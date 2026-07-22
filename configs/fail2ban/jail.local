@@ -1,0 +1,16 @@
+[DEFAULT]
+bantime = 1h
+findtime = 10m
+maxretry = 5
+
+usedns = no
+
+banaction = nftables[type=multiport]
+banaction_allports = nftables[type=allports]
+
+[sshd]
+enabled = true
+backend = systemd
+mode = normal
+port = 22822
+protocol = tcp

@@ -84,17 +84,60 @@ verify_nftables() {
     echo "nftables verification passed."
 }
 
+verify_fail2ban() {
+    echo "Fail2Ban service:"
+
+    systemctl is-enabled fail2ban
+    systemctl is-active fail2ban
+    fail2ban-client ping
+
+    echo
+    echo "SSH jail:"
+    fail2ban-client status sshd
+
+    local maxretry
+    local findtime
+    local bantime
+
+    maxretry="$(fail2ban-client get sshd maxretry)"
+    findtime="$(fail2ban-client get sshd findtime)"
+    bantime="$(fail2ban-client get sshd bantime)"
+
+    [[ "${maxretry}" == "5" ]] || {
+        echo "Verification failed: maxretry is ${maxretry}, expected 5." >&2
+        return 1
+    }
+
+    [[ "${findtime}" == "600" ]] || {
+        echo "Verification failed: findtime is ${findtime}, expected 600." >&2
+        return 1
+    }
+
+    [[ "${bantime}" == "3600" ]] || {
+        echo "Verification failed: bantime is ${bantime}, expected 3600." >&2
+        return 1
+    }
+
+    echo
+    echo "Fail2Ban verification passed."
+}
+
 case "${component}" in
     all)
         verify_ssh
         echo
         verify_nftables
+        echo
+        verify_fail2ban
         ;;
     ssh)
         verify_ssh
         ;;
     nftables)
         verify_nftables
+        ;;
+    fail2ban)
+        verify_fail2ban
         ;;
     *)
         echo "Unknown component: ${component}" >&2

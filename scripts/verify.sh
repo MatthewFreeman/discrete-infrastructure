@@ -31,9 +31,9 @@ verify_nftables() {
     local forward_rules
     local output_rules
 
-    input_rules="$(nft list chain inet filter input)"
-    forward_rules="$(nft list chain inet filter forward)"
-    output_rules="$(nft list chain inet filter output)"
+    input_rules="$(nft list chain inet discrete_filter input)"
+    forward_rules="$(nft list chain inet discrete_filter forward)"
+    output_rules="$(nft list chain inet discrete_filter output)"
 
     require_match "${input_rules}" \
         'policy drop' \

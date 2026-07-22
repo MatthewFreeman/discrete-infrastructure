@@ -1,2 +1,3 @@
 # component	source	target	mode	validate	reload	verify
 ssh	configs/ssh/00-discrete.conf	/etc/ssh/sshd_config.d/00-discrete.conf	0644	sshd -t	systemctl reload ssh	sshd -T
+nftables	configs/nftables/nftables.conf	/etc/nftables.conf	0644	nft -c -f /etc/nftables.conf	nft -f /etc/nftables.conf	nft list table inet filter

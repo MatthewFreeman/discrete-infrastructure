@@ -1,0 +1,26 @@
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+**/secrets/
+
+# Local overrides and generated state
+*.local
+*.bak
+*.tmp
+*.swp
+*.log
+.cache/
+build/
+dist/
+
+# IDE and operating-system noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

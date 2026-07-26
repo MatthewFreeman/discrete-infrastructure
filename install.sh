@@ -8,5 +8,6 @@ if [[ ${EUID} -ne 0 ]]; then
     exit 1
 fi
 
+bash "${REPO_ROOT}/scripts/configure-time-sync.sh"
 "${REPO_ROOT}/scripts/apply-config.sh" all
 "${REPO_ROOT}/scripts/verify.sh" all

@@ -1,0 +1,104 @@
+name: Apply one-time lint fixes
+
+on:
+  push:
+    branches:
+      - ipv4-readme-validation
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event.head_commit.message != 'Apply verified large-file lint fixes'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: ipv4-readme-validation
+          fetch-depth: 0
+
+      - name: Apply exact replacements
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('bootstrap/debian-ipv4.sh'): [
+                  (
+                      'readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"\n'
+                      'readonly REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"',
+                      'SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"\n'
+                      'readonly SCRIPT_DIR\n'
+                      'REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"\n'
+                      'readonly REPO_DIR',
+                  ),
+                  (
+                      '        command -v ufw >/dev/null 2>&1 && ufw --force disable >/dev/null 2>&1 || true',
+                      '        if command -v ufw >/dev/null 2>&1; then\n'
+                      '            ufw --force disable >/dev/null 2>&1 || true\n'
+                      '        fi',
+                  ),
+                  (
+                      'for attempt in {1..40}; do',
+                      'for ((attempt = 1; attempt <= 40; attempt++)); do',
+                  ),
+              ],
+              Path('scripts/verify.sh'): [
+                  (
+                      'for attempt in {1..40}; do',
+                      'for ((attempt = 1; attempt <= 40; attempt++)); do',
+                  ),
+                  (
+                      'for attempt in {1..10}; do',
+                      'for ((attempt = 1; attempt <= 10; attempt++)); do',
+                  ),
+              ],
+          }
+
+          for path, pairs in replacements.items():
+              text = path.read_text()
+              for old, new in pairs:
+                  count = text.count(old)
+                  if count == 0:
+                      raise SystemExit(f'Missing required pattern in {path}: {old!r}')
+                  text = text.replace(old, new)
+              path.write_text(text)
+
+          checks = {
+              Path('bootstrap/debian-ipv4.sh'): [
+                  'readonly SCRIPT_DIR="$(' ,
+                  'readonly REPO_DIR="$(' ,
+                  'command -v ufw >/dev/null 2>&1 &&',
+                  'for attempt in {1..40}; do',
+              ],
+              Path('scripts/verify.sh'): [
+                  'for attempt in {1..40}; do',
+                  'for attempt in {1..10}; do',
+              ],
+          }
+
+          for path, forbidden in checks.items():
+              text = path.read_text()
+              for value in forbidden:
+                  if value in text:
+                      raise SystemExit(f'Forbidden pattern remains in {path}: {value!r}')
+          PY
+
+      - name: Validate fixed scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          bash -n bootstrap/debian-ipv4.sh
+          bash -n scripts/verify.sh
+          shellcheck bootstrap/debian-ipv4.sh scripts/verify.sh
+
+      - name: Commit fixes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add bootstrap/debian-ipv4.sh scripts/verify.sh
+          git commit -m 'Apply verified large-file lint fixes'
+          git push origin HEAD:ipv4-readme-validation

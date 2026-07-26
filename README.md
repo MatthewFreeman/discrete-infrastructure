@@ -22,6 +22,11 @@ docs/bootstrap-from-zero.md
 Do not bypass or improvise around the documented sequence. When implementation and the
 runbook disagree, correct the runbook first and then correct and retest the implementation.
 
+## Validation
+
+GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, and the
+IPv4-only configuration contract on every push and pull request.
+
 ## Repository layout
 
 ```text

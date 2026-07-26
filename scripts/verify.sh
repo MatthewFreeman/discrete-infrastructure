@@ -105,7 +105,7 @@ nft_chain_has_udp_accept() {
 wait_for_fail2ban_table() {
     local attempt
 
-    for attempt in {1..40}; do
+    for ((attempt = 1; attempt <= 40; attempt++)); do
         if nft list table "${FAIL2BAN_FAMILY}" "${FAIL2BAN_TABLE}" \
             >/dev/null 2>&1; then
             return 0
@@ -368,7 +368,7 @@ verify_time_sync() {
     systemctl is-active --quiet "${TIME_SYNC_SERVICE}" \
         || fail "systemd-timesyncd is not active."
 
-    for attempt in {1..10}; do
+    for ((attempt = 1; attempt <= 10; attempt++)); do
         synchronized="$(timedatectl show -p NTPSynchronized --value 2>/dev/null || true)"
         [[ "${synchronized}" == "yes" ]] && break
         sleep 1

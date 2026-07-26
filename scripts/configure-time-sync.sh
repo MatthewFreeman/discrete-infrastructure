@@ -43,7 +43,7 @@ wait_for_time_sync() {
     local attempt
     local synchronized
 
-    for attempt in {1..60}; do
+    for ((attempt = 1; attempt <= 60; attempt++)); do
         synchronized="$(timedatectl show -p NTPSynchronized --value 2>/dev/null || true)"
 
         if [[ "${synchronized}" == "yes" ]]; then

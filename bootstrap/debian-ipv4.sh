@@ -3,8 +3,10 @@ set -Eeuo pipefail
 
 umask 027
 
-readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+readonly REPO_DIR
 readonly STATE_DIR="/var/lib/discrete-infrastructure"
 readonly FINALIZED_MARKER="${STATE_DIR}/bootstrap-finalized"
 readonly TEMP_SSH_CONFIG="/etc/ssh/sshd_config.d/00-discrete-bootstrap.conf"
@@ -104,7 +106,7 @@ wait_for_ipv4_sshd_listener() {
     local port="$1"
     local attempt
 
-    for attempt in {1..40}; do
+    for ((attempt = 1; attempt <= 40; attempt++)); do
         if ipv4_listener_exists "${port}" 1; then
             return 0
         fi
@@ -122,7 +124,7 @@ wait_for_ipv4_listener_absent() {
     local port="$1"
     local attempt
 
-    for attempt in {1..40}; do
+    for ((attempt = 1; attempt <= 40; attempt++)); do
         if ! ipv4_listener_exists "${port}" 0; then
             return 0
         fi
@@ -260,7 +262,9 @@ remove_ufw() {
 
     if command -v ufw >/dev/null 2>&1 || [[ "${installed}" == "yes" ]]; then
         log "Removing UFW so nftables is the only host firewall"
-        command -v ufw >/dev/null 2>&1 && ufw --force disable >/dev/null 2>&1 || true
+        if command -v ufw >/dev/null 2>&1; then
+            ufw --force disable >/dev/null 2>&1 || true
+        fi
         systemctl disable --now ufw.service >/dev/null 2>&1 || true
 
         if [[ "${installed}" == "yes" ]]; then
@@ -435,7 +439,7 @@ build_bootstrap_fail2ban_config() {
 wait_for_fail2ban_table() {
     local attempt
 
-    for attempt in {1..40}; do
+    for ((attempt = 1; attempt <= 40; attempt++)); do
         if nft list table "${FAIL2BAN_FAMILY}" "${FAIL2BAN_TABLE}" \
             >/dev/null 2>&1; then
             return 0

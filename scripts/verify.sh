@@ -61,6 +61,20 @@ nft_chain_has_tcp_port() {
     ' <<<"${rules}"
 }
 
+wait_for_fail2ban_table() {
+    local attempt
+
+    for attempt in {1..40}; do
+        if nft list table inet f2b-table >/dev/null 2>&1; then
+            return 0
+        fi
+
+        sleep 0.25
+    done
+
+    return 1
+}
+
 fail2ban_rule_has_tcp_port() {
     local port="$1"
     local rules
@@ -205,6 +219,9 @@ verify_fail2ban_common() {
 
     fail2ban-client status sshd >/dev/null \
         || fail "Fail2Ban sshd jail is not active."
+
+    wait_for_fail2ban_table \
+        || fail "Fail2Ban nftables table was not initialized."
 
     fail2ban_rule_has_tcp_port "${FINAL_SSH_PORT}" \
         || fail "Fail2Ban does not protect SSH TCP ${FINAL_SSH_PORT}."

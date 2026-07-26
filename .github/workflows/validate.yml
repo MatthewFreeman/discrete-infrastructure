@@ -28,7 +28,10 @@ jobs:
           done < <(find . -type f -name '*.sh' -print0 | sort -z)
 
       - name: Run ShellCheck on managed entrypoints
+        id: shellcheck
+        continue-on-error: true
         run: |
+          set -o pipefail
           shellcheck \
             bootstrap/run.sh \
             bootstrap/debian-ipv4.sh \
@@ -40,7 +43,16 @@ jobs:
             scripts/configure-ipv4-only.sh \
             scripts/configure-time-sync.sh \
             scripts/restart-fail2ban.sh \
-            scripts/verify.sh
+            scripts/verify.sh \
+            2>&1 | tee shellcheck.txt
+
+      - name: Upload ShellCheck diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shellcheck-diagnostics
+          path: shellcheck.txt
+          if-no-files-found: error
 
       - name: Validate OpenSSH configuration
         run: |
@@ -67,3 +79,8 @@ jobs:
           grep -Eq '^net.ipv6.conf.default.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
           grep -Eq '^net.ipv6.conf.lo.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
           grep -F $'nft list table ip discrete_filter' configs/manifest.tsv
+
+      - name: Enforce ShellCheck result
+        if: always()
+        run: |
+          test '${{ steps.shellcheck.outcome }}' = 'success'

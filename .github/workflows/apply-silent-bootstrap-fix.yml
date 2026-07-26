@@ -27,19 +27,24 @@ jobs:
 
       - name: Commit documentation contract first
         run: |
-          git apply .ci-fixes/docs-status.patch
+          set -euxo pipefail
+          patch --batch --forward -p1 < .ci-fixes/docs-status.patch
+          git diff --check
           git add docs/bootstrap-from-zero.md
           git commit -m 'Document explicit bootstrap phase status'
 
       - name: Commit implementation and regression test
         run: |
-          git apply .ci-fixes/implementation-status.patch
+          set -euxo pipefail
+          patch --batch --forward -p1 < .ci-fixes/implementation-status.patch
           bash -n bootstrap/debian-ipv4.sh
+          git diff --check
           git add bootstrap/debian-ipv4.sh .github/workflows/validate.yml
           git commit -m 'Prevent silent success-probe bootstrap exits'
 
       - name: Remove one-time fix machinery
         run: |
+          set -euxo pipefail
           git rm \
             .ci-fixes/docs-status.patch \
             .ci-fixes/implementation-status.patch \

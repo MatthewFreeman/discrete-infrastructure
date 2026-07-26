@@ -20,10 +20,16 @@ if ! ss -H -lntp | LC_ALL=C sort -k4,4; then
     fail "Could not read TCP listening sockets."
 fi
 
+udp_sockets="$(ss -H -lnup 2>/dev/null || true)"
+
 printf '\nUDP listening sockets:\n'
 printf '%s\n' '----------------------'
-if ! ss -H -lnup | LC_ALL=C sort -k4,4; then
-    fail "Could not read UDP listening sockets."
+printf '%s\n' "${udp_sockets}" | LC_ALL=C sort -k4,4
+
+if awk '$4 ~ /:123$/ { found = 1 } END { exit !found }' <<<"${udp_sockets}"; then
+    printf '\nUnexpected UDP 123 listeners:\n' >&2
+    awk '$4 ~ /:123$/' <<<"${udp_sockets}" >&2
+    fail "The client-only baseline must not listen on UDP 123."
 fi
 
 printf '\nActive nftables tables:\n'
@@ -37,5 +43,7 @@ nft -a list chain inet discrete_filter input
 printf '\nPort audit complete.\n'
 printf '%s\n' \
     'Review every wildcard, public-address, and VPS-interface listener.'
+printf '%s\n' \
+    'A provider DHCP client may legitimately listen on UDP 68.'
 printf '%s\n' \
     'This local audit does not prove provider-firewall or Internet reachability.'

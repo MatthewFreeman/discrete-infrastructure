@@ -65,6 +65,27 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Ubuntu access-mode contract
+        run: |
+          test "$(
+            BOOTSTRAP_SOURCE_USER=ubuntu \
+              bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
+          )" = 'no'
+
+          test "$(
+            env -u BOOTSTRAP_SOURCE_USER \
+              bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
+          )" = 'yes'
+
+          grep -F 'PermitRootLogin ${permit_root_login}' \
+            bootstrap/ubuntu-24.04-ipv4.sh
+          grep -F 'authorized_keys directly to ${ADMIN_USER}' \
+            bootstrap/ubuntu-24.04-ipv4.sh
+          grep -F 'root account remains locked' \
+            docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>' \
+            docs/bootstrap-ubuntu-24.04-from-zero.md
+
       - name: Validate platform file separation
         run: |
           grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh

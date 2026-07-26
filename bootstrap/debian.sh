@@ -143,9 +143,16 @@ ensure_admin_user() {
 }
 
 server_appears_finalized() {
+    local effective
+
     [[ -f /etc/ssh/sshd_config.d/00-discrete.conf ]] \
-        && sshd -T 2>/dev/null \
-            | grep -x 'permitrootlogin no' >/dev/null
+        || return 1
+
+    effective="$(sshd -T 2>/dev/null)" \
+        || return 1
+
+    grep -x 'port 22822' <<<"${effective}" >/dev/null \
+        && grep -x 'permitrootlogin no' <<<"${effective}" >/dev/null
 }
 
 write_temporary_ssh_config() {
@@ -214,6 +221,19 @@ build_bootstrap_nftables_config() {
         || die "Could not create the temporary bootstrap nftables configuration."
 }
 
+delete_ufw_table_if_present() {
+    local family="$1"
+    local table="$2"
+    local rules
+
+    rules="$(nft list table "${family}" "${table}" 2>/dev/null)" \
+        || return 0
+
+    if grep -E '(^|[^[:alnum:]_])ufw6?-' <<<"${rules}" >/dev/null; then
+        nft delete table "${family}" "${table}"
+    fi
+}
+
 remove_ufw() {
     local ufw_installed="no"
 
@@ -236,24 +256,19 @@ remove_ufw() {
         fi
     fi
 
-    # Some provider images leave nftables-compat UFW tables behind after the
-    # package or service is removed. Delete only tables that clearly contain
-    # UFW-owned chains.
-    if nft list table ip filter >/tmp/discrete-ufw-ip.$$ 2>/dev/null; then
-        if grep -q 'ufw-' /tmp/discrete-ufw-ip.$$; then
-            nft delete table ip filter
-        fi
-    fi
-    rm -f /tmp/discrete-ufw-ip.$$
+    delete_ufw_table_if_present ip filter
+    delete_ufw_table_if_present ip6 filter
 
-    if nft list table ip6 filter >/tmp/discrete-ufw-ip6.$$ 2>/dev/null; then
-        if grep -q 'ufw-' /tmp/discrete-ufw-ip6.$$; then
-            nft delete table ip6 filter
-        fi
+    if nft list table ip filter >/dev/null 2>&1; then
+        die "Legacy IPv4 filter table remains after UFW cleanup."
     fi
-    rm -f /tmp/discrete-ufw-ip6.$$
 
-    if nft list ruleset | grep 'ufw-' >/dev/null; then
+    if nft list table ip6 filter >/dev/null 2>&1; then
+        die "Legacy IPv6 filter table remains after UFW cleanup."
+    fi
+
+    if nft list ruleset \
+        | grep -E '(^|[^[:alnum:]_])ufw6?-' >/dev/null; then
         die "Residual UFW rules are still present in nftables."
     fi
 }
@@ -517,8 +532,8 @@ apply_prepare_components() {
     install_bootstrap_fail2ban
 
     log "Verifying prepared services"
-    bash "${REPO_DIR}/scripts/verify.sh" nftables
-    bash "${REPO_DIR}/scripts/verify.sh" fail2ban
+    bash "${REPO_DIR}/scripts/verify.sh" nftables-bootstrap
+    bash "${REPO_DIR}/scripts/verify.sh" fail2ban-bootstrap
 
     nft list chain inet discrete_filter input \
         | grep -E "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" >/dev/null \
@@ -544,6 +559,62 @@ confirm_admin_ssh_test() {
         || die "Administrative SSH test was not confirmed."
 }
 
+tcp_listener_exists() {
+    local port="$1"
+    local listeners
+
+    listeners="$(ss -H -lntp 2>/dev/null || true)"
+
+    awk -v expected_port=":${port}" '
+        $4 ~ expected_port "$" && /users:\(\("sshd"/ {
+            found = 1
+        }
+
+        END {
+            exit !found
+        }
+    ' <<<"${listeners}"
+}
+
+wait_for_tcp_listener_absent() {
+    local port="$1"
+    local attempt
+
+    for attempt in {1..40}; do
+        if ! tcp_listener_exists "${port}"; then
+            return 0
+        fi
+
+        sleep 0.25
+    done
+
+    return 1
+}
+
+verify_final_ssh_runtime() {
+    local effective
+    local ports
+
+    effective="$(sshd -T)" \
+        || return 1
+
+    mapfile -t ports < <(
+        awk '$1 == "port" { print $2 }' <<<"${effective}"
+    )
+
+    [[ ${#ports[@]} -eq 1 && "${ports[0]}" == "${FINAL_SSH_PORT}" ]] \
+        || return 1
+
+    grep -x 'permitrootlogin no' <<<"${effective}" >/dev/null \
+        || return 1
+
+    wait_for_tcp_listener "${FINAL_SSH_PORT}" \
+        || return 1
+
+    wait_for_tcp_listener_absent "${BOOTSTRAP_SSH_PORT}" \
+        || return 1
+}
+
 finalize_ssh() {
     local temporary_backup=""
 
@@ -553,18 +624,26 @@ finalize_ssh() {
         rm -f "${TEMP_SSH_CONFIG}"
     fi
 
-    if ! bash "${REPO_DIR}/scripts/apply-config.sh" ssh; then
-        if [[ -n "${temporary_backup}" && -f "${temporary_backup}" ]]; then
-            install -m 0644 "${temporary_backup}" "${TEMP_SSH_CONFIG}"
-            sshd -t
-            systemctl reload ssh
-        fi
+    if bash "${REPO_DIR}/scripts/apply-config.sh" ssh \
+       && verify_final_ssh_runtime; then
 
         rm -f "${temporary_backup}"
-        die "Final SSH configuration failed. Temporary root SSH access was restored."
+        return 0
+    fi
+
+    printf 'ERROR: Final SSH runtime state is invalid; restoring temporary access.\n' >&2
+
+    if [[ -n "${temporary_backup}" && -f "${temporary_backup}" ]]; then
+        install -m 0644 "${temporary_backup}" "${TEMP_SSH_CONFIG}"
+        sshd -t
+        systemctl reload ssh
+
+        wait_for_tcp_listener "${BOOTSTRAP_SSH_PORT}" || true
+        wait_for_tcp_listener "${FINAL_SSH_PORT}" || true
     fi
 
     rm -f "${temporary_backup}"
+    die "Final SSH configuration failed. Temporary root SSH access was restored."
 }
 
 verify_no_ufw() {
@@ -573,7 +652,20 @@ verify_no_ufw() {
         die "UFW is still installed."
     fi
 
-    if nft list ruleset | grep 'ufw-' >/dev/null; then
+    if systemctl is-active --quiet ufw.service 2>/dev/null; then
+        die "UFW service is still active."
+    fi
+
+    if nft list table ip filter >/dev/null 2>&1; then
+        die "Legacy IPv4 filter table is still present."
+    fi
+
+    if nft list table ip6 filter >/dev/null 2>&1; then
+        die "Legacy IPv6 filter table is still present."
+    fi
+
+    if nft list ruleset \
+        | grep -E '(^|[^[:alnum:]_])ufw6?-' >/dev/null; then
         die "UFW rules are still present."
     fi
 }
@@ -620,6 +712,8 @@ prepare() {
 }
 
 finalize() {
+    rm -f "${FINALIZED_MARKER}"
+
     install_base_packages
 
     id "${ADMIN_USER}" >/dev/null 2>&1 \
@@ -651,6 +745,11 @@ finalize() {
     log "Applying final single-port firewall and Fail2Ban configuration"
     bash "${REPO_DIR}/scripts/apply-config.sh" nftables
     bash "${REPO_DIR}/scripts/apply-config.sh" fail2ban
+
+    # Package triggers or compatibility helpers can recreate legacy UFW tables.
+    # Remove them again immediately before the authoritative final verification.
+    remove_ufw
+    verify_no_ufw
 
     log "Running complete verification"
     bash "${REPO_DIR}/scripts/verify.sh" all

@@ -109,6 +109,13 @@ jobs:
                 exit 1
               fi
             done
+
+            grep -A3 -F 'nftables-bootstrap)' scripts/verify.sh \
+              | grep -F 'verify_ipv4_prepare'
+            grep -A3 -F 'fail2ban-bootstrap)' scripts/verify.sh \
+              | grep -F 'verify_ipv4_prepare'
+            grep -A6 -F 'verify_all_final()' scripts/verify.sh \
+              | grep -F 'verify_ipv4_only'
           } 2>&1 | tee ipv6-listener-migration.txt
 
       - name: Test grouped component application

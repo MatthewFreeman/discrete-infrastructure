@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+
 readonly BOOTSTRAP_SSH_PORT="22"
 readonly FINAL_SSH_PORT="22822"
 readonly HOST_FIREWALL_FAMILY="ip"
@@ -136,12 +139,12 @@ fail2ban_rule_has_tcp_port() {
     ' <<<"${rules}"
 }
 
-verify_ipv4_only() {
+verify_ipv4_network_state() {
+    local listener_mode="$1"
     local flag
     local value
     local addresses
     local routes
-    local listeners
 
     [[ -r /etc/sysctl.d/99-discrete-ipv4-only.conf ]] \
         || fail "Managed IPv4-only sysctl policy is missing."
@@ -161,7 +164,6 @@ verify_ipv4_only() {
 
     addresses="$(ip -6 -o address show 2>/dev/null || true)"
     routes="$(ip -6 route show table all 2>/dev/null || true)"
-    listeners="$(ss -6 -H -lntup 2>/dev/null || true)"
 
     if [[ -n "${addresses}" ]]; then
         printf 'Unexpected IPv6 addresses:\n%s\n' "${addresses}" >&2
@@ -173,11 +175,17 @@ verify_ipv4_only() {
         fail "IPv6 routes remain."
     fi
 
-    if [[ -n "${listeners}" ]]; then
-        printf 'Unexpected IPv6 listeners:\n%s\n' "${listeners}" >&2
-        fail "IPv6 listening sockets remain."
-    fi
+    bash "${SCRIPT_DIR}/check-ipv6-listeners.sh" "${listener_mode}" >/dev/null \
+        || fail "IPv6 listener state is invalid for ${listener_mode} verification."
+}
 
+verify_ipv4_prepare() {
+    verify_ipv4_network_state prepare
+    printf 'IPv4-only prepare-state verification passed.\n'
+}
+
+verify_ipv4_only() {
+    verify_ipv4_network_state strict
     printf 'IPv4-only final-state verification passed.\n'
 }
 
@@ -435,11 +443,11 @@ main() {
             verify_time_sync
             ;;
         nftables-bootstrap)
-            verify_ipv4_only
+            verify_ipv4_prepare
             verify_nftables_bootstrap
             ;;
         fail2ban-bootstrap)
-            verify_ipv4_only
+            verify_ipv4_prepare
             verify_fail2ban_bootstrap
             ;;
         all)

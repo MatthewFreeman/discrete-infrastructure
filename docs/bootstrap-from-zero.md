@@ -480,6 +480,13 @@ git pull --ff-only
 `./install.sh` reconciles IPv4-only networking and client-only time synchronization before
 applying managed configuration and running the complete verification suite.
 
+The manifest may contain multiple files for one logical component. The installer stages and
+backs up every file in that component, validates the complete staged configuration, reloads the
+service once, and verifies it once. `Applied components` counts logical components rather than
+manifest rows. With the current manifest, a normal full update applies three components: `ssh`,
+`nftables`, and `fail2ban`. The two managed Fail2Ban files must therefore produce one Fail2Ban
+restart, not two.
+
 Never edit Git-managed files directly under `/etc`, except during emergency recovery.
 
 ---
@@ -507,6 +514,21 @@ and routes from affected interfaces. Verification enumerates every interface-spe
 
 OpenSSH explicitly requires `AddressFamily inet`. The nftables baseline uses `table ip`, not
 `table inet`. Fail2Ban uses `allowipv6 = no` and `table_family=ip`.
+
+</details>
+
+<details>
+<summary><strong>Grouped component application</strong></summary>
+
+`configs/manifest.tsv` may describe several managed files with the same component name. Those
+rows form one transactional component. The installer backs up and installs all of the component's
+files before validation, executes each distinct validation command once, and requires one shared
+reload command and one shared verification command for the group.
+
+If validation, reload, or verification fails, every target in the component is restored from the
+same backup set. After a reload or verification failure, the installer reloads the restored
+configuration once. This prevents partial multi-file service updates and avoids unnecessary
+restarts such as restarting Fail2Ban separately for `fail2ban.local` and `jail.local`.
 
 </details>
 

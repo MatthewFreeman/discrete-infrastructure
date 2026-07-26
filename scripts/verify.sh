@@ -1,146 +1,286 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-component="${1:-all}"
+readonly BOOTSTRAP_SSH_PORT="22"
+readonly FINAL_SSH_PORT="22822"
 
-require_match() {
-    local content="$1"
-    local pattern="$2"
-    local description="$3"
+fail() {
+    printf 'ERROR: %s\n' "$*" >&2
+    exit 1
+}
 
-    if ! grep -Eq "${pattern}" <<<"${content}"; then
-        echo "Verification failed: ${description}" >&2
-        return 1
+require_root() {
+    [[ ${EUID} -eq 0 ]] \
+        || fail "Run verification as root."
+}
+
+tcp_listener_exists() {
+    local port="$1"
+    local listeners
+
+    listeners="$(ss -H -lntp 2>/dev/null || true)"
+
+    awk -v expected_port=":${port}" '
+        $4 ~ expected_port "$" && /users:\(\("sshd"/ {
+            found = 1
+        }
+
+        END {
+            exit !found
+        }
+    ' <<<"${listeners}"
+}
+
+nft_chain_has_tcp_port() {
+    local family="$1"
+    local table="$2"
+    local chain="$3"
+    local port="$4"
+    local rules
+
+    rules="$(nft list chain "${family}" "${table}" "${chain}" 2>/dev/null)" \
+        || return 1
+
+    awk -v expected_port="${port}" '
+        /tcp dport/ {
+            line = $0
+            gsub(/[{},]/, " ", line)
+
+            count = split(line, fields, /[[:space:]]+/)
+
+            for (i = 1; i <= count; i++) {
+                if (fields[i] == expected_port) {
+                    found = 1
+                }
+            }
+        }
+
+        END {
+            exit !found
+        }
+    ' <<<"${rules}"
+}
+
+fail2ban_rule_has_tcp_port() {
+    local port="$1"
+    local rules
+
+    rules="$(nft list table inet f2b-table 2>/dev/null)" \
+        || return 1
+
+    awk -v expected_port="${port}" '
+        /tcp dport/ && /@addr-set-sshd/ {
+            line = $0
+            gsub(/[{},]/, " ", line)
+
+            count = split(line, fields, /[[:space:]]+/)
+
+            for (i = 1; i <= count; i++) {
+                if (fields[i] == expected_port) {
+                    found = 1
+                }
+            }
+        }
+
+        END {
+            exit !found
+        }
+    ' <<<"${rules}"
+}
+
+verify_no_ufw() {
+    if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
+        | grep -x 'install ok installed' >/dev/null; then
+        fail "UFW package is still installed."
     fi
+
+    if systemctl is-active --quiet ufw.service 2>/dev/null; then
+        fail "UFW service is still active."
+    fi
+
+    if nft list table ip filter >/dev/null 2>&1; then
+        fail "Legacy IPv4 filter table still exists."
+    fi
+
+    if nft list table ip6 filter >/dev/null 2>&1; then
+        fail "Legacy IPv6 filter table still exists."
+    fi
+
+    if nft list ruleset | grep -E '(^|[^[:alnum:]_])ufw6?-' >/dev/null; then
+        fail "Residual UFW chains remain in nftables."
+    fi
+
+    printf 'UFW is absent and no legacy UFW tables remain.\n'
 }
 
-verify_ssh() {
-    echo "SSH effective configuration:"
+verify_ssh_final() {
+    local effective
+    local ports
 
-    sshd -T | grep -E \
-        '^(port|logingracetime|maxauthtries|x11forwarding|allowagentforwarding|passwordauthentication|permitrootlogin) '
+    sshd -t
+    systemctl is-enabled --quiet ssh \
+        || fail "SSH service is not enabled."
+    systemctl is-active --quiet ssh \
+        || fail "SSH service is not active."
+
+    effective="$(sshd -T)"
+
+    mapfile -t ports < <(
+        awk '$1 == "port" { print $2 }' <<<"${effective}"
+    )
+
+    [[ ${#ports[@]} -eq 1 && "${ports[0]}" == "${FINAL_SSH_PORT}" ]] \
+        || fail "Effective SSH ports are not exactly: ${FINAL_SSH_PORT}."
+
+    grep -x 'permitrootlogin no' <<<"${effective}" >/dev/null \
+        || fail "Direct root SSH login is not disabled."
+
+    grep -x 'passwordauthentication yes' <<<"${effective}" >/dev/null \
+        || fail "SSH password authentication is not enabled."
+
+    grep -x 'pubkeyauthentication yes' <<<"${effective}" >/dev/null \
+        || fail "SSH public-key authentication is not enabled."
+
+    tcp_listener_exists "${FINAL_SSH_PORT}" \
+        || fail "sshd is not listening on TCP ${FINAL_SSH_PORT}."
+
+    if tcp_listener_exists "${BOOTSTRAP_SSH_PORT}"; then
+        fail "sshd still listens on temporary TCP ${BOOTSTRAP_SSH_PORT}."
+    fi
+
+    printf 'SSH final-state verification passed.\n'
 }
 
-verify_nftables() {
-    echo "nftables service:"
+verify_nftables_common() {
+    systemctl is-enabled --quiet nftables \
+        || fail "nftables service is not enabled."
+    systemctl is-active --quiet nftables \
+        || fail "nftables service is not active."
 
-    systemctl is-enabled nftables
-    systemctl is-active nftables
+    nft list table inet discrete_filter >/dev/null \
+        || fail "inet discrete_filter table is missing."
 
-    local input_rules
-    local forward_rules
-    local output_rules
+    nft_chain_has_tcp_port inet discrete_filter input "${FINAL_SSH_PORT}" \
+        || fail "Firewall does not allow SSH TCP ${FINAL_SSH_PORT}."
 
-    input_rules="$(nft list chain inet discrete_filter input)"
-    forward_rules="$(nft list chain inet discrete_filter forward)"
-    output_rules="$(nft list chain inet discrete_filter output)"
+    nft_chain_has_tcp_port inet discrete_filter input 9330 \
+        || fail "Firewall does not allow Discrete P2P TCP 9330."
 
-    require_match "${input_rules}" \
-        'policy drop' \
-        'input policy must be drop'
+    nft_chain_has_tcp_port inet discrete_filter input 9331 \
+        || fail "Firewall does not allow Discrete RPC HTTP TCP 9331."
 
-    require_match "${input_rules}" \
-        'iifname "lo".*accept' \
-        'loopback traffic must be accepted'
+    nft_chain_has_tcp_port inet discrete_filter input 9332 \
+        || fail "Firewall does not allow Discrete RPC HTTPS TCP 9332."
 
-    require_match "${input_rules}" \
-        'ct state established,related.*accept' \
-        'established and related traffic must be accepted'
-
-    require_match "${input_rules}" \
-        'ct state invalid.*drop' \
-        'invalid traffic must be dropped'
-
-    require_match "${input_rules}" \
-        'meta l4proto icmp.*accept' \
-        'IPv4 ICMP must be accepted'
-
-    require_match "${input_rules}" \
-        'meta l4proto ipv6-icmp.*accept' \
-        'IPv6 ICMP must be accepted'
-
-    local port
-    for port in 22822 9330 9331 9332; do
-        require_match "${input_rules}" \
-            "tcp dport ${port}.*accept" \
-            "TCP port ${port} must be accepted"
-    done
-
-    require_match "${forward_rules}" \
-        'policy drop' \
-        'forward policy must be drop'
-
-    require_match "${output_rules}" \
-        'policy accept' \
-        'output policy must be accept'
-
-    echo
-    echo "${input_rules}"
-    echo
-    echo "${forward_rules}"
-    echo
-    echo "${output_rules}"
-    echo
-    echo "nftables verification passed."
+    verify_no_ufw
 }
 
-verify_fail2ban() {
-    echo "Fail2Ban service:"
+verify_nftables_bootstrap() {
+    verify_nftables_common
 
-    systemctl is-enabled fail2ban
-    systemctl is-active fail2ban
-    fail2ban-client ping
+    nft_chain_has_tcp_port inet discrete_filter input "${BOOTSTRAP_SSH_PORT}" \
+        || fail "Bootstrap firewall does not allow SSH TCP ${BOOTSTRAP_SSH_PORT}."
 
-    echo
-    echo "SSH jail:"
-    fail2ban-client status sshd
-
-    local maxretry
-    local findtime
-    local bantime
-
-    maxretry="$(fail2ban-client get sshd maxretry)"
-    findtime="$(fail2ban-client get sshd findtime)"
-    bantime="$(fail2ban-client get sshd bantime)"
-
-    [[ "${maxretry}" == "5" ]] || {
-        echo "Verification failed: maxretry is ${maxretry}, expected 5." >&2
-        return 1
-    }
-
-    [[ "${findtime}" == "600" ]] || {
-        echo "Verification failed: findtime is ${findtime}, expected 600." >&2
-        return 1
-    }
-
-    [[ "${bantime}" == "3600" ]] || {
-        echo "Verification failed: bantime is ${bantime}, expected 3600." >&2
-        return 1
-    }
-
-    echo
-    echo "Fail2Ban verification passed."
+    printf 'nftables bootstrap-state verification passed.\n'
 }
 
-case "${component}" in
-    all)
-        verify_ssh
-        echo
-        verify_nftables
-        echo
-        verify_fail2ban
-        ;;
-    ssh)
-        verify_ssh
-        ;;
-    nftables)
-        verify_nftables
-        ;;
-    fail2ban)
-        verify_fail2ban
-        ;;
-    *)
-        echo "Unknown component: ${component}" >&2
-        exit 1
-        ;;
-esac
+verify_nftables_final() {
+    verify_nftables_common
+
+    if nft_chain_has_tcp_port inet discrete_filter input "${BOOTSTRAP_SSH_PORT}"; then
+        fail "Final firewall still allows temporary SSH TCP ${BOOTSTRAP_SSH_PORT}."
+    fi
+
+    printf 'nftables final-state verification passed.\n'
+}
+
+verify_fail2ban_common() {
+    systemctl is-enabled --quiet fail2ban \
+        || fail "Fail2Ban service is not enabled."
+    systemctl is-active --quiet fail2ban \
+        || fail "Fail2Ban service is not active."
+
+    fail2ban-client ping | grep -x 'Server replied: pong' >/dev/null \
+        || fail "Fail2Ban control socket did not reply."
+
+    fail2ban-client status sshd >/dev/null \
+        || fail "Fail2Ban sshd jail is not active."
+
+    fail2ban_rule_has_tcp_port "${FINAL_SSH_PORT}" \
+        || fail "Fail2Ban does not protect SSH TCP ${FINAL_SSH_PORT}."
+}
+
+verify_fail2ban_bootstrap() {
+    verify_fail2ban_common
+
+    fail2ban_rule_has_tcp_port "${BOOTSTRAP_SSH_PORT}" \
+        || fail "Fail2Ban does not protect bootstrap SSH TCP ${BOOTSTRAP_SSH_PORT}."
+
+    printf 'Fail2Ban bootstrap-state verification passed.\n'
+}
+
+verify_fail2ban_final() {
+    verify_fail2ban_common
+
+    if fail2ban_rule_has_tcp_port "${BOOTSTRAP_SSH_PORT}"; then
+        fail "Fail2Ban still targets temporary SSH TCP ${BOOTSTRAP_SSH_PORT}."
+    fi
+
+    printf 'Fail2Ban final-state verification passed.\n'
+}
+
+verify_all_final() {
+    verify_ssh_final
+    verify_nftables_final
+    verify_fail2ban_final
+    printf 'Complete final-state verification passed.\n'
+}
+
+usage() {
+    cat <<EOF
+Usage:
+  $0 ssh
+  $0 nftables
+  $0 fail2ban
+  $0 nftables-bootstrap
+  $0 fail2ban-bootstrap
+  $0 all
+
+Final-state checks:
+  ssh, nftables, fail2ban, all
+
+Temporary prepare-phase checks:
+  nftables-bootstrap, fail2ban-bootstrap
+EOF
+}
+
+main() {
+    require_root
+
+    case "${1:-}" in
+        ssh)
+            verify_ssh_final
+            ;;
+        nftables)
+            verify_nftables_final
+            ;;
+        fail2ban)
+            verify_fail2ban_final
+            ;;
+        nftables-bootstrap)
+            verify_nftables_bootstrap
+            ;;
+        fail2ban-bootstrap)
+            verify_fail2ban_bootstrap
+            ;;
+        all)
+            verify_all_final
+            ;;
+        *)
+            usage
+            exit 2
+            ;;
+    esac
+}
+
+main "$@"

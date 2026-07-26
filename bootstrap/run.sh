@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
 apt-get() {
-    local real_apt_get="/usr/bin/apt-get"
+    local real_apt_get="${APT_GET_BIN:-/usr/bin/apt-get}"
     local lock_timeout="${APT_LOCK_TIMEOUT_SECONDS:-300}"
     local progress_interval="${APT_LOCK_PROGRESS_SECONDS:-30}"
     local status
@@ -59,4 +59,6 @@ apt-get() {
 
 export -f apt-get
 
-exec bash "${SCRIPT_DIR}/debian-ipv4.sh" "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    exec bash "${SCRIPT_DIR}/debian-ipv4.sh" "$@"
+fi

@@ -64,27 +64,6 @@ ubuntu_temporary_root_login_policy() {
     fi
 }
 
-ubuntu_source_authorized_keys() {
-    local source_user="${BOOTSTRAP_SOURCE_USER:-}"
-    local source_home
-    local source_keys
-
-    [[ -n "${source_user}" ]] || return 1
-    [[ "${source_user}" != "root" ]] \
-        || die "BOOTSTRAP_SOURCE_USER must name the original non-root cloud user."
-    id "${source_user}" >/dev/null 2>&1 \
-        || die "BOOTSTRAP_SOURCE_USER does not exist: ${source_user}"
-
-    source_home="$(getent passwd "${source_user}" | cut -d: -f6)"
-    [[ -n "${source_home}" ]] \
-        || die "Cannot determine home directory for ${source_user}."
-
-    source_keys="${source_home}/.ssh/authorized_keys"
-    [[ -s "${source_keys}" ]] || return 1
-
-    printf '%s\n' "${source_keys}"
-}
-
 ensure_admin_user() {
     log "Creating or validating administrative user: ${ADMIN_USER}"
 
@@ -94,7 +73,9 @@ ensure_admin_user() {
     local admin_home
     local admin_group
     local admin_keys
-    local source_keys=""
+    local source_user
+    local source_home
+    local source_keys
 
     admin_home="$(getent passwd "${ADMIN_USER}" | cut -d: -f6)"
     admin_group="$(id -gn "${ADMIN_USER}")"
@@ -107,12 +88,24 @@ ensure_admin_user() {
     admin_keys="${admin_home}/.ssh/authorized_keys"
 
     if ubuntu_cloud_user_mode; then
-        source_keys="$(ubuntu_source_authorized_keys || true)"
-        if [[ -n "${source_keys}" && ! -e "${admin_keys}" ]]; then
-            log "Copying ${BOOTSTRAP_SOURCE_USER} authorized_keys directly to ${ADMIN_USER}"
+        source_user="${BOOTSTRAP_SOURCE_USER}"
+        [[ "${source_user}" != "root" ]] \
+            || die "BOOTSTRAP_SOURCE_USER must name the original non-root cloud user."
+        id "${source_user}" >/dev/null 2>&1 \
+            || die "BOOTSTRAP_SOURCE_USER does not exist: ${source_user}"
+
+        source_home="$(getent passwd "${source_user}" | cut -d: -f6)"
+        [[ -n "${source_home}" ]] \
+            || die "Cannot determine home directory for ${source_user}."
+        source_keys="${source_home}/.ssh/authorized_keys"
+
+        if [[ -s "${source_keys}" && ! -e "${admin_keys}" ]]; then
+            log "Copying ${source_user} authorized_keys directly to ${ADMIN_USER}"
             install -m 0600 -o "${ADMIN_USER}" -g "${admin_group}" \
                 "${source_keys}" \
                 "${admin_keys}"
+        elif [[ ! -s "${source_keys}" ]]; then
+            log "No SSH authorized_keys found for ${source_user}; use the ${ADMIN_USER} password for the fresh login test"
         fi
     elif [[ -s /root/.ssh/authorized_keys && ! -e "${admin_keys}" ]]; then
         log "Copying root authorized_keys to ${ADMIN_USER}"

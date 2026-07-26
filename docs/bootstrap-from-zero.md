@@ -262,3 +262,7 @@ git pull --ff-only
 ./install.sh
 
 Never edit managed files directly under /etc except during emergencyrecovery.
+
+Implementation note: pipefail and service checks
+
+The bootstrap runs with set -Eeuo pipefail. Service-output checks must notuse grep -q in a pipeline because grep -q may exit as soon as it finds amatch, causing the producer to receive SIGPIPE and making the whole pipelinelook failed. The script therefore lets grep consume the complete input andredirects its output to /dev/null.

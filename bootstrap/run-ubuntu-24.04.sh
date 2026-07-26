@@ -9,5 +9,11 @@ readonly UBUNTU_RUNNER_DIR
 source "${UBUNTU_RUNNER_DIR}/run.sh"
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    case "${1:-}" in
+        prepare|finalize)
+            bash "${UBUNTU_RUNNER_DIR}/install-ubuntu-ipv4-reassertion.sh"
+            ;;
+    esac
+
     exec bash "${UBUNTU_RUNNER_DIR}/ubuntu-24.04-ipv4.sh" "$@"
 fi

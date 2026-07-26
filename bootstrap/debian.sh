@@ -462,6 +462,26 @@ build_bootstrap_fail2ban_config() {
         || die "Could not create temporary two-port Fail2Ban configuration."
 }
 
+wait_for_fail2ban_table() {
+    local attempt
+
+    for attempt in {1..40}; do
+        if nft list table inet f2b-table >/dev/null 2>&1; then
+            return 0
+        fi
+
+        sleep 0.25
+    done
+
+    printf 'ERROR: Fail2Ban nftables table did not appear within 10 seconds.\n' >&2
+    printf '\nFail2Ban status:\n' >&2
+    fail2ban-client status sshd >&2 || true
+    printf '\nRecent Fail2Ban log:\n' >&2
+    journalctl -u fail2ban -n 60 --no-pager >&2 || true
+
+    return 1
+}
+
 fail2ban_nftables_rule_has_port() {
     local port="$1"
     local ruleset
@@ -522,6 +542,9 @@ install_bootstrap_fail2ban() (
 
     fail2ban-client ping
     fail2ban-client status sshd
+
+    wait_for_fail2ban_table \
+        || die "Fail2Ban did not initialize its nftables action."
 
     verify_bootstrap_fail2ban_ports \
         || die "Fail2Ban is not protecting both bootstrap SSH ports."

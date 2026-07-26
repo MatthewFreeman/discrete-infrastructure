@@ -27,20 +27,36 @@ jobs:
 
       - name: Commit documentation contract first
         run: |
-          set -euxo pipefail
-          patch --batch --forward -p1 < .ci-fixes/docs-status.patch
-          git diff --check
-          git add docs/bootstrap-from-zero.md
-          git commit -m 'Document explicit bootstrap phase status'
+          set -o pipefail
+          {
+            set -eux
+            patch --batch --forward -p1 < .ci-fixes/docs-status.patch
+            git diff --check
+            git add docs/bootstrap-from-zero.md
+            git commit -m 'Document explicit bootstrap phase status'
+          } 2>&1 | tee docs-fix.log
 
       - name: Commit implementation and regression test
         run: |
-          set -euxo pipefail
-          patch --batch --forward -p1 < .ci-fixes/implementation-status.patch
-          bash -n bootstrap/debian-ipv4.sh
-          git diff --check
-          git add bootstrap/debian-ipv4.sh .github/workflows/validate.yml
-          git commit -m 'Prevent silent success-probe bootstrap exits'
+          set -o pipefail
+          {
+            set -eux
+            patch --batch --forward -p1 < .ci-fixes/implementation-status.patch
+            bash -n bootstrap/debian-ipv4.sh
+            git diff --check
+            git add bootstrap/debian-ipv4.sh .github/workflows/validate.yml
+            git commit -m 'Prevent silent success-probe bootstrap exits'
+          } 2>&1 | tee implementation-fix.log
+
+      - name: Upload fix diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: silent-bootstrap-fix-diagnostics
+          path: |
+            docs-fix.log
+            implementation-fix.log
+          if-no-files-found: warn
 
       - name: Remove one-time fix machinery
         run: |

@@ -1,0 +1,52 @@
+name: Test bootstrap status semantics
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  expected-absence:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate expected-absence probes
+        run: |
+          set -Eeuo pipefail
+
+          bash -n bootstrap/debian-ipv4.sh
+          source bootstrap/debian-ipv4.sh
+
+          nft() {
+            return 1
+          }
+
+          assert_nft_table_absent \
+            inet \
+            f2b-table \
+            'Fixture table unexpectedly exists.'
+
+          if (
+            nft() {
+              return 0
+            }
+            assert_nft_table_absent \
+              inet \
+              f2b-table \
+              'Fixture table exists.'
+          ); then
+            echo 'Expected-present nftables fixture was accepted.' >&2
+            exit 1
+          fi
+
+          awk '/^install_bootstrap_fail2ban\(\)/,/^\)/' \
+            bootstrap/debian-ipv4.sh \
+            | grep -F 'return 0'
+
+          awk '/^verify_no_ufw\(\)/,/^}/' \
+            bootstrap/debian-ipv4.sh \
+            | grep -F 'return 0'

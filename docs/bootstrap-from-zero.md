@@ -315,8 +315,26 @@ X11-enabled session is still open.
 
 ## 7. Run the `finalize` phase
 
-From a fresh root or administrative IPv4 session. If `prepare` reported a transient X11
-listener, use the fresh administrative session after closing the original root session:
+Run `finalize` as root from a fresh IPv4 session.
+
+If continuing from the fresh `serveradmin` session, enter a root login shell first:
+
+```bash
+sudo -i
+whoami
+```
+
+Expected output:
+
+```text
+root
+```
+
+If `prepare` reported a transient X11 listener, use the fresh `serveradmin` session after closing
+the original root session and confirming in step 6 that no IPv6 listeners remain. Then enter the
+root login shell as shown above.
+
+From the root shell:
 
 ```bash
 cd /opt/discrete-infrastructure

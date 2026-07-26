@@ -7,13 +7,16 @@ readonly SCRIPT_DIR
 apt-get() {
     local real_apt_get="/usr/bin/apt-get"
     local lock_timeout="${APT_LOCK_TIMEOUT_SECONDS:-300}"
-    local retry_interval=5
-    local deadline
-    local output
+    local progress_interval="${APT_LOCK_PROGRESS_SECONDS:-30}"
     local status
 
     [[ "${lock_timeout}" =~ ^[1-9][0-9]*$ ]] || {
         printf 'ERROR: APT_LOCK_TIMEOUT_SECONDS must be a positive integer.\n' >&2
+        return 2
+    }
+
+    [[ "${progress_interval}" =~ ^[1-9][0-9]*$ ]] || {
+        printf 'ERROR: APT_LOCK_PROGRESS_SECONDS must be a positive integer.\n' >&2
         return 2
     }
 
@@ -23,43 +26,35 @@ apt-get() {
         return 127
     }
 
-    deadline=$((SECONDS + lock_timeout))
+    set +e
+    "${real_apt_get}" \
+        -o "DPkg::Lock::Timeout=${lock_timeout}" \
+        "$@" 2>&1 \
+        | awk \
+            -v timeout="${lock_timeout}" \
+            -v progress_interval="${progress_interval}" '
+                /^Waiting for cache lock:/ {
+                    now = systime()
+                    if (!waiting) {
+                        waiting = 1
+                        started = now
+                        last_progress = now
+                        printf "==> Package manager is busy; waiting up to %s seconds\n", timeout
+                        fflush()
+                    } else if (now - last_progress >= progress_interval) {
+                        printf "==> Still waiting for package manager lock (%s seconds elapsed)\n", now - started
+                        fflush()
+                        last_progress = now
+                    }
+                    next
+                }
 
-    while true; do
-        output="$(mktemp)"
+                { print; fflush() }
+            '
+    status=${PIPESTATUS[0]}
+    set -e
 
-        if "${real_apt_get}" \
-            -o "DPkg::Lock::Timeout=${lock_timeout}" \
-            "$@" 2>&1 | tee "${output}"; then
-            status=0
-        else
-            status=${PIPESTATUS[0]}
-        fi
-
-        if [[ ${status} -eq 0 ]]; then
-            rm -f "${output}"
-            return 0
-        fi
-
-        if ! grep -E \
-            'Could not get lock|Unable to acquire.*lock|Unable to lock directory|Could not open lock file' \
-            "${output}" >/dev/null; then
-            rm -f "${output}"
-            return "${status}"
-        fi
-
-        rm -f "${output}"
-
-        if (( SECONDS >= deadline )); then
-            printf 'ERROR: APT lock wait exceeded %s seconds.\n' \
-                "${lock_timeout}" >&2
-            return "${status}"
-        fi
-
-        printf '\n==> Package manager is busy; retrying in %s seconds\n' \
-            "${retry_interval}" >&2
-        sleep "${retry_interval}"
-    done
+    return "${status}"
 }
 
 export -f apt-get

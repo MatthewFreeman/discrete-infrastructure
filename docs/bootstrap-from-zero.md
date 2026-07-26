@@ -214,9 +214,13 @@ applies the final nftables policy without TCP 22;
 
 reapplies the final Fail2Ban policy for TCP 22822 only;
 
-runs the complete verification suite;
+verifies the effective SSH port and real kernel listeners;
 
-records the finalized state.
+removes any UFW tables recreated during package/service reloads;
+
+runs the complete final-state verification suite;
+
+records the finalized state only after every check passes.
 
 8. Perform final access tests
 
@@ -246,10 +250,17 @@ Expected important state:
 port 22822
 permitrootlogin no
 passwordauthentication yes
+pubkeyauthentication yes
+sshd listener: TCP 22822
+no sshd listener: TCP 22
 table inet discrete_filter
 table inet f2b-table
+no table ip filter
+no table ip6 filter
 UFW: absent
 Server replied: pong
+
+finalize does not write the finalized-state marker unless those conditionsare true. If the final SSH runtime check fails, the script restores thetemporary two-port SSH configuration so TCP 22 remains available forrecovery.
 
 10. Normal future updates
 
@@ -274,3 +285,28 @@ systemctl reload ssh may return before sshd has reopened every configuredlisteni
 Implementation note: verifying Fail2Ban ports
 
 Fail2Ban 1.0.2 does not provide a get <JAIL> port client command. During thetwo-port bootstrap phase, the script verifies the active nftables actioninstead: the f2b-table rule for addr-set-sshd must include both TCP 22and TCP 22822. This checks the firewall state actually enforcing bans,rather than merely rereading the source configuration.
+
+Final-state verification contract
+
+The repository's final SSH configuration explicitly contains:
+
+Port 22822
+PermitRootLogin no
+PasswordAuthentication yes
+PubkeyAuthentication yes
+
+The verification suite checks both configuration and runtime state:
+
+sshd -T reports exactly TCP 22822;
+
+sshd listens on TCP 22822;
+
+sshd does not listen on TCP 22;
+
+the final nftables policy allows TCP 22822 and does not allow TCP 22;
+
+Fail2Ban targets TCP 22822 and does not target TCP 22;
+
+neither table ip filter nor table ip6 filter remains;
+
+no UFW chains remain anywhere in the nftables ruleset.

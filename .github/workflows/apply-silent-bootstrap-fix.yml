@@ -1,0 +1,50 @@
+name: Apply silent bootstrap fix
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    if: github.head_ref == 'fix-silent-bootstrap-exit'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix-silent-bootstrap-exit
+          fetch-depth: 0
+
+      - name: Configure commit identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Commit documentation contract first
+        run: |
+          git apply .ci-fixes/docs-status.patch
+          git add docs/bootstrap-from-zero.md
+          git commit -m 'Document explicit bootstrap phase status'
+
+      - name: Commit implementation and regression test
+        run: |
+          git apply .ci-fixes/implementation-status.patch
+          bash -n bootstrap/debian-ipv4.sh
+          git add bootstrap/debian-ipv4.sh .github/workflows/validate.yml
+          git commit -m 'Prevent silent success-probe bootstrap exits'
+
+      - name: Remove one-time fix machinery
+        run: |
+          git rm \
+            .ci-fixes/docs-status.patch \
+            .ci-fixes/implementation-status.patch \
+            .github/workflows/apply-silent-bootstrap-fix.yml
+          git commit -m 'Remove one-time silent-exit fix workflow'
+
+      - name: Push ordered commits
+        run: git push origin HEAD:fix-silent-bootstrap-exit

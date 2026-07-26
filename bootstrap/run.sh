@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
 apt-get() {
     local real_apt_get="/usr/bin/apt-get"
@@ -65,4 +66,30 @@ apt-get() {
 
 export -f apt-get
 
-exec bash "${SCRIPT_DIR}/debian.sh" "$@"
+case "${1:-}" in
+    prepare|finalize)
+        bash "${REPO_DIR}/scripts/configure-time-sync.sh"
+        bash "${SCRIPT_DIR}/debian.sh" "$@"
+        printf 'Time synchronization: systemd-timesyncd client\n'
+        printf 'UDP 123 listener:      none\n'
+        ;;
+    status)
+        bash "${SCRIPT_DIR}/debian.sh" "$@"
+        printf '\nTime synchronization:\n'
+        if systemctl is-active --quiet systemd-timesyncd.service; then
+            printf 'systemd-timesyncd: active\n'
+        else
+            printf 'systemd-timesyncd: inactive\n'
+        fi
+        printf 'NTP synchronized: %s\n' \
+            "$(timedatectl show -p NTPSynchronized --value 2>/dev/null || echo unknown)"
+        if ss -H -lnup 2>/dev/null | awk '$4 ~ /:123$/ { found = 1 } END { exit !found }'; then
+            printf 'listener present: UDP 123\n'
+        else
+            printf 'no listener: UDP 123\n'
+        fi
+        ;;
+    *)
+        exec bash "${SCRIPT_DIR}/debian.sh" "$@"
+        ;;
+esac

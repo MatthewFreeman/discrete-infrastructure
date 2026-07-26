@@ -5,7 +5,9 @@ The finished host is intentionally IPv4-only. Discrete services use TCP only.
 
 > **Important**
 >
-> Keep the original root SSH session open until final verification is complete.
+> Keep the original root SSH session open until fresh root and `serveradmin` IPv4 sessions have
+> been tested. If `prepare` reports a transient X11 listener from the original session, close that
+> original session before `finalize` and continue from the fresh administrative session.
 > Use the VPS IPv4 address for every access test.
 > Do not remove provider access to IPv4 TCP `22` before `finalize` succeeds and a fresh
 > `serveradmin` login on IPv4 TCP `22822` has been tested.
@@ -93,7 +95,13 @@ verification succeed.
 ## 2. Log in as root over IPv4
 
 Use the provider-supplied root credentials and the public IPv4 address.
-Keep this session open until all final access tests pass.
+Keep this session open until fresh root and `serveradmin` IPv4 sessions have been tested.
+
+Some SSH clients, including MobaXterm configurations, may request X11 forwarding automatically.
+The bootstrap disables X11 forwarding for all new sessions. A loopback-only listener such as
+`[::1]:6010` may nevertheless remain attached to the original session until that session closes.
+The `prepare` phase treats only an existing `sshd` listener on `[::1]:6000` through
+`[::1]:6063` as a temporary migration exception; every other IPv6 listener is an error.
 
 ---
 
@@ -146,17 +154,19 @@ The script will:
 2. wait for provider package-manager activity and install required packages;
 3. install and apply the managed IPv4-only sysctl policy;
 4. remove all guest IPv6 addresses and routes;
-5. require that no IPv6 listening socket remains;
-6. remove `ntp`, `ntpsec`, `chrony`, and `openntpd` when installed;
-7. install and enable client-only `systemd-timesyncd`;
-8. verify that the clock is synchronized and no process listens on UDP `123`;
-9. create `serveradmin` and add it to `sudo`;
-10. keep root SSH on IPv4 TCP `22`;
-11. enable admin SSH on IPv4 TCP `22822`;
-12. activate the temporary IPv4 two-port nftables policy;
-13. remove UFW and residual UFW tables;
-14. configure IPv4-only Fail2Ban for TCP `22` and TCP `22822`;
-15. generate a dedicated GitHub deploy key.
+5. reject every IPv6 listener except a loopback-only `sshd` X11 listener on `[::1]:6000`
+   through `[::1]:6063` that belongs to the already-open original SSH session;
+6. disable X11 forwarding for all new SSH sessions;
+7. remove `ntp`, `ntpsec`, `chrony`, and `openntpd` when installed;
+8. install and enable client-only `systemd-timesyncd`;
+9. verify that the clock is synchronized and no process listens on UDP `123`;
+10. create `serveradmin` and add it to `sudo`;
+11. keep root SSH on IPv4 TCP `22`;
+12. enable admin SSH on IPv4 TCP `22822`;
+13. activate the temporary IPv4 two-port nftables policy;
+14. remove UFW and residual UFW tables;
+15. configure IPv4-only Fail2Ban for TCP `22` and TCP `22822`;
+16. generate a dedicated GitHub deploy key.
 
 The bootstrap waits for up to five minutes when provider processes such as
 `unattended-upgrades` hold APT or dpkg locks. Lock-wait or retry messages during this
@@ -180,6 +190,12 @@ Fail2Ban SSH ports:    22 and 22822
 Time synchronization: systemd-timesyncd client
 UDP 123 listener:      none
 Deploy key ready:      no
+```
+
+`IPv6 listeners` may instead show:
+
+```text
+IPv6 listeners:        transient loopback X11; close original session before finalize
 ```
 
 `Deploy key ready` may show `yes` on a supported rerun after the key has already been
@@ -279,11 +295,23 @@ root
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
+If `prepare` reported a transient `[::1]:60xx` X11 listener, keep the fresh administrative
+session open, close the original root session, and verify from the fresh session:
+
+```bash
+ss -6 -H -lntup
+```
+
+Expected output: none. New sessions cannot recreate the listener because the managed temporary
+SSH configuration already sets `X11Forwarding no`. Do not run `finalize` while the original
+X11-enabled session is still open.
+
 ---
 
 ## 7. Run the `finalize` phase
 
-From the still-open root or administrative session:
+From a fresh root or administrative IPv4 session. If `prepare` reported a transient X11
+listener, use the fresh administrative session after closing the original root session:
 
 ```bash
 cd /opt/discrete-infrastructure
@@ -511,9 +539,13 @@ Never edit Git-managed files directly under `/etc`, except during emergency reco
 # Safety and recovery behavior
 
 The bootstrap is deliberately two-phase. Disabling IPv6 does not alter the existing IPv4
-address or the current IPv4 SSH transport. The managed SSH configuration is validated before
-reload. If final SSH runtime validation fails, the script restores temporary IPv4 access on
-TCP `22` and TCP `22822`.
+address or the current IPv4 SSH transport. An SSH session that requested X11 forwarding before
+IPv6 was disabled may retain a loopback-only `[::1]:60xx` proxy listener until that session
+closes. `prepare` tolerates only that narrow transient case and disables X11 forwarding for every
+new session. `finalize` remains strict and requires all IPv6 listeners to be gone.
+
+The managed SSH configuration is validated before reload. If final SSH runtime validation fails,
+the script restores temporary IPv4 access on TCP `22` and TCP `22822`.
 
 The finalized-state marker is not written unless every final check passes.
 
@@ -531,6 +563,12 @@ and routes from affected interfaces. Verification enumerates every interface-spe
 
 OpenSSH explicitly requires `AddressFamily inet`. The nftables baseline uses `table ip`, not
 `table inet`. Fail2Ban uses `allowipv6 = no` and `table_family=ip`.
+
+During `prepare`, the only permitted transient IPv6 socket is an `sshd` X11 proxy bound to
+`[::1]` on TCP `6000` through `6063` by the already-open original session. OpenSSH uses display
+number 10 by default, which normally appears as TCP `6010`. The managed temporary and final SSH
+configurations set `X11Forwarding no`, so fresh sessions cannot recreate it. Final verification
+does not permit this exception.
 
 </details>
 

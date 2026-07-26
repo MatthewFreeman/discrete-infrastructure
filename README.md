@@ -25,7 +25,8 @@ runbook disagree, correct the runbook first and then correct and retest the impl
 ## Validation
 
 GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, and the
-IPv4-only configuration contract on every push and pull request.
+IPv4-only configuration contract on every push and pull request, with complete diagnostics
+retained as workflow artifacts.
 
 ## Repository layout
 

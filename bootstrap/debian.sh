@@ -109,7 +109,7 @@ ensure_admin_user() {
 server_appears_finalized() {
     [[ -f /etc/ssh/sshd_config.d/00-discrete.conf ]] \
         && sshd -T 2>/dev/null \
-            | grep -qx 'permitrootlogin no'
+            | grep -x 'permitrootlogin no' >/dev/null
 }
 
 write_temporary_ssh_config() {
@@ -146,11 +146,11 @@ EOF
     systemctl reload ssh
 
     ss -lnt \
-        | grep -Eq "[:.]${BOOTSTRAP_SSH_PORT}[[:space:]]" \
+        | grep -E "[:.]${BOOTSTRAP_SSH_PORT}[[:space:]]" >/dev/null \
         || die "sshd is not listening on bootstrap port ${BOOTSTRAP_SSH_PORT}."
 
     ss -lnt \
-        | grep -Eq "[:.]${FINAL_SSH_PORT}[[:space:]]" \
+        | grep -E "[:.]${FINAL_SSH_PORT}[[:space:]]" >/dev/null \
         || die "sshd is not listening on final port ${FINAL_SSH_PORT}."
 }
 
@@ -184,7 +184,7 @@ remove_ufw() {
     local ufw_installed="no"
 
     if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
-        | grep -qx 'install ok installed'; then
+        | grep -x 'install ok installed' >/dev/null; then
         ufw_installed="yes"
     fi
 
@@ -219,7 +219,7 @@ remove_ufw() {
     fi
     rm -f /tmp/discrete-ufw-ip6.$$
 
-    if nft list ruleset | grep -q 'ufw-'; then
+    if nft list ruleset | grep 'ufw-' >/dev/null; then
         die "Residual UFW rules are still present in nftables."
     fi
 }
@@ -258,11 +258,11 @@ install_bootstrap_firewall() (
         || die "nftables service is not active."
 
     nft list chain inet discrete_filter input \
-        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" \
+        | grep -E "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Temporary firewall does not allow SSH port ${BOOTSTRAP_SSH_PORT}."
 
     nft list chain inet discrete_filter input \
-        | grep -Eq "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" \
+        | grep -E "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Temporary firewall does not allow SSH port ${FINAL_SSH_PORT}."
 )
 
@@ -432,11 +432,11 @@ install_bootstrap_fail2ban() (
     fail2ban-client status sshd
 
     fail2ban-client get sshd port \
-        | grep -Eq "(^|,|[[:space:]])${BOOTSTRAP_SSH_PORT}(,|[[:space:]]|$)" \
+        | grep -E "(^|,|[[:space:]])${BOOTSTRAP_SSH_PORT}(,|[[:space:]]|$)" >/dev/null \
         || die "Fail2Ban is not monitoring bootstrap SSH port ${BOOTSTRAP_SSH_PORT}."
 
     fail2ban-client get sshd port \
-        | grep -Eq "(^|,|[[:space:]])${FINAL_SSH_PORT}(,|[[:space:]]|$)" \
+        | grep -E "(^|,|[[:space:]])${FINAL_SSH_PORT}(,|[[:space:]]|$)" >/dev/null \
         || die "Fail2Ban is not monitoring final SSH port ${FINAL_SSH_PORT}."
 )
 
@@ -449,7 +449,7 @@ apply_prepare_components() {
     bash "${REPO_DIR}/scripts/verify.sh" fail2ban
 
     nft list chain inet discrete_filter input \
-        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" \
+        | grep -E "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Bootstrap verification lost SSH port ${BOOTSTRAP_SSH_PORT}."
 }
 
@@ -497,11 +497,11 @@ finalize_ssh() {
 
 verify_no_ufw() {
     if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
-        | grep -qx 'install ok installed'; then
+        | grep -x 'install ok installed' >/dev/null; then
         die "UFW is still installed."
     fi
 
-    if nft list ruleset | grep -q 'ufw-'; then
+    if nft list ruleset | grep 'ufw-' >/dev/null; then
         die "UFW rules are still present."
     fi
 }
@@ -555,17 +555,17 @@ finalize() {
 
     id -nG "${ADMIN_USER}" \
         | tr ' ' '\n' \
-        | grep -qx sudo \
+        | grep -x sudo >/dev/null \
         || die "${ADMIN_USER} is not a member of sudo."
 
     verify_no_ufw
 
     nft list chain inet discrete_filter input \
-        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" \
+        | grep -E "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Bootstrap SSH port ${BOOTSTRAP_SSH_PORT} is not protected by the temporary firewall."
 
     nft list chain inet discrete_filter input \
-        | grep -Eq "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" \
+        | grep -E "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Final SSH port ${FINAL_SSH_PORT} is not protected by the temporary firewall."
 
     ensure_deploy_key \
@@ -584,7 +584,7 @@ finalize() {
     bash "${REPO_DIR}/scripts/verify.sh" all
 
     if nft list chain inet discrete_filter input \
-        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)"; then
+        | grep -E "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" >/dev/null; then
         die "Final firewall still exposes temporary SSH port ${BOOTSTRAP_SSH_PORT}."
     fi
 
@@ -634,7 +634,7 @@ status() {
 
     printf '\nUFW:\n'
     if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
-        | grep -qx 'install ok installed'; then
+        | grep -x 'install ok installed' >/dev/null; then
         printf 'installed\n'
     else
         printf 'absent\n'

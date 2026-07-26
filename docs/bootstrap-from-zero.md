@@ -1,316 +1,491 @@
-Bootstrap from a clean Debian 12 VPS
+# Bootstrap a Clean Debian 12 VPS
 
-This procedure builds the server baseline from a newly created Debian 12 VPS.
+This runbook builds the standard Discrete server baseline from a newly created Debian 12 VPS.
 
-The bootstrap uses two access phases:
+> **Important**
+>
+> Keep the original root SSH session open until the final verification is complete.
+> Do not remove provider access to TCP `22` before `finalize` succeeds and a fresh
+> `serveradmin` login on TCP `22822` has been tested.
 
-Phase
+---
 
-Root SSH
+## What the bootstrap does
 
-Admin SSH
+| Phase | Root SSH | Admin SSH | Host firewall |
+|---|---|---|---|
+| `prepare` | TCP `22` allowed | TCP `22822` allowed | nftables allows both ports |
+| `finalize` | Direct root SSH disabled | TCP `22822` allowed | nftables removes TCP `22` |
 
-Firewall
+The bootstrap installs and configures:
 
-prepare
+- base packages;
+- the `serveradmin` administrative account;
+- temporary root SSH on TCP `22`;
+- administrative SSH on TCP `22822`;
+- nftables as the only host firewall;
+- removal of UFW and residual UFW tables;
+- Fail2Ban protection;
+- a dedicated read-only GitHub deploy key;
+- Git-managed deployment, rollback, and verification.
 
-TCP 22 allowed
+The bootstrap does **not** create the VPS itself. Provider plans, regions, IP addresses,
+recovery consoles, snapshots, and provider-side firewall rules remain provider-specific.
 
-TCP 22822 allowed
+---
 
-nftables allows both ports
+# Deployment procedure
 
-finalize
+## 1. Create the VPS
 
-disabled
+Create a new VPS with:
 
-TCP 22822 allowed
+- Debian 12;
+- a public IPv4 address;
+- provider console or recovery access;
+- provider firewall rules allowing:
 
-nftables removes TCP 22
+| Protocol | Port | Purpose |
+|---|---:|---|
+| TCP | `22` | Temporary root SSH during bootstrap |
+| TCP | `22822` | Administrative SSH |
+| TCP | `9330` | Discrete P2P |
+| TCP | `9331` | Discrete RPC HTTP |
+| TCP | `9332` | Discrete RPC HTTPS |
+| ICMP / ICMPv6 | n/a | Diagnostics and normal IPv6 operation |
 
-The script removes UFW before the server becomes dependent on theGit-managed nftables policy. Provider images sometimes ship with UFW enabled,even when the user did not ask for it, because surprise firewalls areapparently considered a feature.
+Do not remove provider access to TCP `22` yet.
 
-Covered by the bootstrap
+---
 
-base packages;
+## 2. Log in as root
 
-the serveradmin administrative account;
+Use the provider-supplied root credentials.
 
-temporary root SSH on TCP 22;
+Keep this session open until all final access tests pass.
 
-administrative SSH on TCP 22822;
+---
 
-final denial of direct root SSH access;
+## 3. Install Git and clone the repository
 
-removal of UFW and residual UFW nftables tables;
-
-nftables as the only host firewall;
-
-Fail2Ban;
-
-a dedicated read-only GitHub deploy key;
-
-Git-managed deployment, rollback, and verification.
-
-It does not create the VPS at the provider. Provider plans, regions,public IPs, recovery consoles, snapshots, and provider firewalls remainprovider-specific.
-
-1. Create the VPS
-
-Create a VPS with:
-
-Debian 12;
-
-a public IPv4 address;
-
-provider console or recovery access;
-
-provider firewall rules allowing:
-
-TCP 22 during bootstrap;
-
-TCP 22822 for administrative SSH;
-
-TCP 9330 for Discrete P2P;
-
-TCP 9331 for Discrete RPC HTTP;
-
-TCP 9332 for Discrete RPC HTTPS;
-
-ICMP and ICMPv6 when supported.
-
-Do not remove provider access to TCP 22 until finalize has completed anda fresh serveradmin login on TCP 22822 has been tested.
-
-2. Log in as root
-
-Use the provider-supplied root access.
-
-Keep the initial root session open until the complete bootstrap and final SSHtests are finished.
-
-3. Install Git and clone the private repository
-
+```bash
 apt-get update
 apt-get install -y ca-certificates git
+```
 
+Clone the private repository:
+
+```bash
 git clone \
-  https://github.com/OWNER/discrete-infrastructure.git \
+  https://github.com/MatthewFreeman/discrete-infrastructure.git \
   /opt/discrete-infrastructure
 
 cd /opt/discrete-infrastructure
+```
 
-For a private repository, Git prompts for credentials.
+GitHub will prompt for credentials.
 
 Use:
 
-your GitHub username;
-
-a temporary fine-grained personal access token as the password;
-
-repository access limited to this repository;
-
-Contents: Read-only.
+- your GitHub username;
+- a temporary fine-grained personal access token as the password;
+- access limited to this repository;
+- repository permission: **Contents: Read-only**.
 
 Do not place the token directly in the clone URL.
 
-4. Run the prepare phase
+---
 
+## 4. Run the `prepare` phase
+
+```bash
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
   bash bootstrap/debian.sh prepare
+```
 
-The prepare phase:
+The script will:
 
-validates Debian 12;
+1. validate Debian 12;
+2. install required packages;
+3. create `serveradmin`;
+4. ask for a strong password;
+5. add `serveradmin` to `sudo`;
+6. keep root SSH on TCP `22`;
+7. enable admin SSH on TCP `22822`;
+8. activate the temporary two-port nftables policy;
+9. remove UFW and residual UFW tables;
+10. configure Fail2Ban for TCP `22` and TCP `22822`;
+11. generate a dedicated GitHub deploy key.
 
-installs required packages;
+Expected final banner:
 
-creates serveradmin;
+```text
+PREPARE PHASE COMPLETE
 
-asks for its password when needed;
+SSH ports:             22 and 22822
+Administrative user:  serveradmin
+Root SSH login:        temporarily allowed
+UFW:                   removed
+Fail2Ban SSH ports:    22 and 22822
+Deploy key ready:      no
+```
 
-copies root authorized_keys to the new account when appropriate;
+Do not run `finalize` yet.
 
-keeps SSH on TCP 22;
+---
 
-adds SSH on TCP 22822;
+## 5. Register the GitHub deploy key
 
-activates a temporary nftables policy that allows both SSH ports;
+Display the public key:
 
-removes UFW and residual UFW tables;
+```bash
+cat /root/.ssh/discrete_infrastructure_deploy.pub
+```
 
-reapplies nftables as the only host firewall;
+Copy the complete line beginning with:
 
-configures Fail2Ban to monitor TCP 22 and TCP 22822 during bootstrap;
-
-generates a dedicated GitHub deploy key.
-
-5. Register the deploy key
+```text
+ssh-ed25519
+```
 
 In GitHub, open:
 
+```text
 Repository
-  -> Settings
-  -> Deploy keys
-  -> Add deploy key
+→ Settings
+→ Deploy keys
+→ Add deploy key
+```
 
-Paste the public key printed by the prepare phase.
+Recommended title:
 
-Leave Allow write access disabled.
+```text
+<server-name> discrete infrastructure pull key
+```
 
-6. Test both access paths
+Paste the public key.
+
+Leave **Allow write access** disabled.
+
+Verify the deploy key from the VPS:
+
+```bash
+git ls-remote \
+  git@github-discrete:MatthewFreeman/discrete-infrastructure.git \
+  HEAD
+```
+
+Expected result: a commit SHA followed by `HEAD`, without a username or token prompt.
+
+---
+
+## 6. Test both SSH access paths
 
 Do not close the original root session.
 
-Test a fresh root session:
+### Test root on TCP 22
 
-Host: VPS public IP
-Port: 22
-User: root
+From a new terminal:
 
-Then test a fresh administrative session:
+```bash
+ssh -p 22 root@<VPS_IP>
+```
 
-Host: VPS public IP
-Port: 22822
-User: serveradmin
+This login must succeed during the `prepare` phase.
 
-Inside the administrative session:
+### Test `serveradmin` on TCP 22822
 
+From another new terminal:
+
+```bash
+ssh -p 22822 serveradmin@<VPS_IP>
+```
+
+Inside the new session:
+
+```bash
 whoami
 sudo -v
 sudo -i
 whoami
+```
 
-Expected result:
+Expected output:
 
+```text
 serveradmin
 root
+```
 
-Do not run finalize until both fresh sessions work.
+Do not continue until both fresh SSH sessions work.
 
-7. Finalize the baseline
+---
 
-From the still-open administrative or root session:
+## 7. Run the `finalize` phase
 
+From the still-open root or administrative session:
+
+```bash
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
   bash bootstrap/debian.sh finalize
+```
 
-The finalize phase:
+When prompted, type:
 
-verifies that UFW is absent;
+```text
+serveradmin
+```
 
-verifies both temporary SSH firewall rules;
+The script will:
 
-verifies the read-only GitHub deploy key;
+1. verify that UFW is absent;
+2. verify both temporary SSH firewall rules;
+3. verify the read-only GitHub deploy key;
+4. require confirmation of the admin SSH test;
+5. apply the final SSH configuration on TCP `22822`;
+6. disable direct root SSH;
+7. remove temporary TCP `22` access;
+8. apply the final single-port nftables policy;
+9. apply the final Fail2Ban policy for TCP `22822`;
+10. verify the effective SSH configuration and real kernel listeners;
+11. remove any recreated UFW tables;
+12. run the complete final-state verification;
+13. write the finalized-state marker only after every check passes.
 
-requires explicit confirmation of the admin SSH test;
+Expected final banner:
 
-removes temporary root SSH access;
+```text
+BOOTSTRAP FINALIZED
 
-applies the final SSH configuration on TCP 22822;
+Administrative SSH:    serveradmin@server:22822
+Direct root SSH:       disabled
+Temporary SSH port:    closed
+UFW:                   absent
+Firewall:              inet discrete_filter
+Fail2Ban:              active
+Git origin:            git@github-discrete:MatthewFreeman/discrete-infrastructure.git
+```
 
-applies the final nftables policy without TCP 22;
+---
 
-reapplies the final Fail2Ban policy for TCP 22822 only;
+## 8. Perform final access tests
 
-verifies the effective SSH port and real kernel listeners;
+Keep the current session open until these tests finish.
 
-removes any UFW tables recreated during package/service reloads;
+### Fresh admin login must succeed
 
-runs the complete final-state verification suite;
+```bash
+ssh -p 22822 serveradmin@<VPS_IP>
+```
 
-records the finalized state only after every check passes.
+Then:
 
-8. Perform final access tests
+```bash
+sudo -i
+whoami
+```
 
-Keep the current session open.
+Expected result:
 
-A fresh serveradmin login on TCP 22822 must succeed.
+```text
+root
+```
 
-A fresh root login must be denied.
+### Direct root SSH must be denied
 
-The root account itself is not deleted or locked. Root remains availablethrough:
+```bash
+ssh -o ConnectTimeout=5 -p 22822 root@<VPS_IP>
+```
 
-sudo -i;
+Expected result: authentication denied.
 
-provider console or recovery environment;
+### TCP 22 must be closed
 
-provider password-reset facilities when offered.
+From PowerShell:
 
-9. Inspect the resulting state
+```powershell
+Test-NetConnection <VPS_IP> -Port 22
+Test-NetConnection <VPS_IP> -Port 22822
+```
 
+Expected:
+
+```text
+TCP 22:     False
+TCP 22822:  True
+```
+
+The root account itself is not deleted or locked. Root remains available through:
+
+- `sudo -i`;
+- the provider console or recovery environment;
+- provider password-reset facilities, when offered.
+
+---
+
+## 9. Run the final verification
+
+```bash
 cd /opt/discrete-infrastructure
 
+./scripts/verify.sh all
+```
+
+Expected output:
+
+```text
+SSH final-state verification passed.
+UFW is absent and no legacy UFW tables remain.
+nftables final-state verification passed.
+Fail2Ban final-state verification passed.
+Complete final-state verification passed.
+```
+
+Inspect the recorded state:
+
+```bash
 ADMIN_USER=serveradmin \
   bash bootstrap/debian.sh status
+```
 
 Expected important state:
 
+```text
 port 22822
 permitrootlogin no
 passwordauthentication yes
 pubkeyauthentication yes
+
 sshd listener: TCP 22822
 no sshd listener: TCP 22
+
 table inet discrete_filter
 table inet f2b-table
+
 no table ip filter
 no table ip6 filter
+
 UFW: absent
 Server replied: pong
+```
 
-finalize does not write the finalized-state marker unless those conditionsare true. If the final SSH runtime check fails, the script restores thetemporary two-port SSH configuration so TCP 22 remains available forrecovery.
+---
 
-10. Normal future updates
+## 10. Normal future updates
 
 The VPS deploy key is read-only.
 
-Edit and commit configuration from GitHub or a trusted workstation. On theserver:
+Edit and commit managed configuration from GitHub or a trusted workstation.
 
+On the server:
+
+```bash
 cd /opt/discrete-infrastructure
 git pull --ff-only
 ./install.sh
+```
 
-Never edit managed files directly under /etc except during emergencyrecovery.
+Never edit Git-managed files directly under `/etc`, except during emergency recovery.
 
-Implementation note: pipefail and service checks
+---
 
-The bootstrap runs with set -Eeuo pipefail. Service-output checks must notuse grep -q in a pipeline because grep -q may exit as soon as it finds amatch, causing the producer to receive SIGPIPE and making the whole pipelinelook failed. The script therefore lets grep consume the complete input andredirects its output to /dev/null.
+# Safety and recovery behavior
 
-Implementation note: SSH listener cutover
+The bootstrap is deliberately two-phase.
 
-systemctl reload ssh may return before sshd has reopened every configuredlistening socket. The bootstrap therefore polls the kernel listener table forup to 10 seconds before declaring either TCP 22 or TCP 22822 unavailable.On failure it prints the active listeners and recent SSH service logs.
+If the final SSH runtime check fails, the script restores the temporary two-port
+SSH configuration so TCP `22` remains available for recovery.
 
-Implementation note: verifying Fail2Ban ports
+The finalized-state marker is not written unless all final checks pass.
 
-Fail2Ban 1.0.2 does not provide a get <JAIL> port client command. During thetwo-port bootstrap phase, the script verifies the active nftables actioninstead: the f2b-table rule for addr-set-sshd must include both TCP 22and TCP 22822. This checks the firewall state actually enforcing bans,rather than merely rereading the source configuration.
+---
 
-Final-state verification contract
+# Implementation notes
 
-The repository's final SSH configuration explicitly contains:
+These details explain why the scripts contain several checks that may otherwise
+look unnecessarily defensive. Linux administrators call this “experience.”
+Everyone else calls it “why is this script 700 lines?”
 
+<details>
+<summary><strong>pipefail and service checks</strong></summary>
+
+The bootstrap uses:
+
+```bash
+set -Eeuo pipefail
+```
+
+A pipeline must not use `grep -q` where the producer may receive `SIGPIPE`
+after `grep` exits early. The scripts allow `grep` to consume the full input and
+redirect its output to `/dev/null`.
+
+</details>
+
+<details>
+<summary><strong>SSH listener cutover</strong></summary>
+
+`systemctl reload ssh` may return before `sshd` has reopened every configured
+listening socket.
+
+The bootstrap polls the kernel listener table for up to 10 seconds before declaring
+TCP `22` or TCP `22822` unavailable. On failure it prints the active listeners and
+recent SSH logs.
+
+</details>
+
+<details>
+<summary><strong>Fail2Ban port verification</strong></summary>
+
+Fail2Ban 1.0.2 does not provide a direct `get <jail> port` client command.
+
+During `prepare`, the bootstrap verifies the active nftables rule instead. The
+`f2b-table` rule for `addr-set-sshd` must contain both TCP `22` and TCP `22822`.
+
+During the final state, only TCP `22822` may remain.
+
+</details>
+
+<details>
+<summary><strong>Fail2Ban nftables initialization</strong></summary>
+
+Fail2Ban normally creates `f2b-table` only after the first ban.
+
+The infrastructure configuration sets:
+
+```ini
+actionstart_on_demand=false
+```
+
+This creates the nftables action immediately, allowing the deployment to verify
+the real enforcement path before the first hostile login attempt. The bootstrap
+and final verifier wait up to 10 seconds for the table to appear.
+
+</details>
+
+<details>
+<summary><strong>Final-state verification contract</strong></summary>
+
+The final SSH configuration explicitly requires:
+
+```text
 Port 22822
 PermitRootLogin no
 PasswordAuthentication yes
 PubkeyAuthentication yes
+```
 
-The verification suite checks both configuration and runtime state:
+The verification suite confirms:
 
-sshd -T reports exactly TCP 22822;
+- `sshd -T` reports exactly TCP `22822`;
+- `sshd` listens on TCP `22822`;
+- `sshd` does not listen on TCP `22`;
+- nftables allows TCP `22822` and does not allow TCP `22`;
+- Fail2Ban protects TCP `22822` and does not target TCP `22`;
+- neither `table ip filter` nor `table ip6 filter` exists;
+- no UFW chains remain anywhere in the nftables ruleset.
 
-sshd listens on TCP 22822;
-
-sshd does not listen on TCP 22;
-
-the final nftables policy allows TCP 22822 and does not allow TCP 22;
-
-Fail2Ban targets TCP 22822 and does not target TCP 22;
-
-neither table ip filter nor table ip6 filter remains;
-
-no UFW chains remain anywhere in the nftables ruleset.
-
-Fail2Ban nftables initialization
-
-Fail2Ban normally creates its f2b-table on demand when the first address isbanned. The infrastructure configuration disables that lazy start for thenftables actions with actionstart_on_demand=false. This makes the table andSSH port rules exist immediately after Fail2Ban starts, so deployment canverify the real enforcement path before exposing the server. Both bootstrapand final verification wait up to 10 seconds for the table to appear.
+</details>

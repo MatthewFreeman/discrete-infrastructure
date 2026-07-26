@@ -50,3 +50,56 @@ jobs:
           awk '/^verify_no_ufw\(\)/,/^}/' \
             bootstrap/debian-ipv4.sh \
             | grep -F 'return 0'
+
+      - name: Validate finalize root contract
+        run: |
+          set -Eeuo pipefail
+
+          finalize_section="$(
+            awk \
+              '/^## 7\. Run the `finalize` phase$/,/^## 8\./' \
+              docs/bootstrap-from-zero.md
+          )"
+
+          sudo_line="$(
+            grep -n -F 'sudo -i' <<<"${finalize_section}" \
+              | head -n 1 \
+              | cut -d: -f1 \
+              || true
+          )"
+          finalize_line="$(
+            grep -n -F 'bash bootstrap/run.sh finalize' <<<"${finalize_section}" \
+              | head -n 1 \
+              | cut -d: -f1 \
+              || true
+          )"
+
+          [[ "${sudo_line}" =~ ^[0-9]+$ ]] \
+            || { echo 'Runbook does not document sudo -i before finalize.' >&2; exit 1; }
+          [[ "${finalize_line}" =~ ^[0-9]+$ ]] \
+            || { echo 'Runbook finalize command is missing.' >&2; exit 1; }
+          (( sudo_line < finalize_line )) \
+            || { echo 'Runbook invokes finalize before entering a root shell.' >&2; exit 1; }
+
+          main_section="$(
+            awk '/^main\(\) \{$/,/^}/' bootstrap/debian-ipv4.sh
+          )"
+          require_root_line="$(
+            grep -n -F 'require_root' <<<"${main_section}" \
+              | head -n 1 \
+              | cut -d: -f1 \
+              || true
+          )"
+          dispatch_line="$(
+            grep -n -F 'case "${1:-}" in' <<<"${main_section}" \
+              | head -n 1 \
+              | cut -d: -f1 \
+              || true
+          )"
+
+          [[ "${require_root_line}" =~ ^[0-9]+$ ]] \
+            || { echo 'Bootstrap entrypoint no longer requires root.' >&2; exit 1; }
+          [[ "${dispatch_line}" =~ ^[0-9]+$ ]] \
+            || { echo 'Bootstrap phase dispatch is missing.' >&2; exit 1; }
+          (( require_root_line < dispatch_line )) \
+            || { echo 'Bootstrap checks root only after phase dispatch.' >&2; exit 1; }

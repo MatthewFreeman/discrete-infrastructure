@@ -1,51 +1,93 @@
-# Bootstrap from a clean Debian 12 VPS
+Bootstrap from a clean Debian 12 VPS
 
 This procedure builds the server baseline from a newly created Debian 12 VPS.
 
-It covers:
+The bootstrap uses two access phases:
 
-- base packages;
-- the `serveradmin` administrative account;
-- SSH on TCP port `22822`;
-- temporary safe root access during deployment;
-- final denial of direct root SSH access;
-- nftables;
-- Fail2Ban;
-- a dedicated read-only GitHub deploy key;
-- Git-managed deployment, rollback, and verification.
+Phase
 
-It does **not** create the VPS at the provider. Provider plans, regions,
-public IPs, recovery consoles, snapshots, and provider firewalls remain
-provider-specific.
+Root SSH
 
-## 1. Create the VPS
+Admin SSH
+
+Firewall
+
+prepare
+
+TCP 22 allowed
+
+TCP 22822 allowed
+
+nftables allows both ports
+
+finalize
+
+disabled
+
+TCP 22822 allowed
+
+nftables removes TCP 22
+
+The script removes UFW before the server becomes dependent on theGit-managed nftables policy. Provider images sometimes ship with UFW enabled,even when the user did not ask for it, because surprise firewalls areapparently considered a feature.
+
+Covered by the bootstrap
+
+base packages;
+
+the serveradmin administrative account;
+
+temporary root SSH on TCP 22;
+
+administrative SSH on TCP 22822;
+
+final denial of direct root SSH access;
+
+removal of UFW and residual UFW nftables tables;
+
+nftables as the only host firewall;
+
+Fail2Ban;
+
+a dedicated read-only GitHub deploy key;
+
+Git-managed deployment, rollback, and verification.
+
+It does not create the VPS at the provider. Provider plans, regions,public IPs, recovery consoles, snapshots, and provider firewalls remainprovider-specific.
+
+1. Create the VPS
 
 Create a VPS with:
 
-- Debian 12;
-- a public IPv4 address;
-- provider console or recovery access;
-- provider firewall rules allowing:
-  - TCP `22` temporarily for the first login;
-  - TCP `22822` for administrative SSH;
-  - TCP `9330` for Discrete P2P;
-  - TCP `9331` for Discrete RPC HTTP;
-  - TCP `9332` for Discrete RPC HTTPS;
-  - ICMP and ICMPv6 when the provider firewall supports them.
+Debian 12;
 
-Do not remove provider access to TCP `22` until the new TCP `22822` login has
-been tested.
+a public IPv4 address;
 
-## 2. Log in as root
+provider console or recovery access;
+
+provider firewall rules allowing:
+
+TCP 22 during bootstrap;
+
+TCP 22822 for administrative SSH;
+
+TCP 9330 for Discrete P2P;
+
+TCP 9331 for Discrete RPC HTTP;
+
+TCP 9332 for Discrete RPC HTTPS;
+
+ICMP and ICMPv6 when supported.
+
+Do not remove provider access to TCP 22 until finalize has completed anda fresh serveradmin login on TCP 22822 has been tested.
+
+2. Log in as root
 
 Use the provider-supplied root access.
 
-Keep this initial root session open until the complete bootstrap and final SSH
-tests are finished.
+Keep the initial root session open until the complete bootstrap and final SSHtests are finished.
 
-## 3. Install Git and clone the private repository
+3. Install Git and clone the private repository
 
-```bash
 apt-get update
 apt-get install -y ca-certificates git
 
@@ -54,169 +96,169 @@ git clone \
   /opt/discrete-infrastructure
 
 cd /opt/discrete-infrastructure
-```
 
 For a private repository, Git prompts for credentials.
 
 Use:
 
-- your GitHub username;
-- a temporary fine-grained personal access token as the password;
-- repository access limited to this repository;
-- **Contents: Read-only**.
+your GitHub username;
 
-Do not place the token directly in the clone URL. That leaks it into shell
-history and process listings, which is a remarkably efficient way to convert
-a secret into public documentation.
+a temporary fine-grained personal access token as the password;
 
-The bootstrap later changes `origin` to a dedicated read-only SSH deploy key,
-so the temporary token is not retained in the Git remote.
+repository access limited to this repository;
 
-## 4. Run the prepare phase
+Contents: Read-only.
 
-```bash
+Do not place the token directly in the clone URL.
+
+4. Run the prepare phase
+
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
   bash bootstrap/debian.sh prepare
-```
 
 The prepare phase:
 
-1. validates Debian 12;
-2. installs required packages;
-3. creates `serveradmin`;
-4. asks for the `serveradmin` password when needed;
-5. copies root `authorized_keys` to the new account when appropriate;
-6. moves SSH to port `22822`;
-7. keeps direct root SSH temporarily enabled;
-8. applies nftables and Fail2Ban;
-9. creates a dedicated GitHub deploy key;
-10. prints the deploy public key.
+validates Debian 12;
 
-## 5. Register the deploy key
+installs required packages;
+
+creates serveradmin;
+
+asks for its password when needed;
+
+copies root authorized_keys to the new account when appropriate;
+
+keeps SSH on TCP 22;
+
+adds SSH on TCP 22822;
+
+activates a temporary nftables policy that allows both SSH ports;
+
+removes UFW and residual UFW tables;
+
+reapplies nftables as the only host firewall;
+
+configures Fail2Ban to monitor TCP 22 and TCP 22822 during bootstrap;
+
+generates a dedicated GitHub deploy key.
+
+5. Register the deploy key
 
 In GitHub, open:
 
-```text
 Repository
   -> Settings
   -> Deploy keys
   -> Add deploy key
-```
 
 Paste the public key printed by the prepare phase.
 
-Use a descriptive title such as:
+Leave Allow write access disabled.
 
-```text
-Canada discrete infrastructure pull key
-```
-
-Leave **Allow write access** disabled.
-
-Run the prepare phase again only when it stopped before completing. The script
-is idempotent during the prepare stage.
-
-## 6. Test the administrative login
+6. Test both access paths
 
 Do not close the original root session.
 
-Open a new SSH session:
+Test a fresh root session:
 
-```text
+Host: VPS public IP
+Port: 22
+User: root
+
+Then test a fresh administrative session:
+
 Host: VPS public IP
 Port: 22822
 User: serveradmin
-```
 
-Then test:
+Inside the administrative session:
 
-```bash
 whoami
 sudo -v
 sudo -i
 whoami
-```
 
 Expected result:
 
-```text
 serveradmin
 root
-```
 
-## 7. Finalize the baseline
+Do not run finalize until both fresh sessions work.
+
+7. Finalize the baseline
 
 From the still-open administrative or root session:
 
-```bash
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
   bash bootstrap/debian.sh finalize
-```
-
-The script requires explicit confirmation that the new administrative SSH
-session works.
 
 The finalize phase:
 
-1. verifies the read-only GitHub deploy key;
-2. switches Git `origin` to the SSH deploy key alias;
-3. removes temporary root SSH access;
-4. applies final SSH, nftables, and Fail2Ban configurations;
-5. runs the complete verification suite;
-6. records the finalized state under
-   `/var/lib/discrete-infrastructure/bootstrap-finalized`.
+verifies that UFW is absent;
 
-## 8. Perform the final access tests
+verifies both temporary SSH firewall rules;
+
+verifies the read-only GitHub deploy key;
+
+requires explicit confirmation of the admin SSH test;
+
+removes temporary root SSH access;
+
+applies the final SSH configuration on TCP 22822;
+
+applies the final nftables policy without TCP 22;
+
+reapplies the final Fail2Ban policy for TCP 22822 only;
+
+runs the complete verification suite;
+
+records the finalized state.
+
+8. Perform final access tests
 
 Keep the current session open.
 
-Test a new login as `serveradmin` on port `22822`. It must succeed.
+A fresh serveradmin login on TCP 22822 must succeed.
 
-Test a new login as `root` on port `22822`. It must be denied.
+A fresh root login must be denied.
 
-The root account itself is not deleted or locked. Root remains available
-through:
+The root account itself is not deleted or locked. Root remains availablethrough:
 
-- `sudo -i`;
-- the provider console or recovery environment;
-- provider password-reset facilities when offered.
+sudo -i;
 
-## 9. Inspect the resulting state
+provider console or recovery environment;
 
-```bash
+provider password-reset facilities when offered.
+
+9. Inspect the resulting state
+
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
   bash bootstrap/debian.sh status
-```
 
 Expected important state:
 
-```text
+port 22822
 permitrootlogin no
 passwordauthentication yes
 table inet discrete_filter
 table inet f2b-table
+UFW: absent
 Server replied: pong
-```
 
-## 10. Normal future updates
+10. Normal future updates
 
 The VPS deploy key is read-only.
 
-Edit and commit configuration from GitHub or a trusted workstation. On the
-server:
+Edit and commit configuration from GitHub or a trusted workstation. On theserver:
 
-```bash
 cd /opt/discrete-infrastructure
 git pull --ff-only
 ./install.sh
-```
 
-Never edit managed files directly under `/etc` except during emergency
-recovery. Otherwise Git becomes decorative furniture, a role already occupied
-by enough enterprise tooling.
+Never edit managed files directly under /etc except during emergencyrecovery.

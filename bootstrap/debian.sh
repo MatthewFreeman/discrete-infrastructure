@@ -447,6 +447,49 @@ build_bootstrap_fail2ban_config() {
         || die "Could not create temporary two-port Fail2Ban configuration."
 }
 
+fail2ban_nftables_rule_has_port() {
+    local port="$1"
+    local ruleset
+
+    ruleset="$(nft list table inet f2b-table 2>/dev/null)" \
+        || return 1
+
+    awk -v expected_port="${port}" '
+        /tcp dport/ && /@addr-set-sshd/ {
+            line = $0
+            gsub(/[{},]/, " ", line)
+
+            count = split(line, fields, /[[:space:]]+/)
+
+            for (i = 1; i <= count; i++) {
+                if (fields[i] == expected_port) {
+                    found = 1
+                }
+            }
+        }
+
+        END {
+            exit !found
+        }
+    ' <<<"${ruleset}"
+}
+
+verify_bootstrap_fail2ban_ports() {
+    local port
+
+    for port in "${BOOTSTRAP_SSH_PORT}" "${FINAL_SSH_PORT}"; do
+        if ! fail2ban_nftables_rule_has_port "${port}"; then
+            printf 'ERROR: Fail2Ban nftables action is not protecting SSH port %s.\n' \
+                "${port}" >&2
+
+            printf '\nCurrent Fail2Ban nftables table:\n' >&2
+            nft list table inet f2b-table >&2 || true
+
+            return 1
+        fi
+    done
+}
+
 install_bootstrap_fail2ban() (
     local temporary_config
 
@@ -465,13 +508,8 @@ install_bootstrap_fail2ban() (
     fail2ban-client ping
     fail2ban-client status sshd
 
-    fail2ban-client get sshd port \
-        | grep -E "(^|,|[[:space:]])${BOOTSTRAP_SSH_PORT}(,|[[:space:]]|$)" >/dev/null \
-        || die "Fail2Ban is not monitoring bootstrap SSH port ${BOOTSTRAP_SSH_PORT}."
-
-    fail2ban-client get sshd port \
-        | grep -E "(^|,|[[:space:]])${FINAL_SSH_PORT}(,|[[:space:]]|$)" >/dev/null \
-        || die "Fail2Ban is not monitoring final SSH port ${FINAL_SSH_PORT}."
+    verify_bootstrap_fail2ban_ports \
+        || die "Fail2Ban is not protecting both bootstrap SSH ports."
 )
 
 apply_prepare_components() {

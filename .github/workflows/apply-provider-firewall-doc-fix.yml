@@ -106,3 +106,5 @@ verification succeed.
           git add .github/workflows/apply-provider-firewall-doc-fix.yml
           git commit -m 'Remove one-time provider firewall doc workflow'
           git push origin clarify-provider-firewall
+
+# Trigger after this workflow already exists on the branch.

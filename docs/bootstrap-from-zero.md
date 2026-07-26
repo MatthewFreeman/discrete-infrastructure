@@ -57,21 +57,32 @@ Create a new VPS with:
 
 - Debian 12;
 - a public IPv4 address;
-- provider console or recovery access;
-- provider firewall rules allowing IPv4 traffic only:
+- provider console or recovery access.
+
+Do **not** configure guest firewall rules manually in the provider panel as part of this step.
+The bootstrap installs and manages the Debian host firewall through nftables. It opens the
+required host-side ports itself.
+
+### Optional provider firewall
+
+A provider firewall is a separate network layer outside the VPS. The repository cannot create,
+modify, or verify it. If no provider firewall is attached to the VPS, leave the provider panel
+unchanged during bootstrap.
+
+If a provider firewall is intentionally attached during bootstrap, allow only:
 
 | Protocol | Port | Purpose |
 |---|---:|---|
 | TCP | `22` | Temporary root SSH during bootstrap |
-| TCP | `22822` | Administrative SSH |
-| TCP | `9330` | Discrete P2P |
-| TCP | `9331` | Discrete RPC HTTP |
-| TCP | `9332` | Discrete RPC HTTPS |
+| TCP | `22822` | Administrative SSH test and final access |
 | ICMP | n/a | IPv4 diagnostics and Path MTU handling |
 
-Do not add inbound UDP rules.
-Do not add IPv6 firewall rules.
-Do not remove provider access to IPv4 TCP `22` yet.
+Do not add inbound UDP rules or IPv6 rules. Keep provider access to IPv4 TCP `22` until
+`finalize` succeeds and a fresh `serveradmin` login on IPv4 TCP `22822` has been tested.
+
+Provider rules for TCP `9330`, `9331`, and `9332` are not required for the baseline bootstrap.
+Add them only after the corresponding Discrete services are installed, listening, and intended
+to be reachable from the Internet.
 
 A provider may initially assign an IPv6 address to the guest. The bootstrap removes guest
 IPv6 addresses and routes. Provider-side IPv6 can be disabled after the guest migration and

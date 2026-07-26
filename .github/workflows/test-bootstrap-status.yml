@@ -103,3 +103,25 @@ jobs:
             || { echo 'Bootstrap phase dispatch is missing.' >&2; exit 1; }
           (( require_root_line < dispatch_line )) \
             || { echo 'Bootstrap checks root only after phase dispatch.' >&2; exit 1; }
+
+      - name: Validate compact IPv6 audit output
+        run: |
+          set -Eeuo pipefail
+
+          bash -n scripts/audit-ports.sh
+
+          grep -F 'flags=(/proc/sys/net/ipv6/conf/*/disable_ipv6)' \
+            scripts/audit-ports.sh
+          grep -F 'for flag in "${flags[@]}"; do' \
+            scripts/audit-ports.sh
+          grep -F '[[ "${value}" == "1" ]]' \
+            scripts/audit-ports.sh
+          grep -F 'IPv6 is enabled on ${interface}' \
+            scripts/audit-ports.sh
+          grep -F 'IPv6 interface policy: all current and future interfaces disabled' \
+            scripts/audit-ports.sh
+
+          if grep -F "printf '%-18s %s" scripts/audit-ports.sh; then
+            echo 'Audit still prints raw per-interface IPv6 flag rows.' >&2
+            exit 1
+          fi

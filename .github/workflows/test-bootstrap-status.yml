@@ -125,3 +125,69 @@ jobs:
             echo 'Audit still prints raw per-interface IPv6 flag rows.' >&2
             exit 1
           fi
+
+      - name: Validate compact APT lock output
+        run: |
+          set -Eeuo pipefail
+
+          bash -n bootstrap/run.sh
+          source bootstrap/run.sh
+
+          success_fixture="$(mktemp)"
+          error_fixture="$(mktemp)"
+          trap 'rm -f "${success_fixture}" "${error_fixture}"' EXIT
+
+          cat >"${success_fixture}" <<'EOF'
+          #!/usr/bin/env bash
+          printf '%s\n' 'Waiting for cache lock: fixture lock holder' >&2
+          sleep 2
+          printf '%s\n' 'Waiting for cache lock: fixture lock holder' >&2
+          printf '%s\n' 'Waiting for cache lock: fixture lock holder' >&2
+          printf '%s\n' 'Reading package lists... Done'
+          EOF
+          chmod +x "${success_fixture}"
+
+          output="$(
+            APT_GET_BIN="${success_fixture}" \
+            APT_LOCK_TIMEOUT_SECONDS=5 \
+            APT_LOCK_PROGRESS_SECONDS=1 \
+              apt-get update
+          )"
+
+          initial_count="$(
+            awk '
+              $0 == "==> Package manager is busy; waiting up to 5 seconds" {
+                count++
+              }
+              END { print count + 0 }
+            ' <<<"${output}"
+          )"
+          [[ "${initial_count}" -eq 1 ]] \
+            || { echo 'APT lock wait announcement was not emitted exactly once.' >&2; exit 1; }
+
+          grep -F '==> Still waiting for package manager lock (' <<<"${output}"
+          grep -F 'Reading package lists... Done' <<<"${output}"
+
+          if grep -F 'Waiting for cache lock:' <<<"${output}"; then
+            echo 'Raw repeated APT lock diagnostics leaked into output.' >&2
+            exit 1
+          fi
+
+          cat >"${error_fixture}" <<'EOF'
+          #!/usr/bin/env bash
+          printf '%s\n' 'E: fixture package failure' >&2
+          exit 42
+          EOF
+          chmod +x "${error_fixture}"
+
+          set +e
+          error_output="$(
+            APT_GET_BIN="${error_fixture}" \
+              apt-get update 2>&1
+          )"
+          error_status=$?
+          set -e
+
+          [[ "${error_status}" -eq 42 ]] \
+            || { echo "APT exit status changed to ${error_status}; expected 42." >&2; exit 1; }
+          grep -F 'E: fixture package failure' <<<"${error_output}"

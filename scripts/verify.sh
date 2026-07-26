@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 readonly BOOTSTRAP_SSH_PORT="22"
 readonly FINAL_SSH_PORT="22822"
+readonly TIME_SYNC_SERVICE="systemd-timesyncd.service"
+readonly CONFLICTING_TIME_PACKAGES=(ntp ntpsec chrony openntpd)
 
 fail() {
     printf 'ERROR: %s\n' "$*" >&2
@@ -14,6 +16,13 @@ require_root() {
         || fail "Run verification as root."
 }
 
+package_is_installed() {
+    local package="$1"
+
+    dpkg-query -W -f='${Status}\n' "${package}" 2>/dev/null \
+        | grep -x 'install ok installed' >/dev/null
+}
+
 tcp_listener_exists() {
     local port="$1"
     local listeners
@@ -22,6 +31,23 @@ tcp_listener_exists() {
 
     awk -v expected_port=":${port}" '
         $4 ~ expected_port "$" && /users:\(\("sshd"/ {
+            found = 1
+        }
+
+        END {
+            exit !found
+        }
+    ' <<<"${listeners}"
+}
+
+udp_listener_exists() {
+    local port="$1"
+    local listeners
+
+    listeners="$(ss -H -lnup 2>/dev/null || true)"
+
+    awk -v expected_port=":${port}" '
+        $4 ~ expected_port "$" {
             found = 1
         }
 
@@ -103,8 +129,7 @@ fail2ban_rule_has_tcp_port() {
 }
 
 verify_no_ufw() {
-    if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
-        | grep -x 'install ok installed' >/dev/null; then
+    if package_is_installed ufw; then
         fail "UFW package is still installed."
     fi
 
@@ -246,10 +271,49 @@ verify_fail2ban_final() {
     printf 'Fail2Ban final-state verification passed.\n'
 }
 
+verify_time_sync() {
+    local package
+    local attempt
+    local synchronized="no"
+
+    package_is_installed systemd-timesyncd \
+        || fail "systemd-timesyncd is not installed."
+
+    for package in "${CONFLICTING_TIME_PACKAGES[@]}"; do
+        if package_is_installed "${package}"; then
+            fail "Conflicting NTP server package is installed: ${package}."
+        fi
+    done
+
+    systemctl is-enabled --quiet "${TIME_SYNC_SERVICE}" \
+        || fail "systemd-timesyncd is not enabled."
+    systemctl is-active --quiet "${TIME_SYNC_SERVICE}" \
+        || fail "systemd-timesyncd is not active."
+
+    for attempt in {1..10}; do
+        synchronized="$(timedatectl show -p NTPSynchronized --value 2>/dev/null || true)"
+
+        [[ "${synchronized}" == "yes" ]] && break
+        sleep 1
+    done
+
+    [[ "${synchronized}" == "yes" ]] \
+        || fail "Clock does not report NTPSynchronized=yes."
+
+    if udp_listener_exists 123; then
+        printf 'Unexpected UDP 123 listeners:\n' >&2
+        ss -H -lnup | awk '$4 ~ /:123$/' >&2 || true
+        fail "A process still listens on UDP 123."
+    fi
+
+    printf 'Time synchronization final-state verification passed.\n'
+}
+
 verify_all_final() {
     verify_ssh_final
     verify_nftables_final
     verify_fail2ban_final
+    verify_time_sync
     printf 'Complete final-state verification passed.\n'
 }
 
@@ -259,12 +323,13 @@ Usage:
   $0 ssh
   $0 nftables
   $0 fail2ban
+  $0 timesync
   $0 nftables-bootstrap
   $0 fail2ban-bootstrap
   $0 all
 
 Final-state checks:
-  ssh, nftables, fail2ban, all
+  ssh, nftables, fail2ban, timesync, all
 
 Temporary prepare-phase checks:
   nftables-bootstrap, fail2ban-bootstrap
@@ -283,6 +348,9 @@ main() {
             ;;
         fail2ban)
             verify_fail2ban_final
+            ;;
+        timesync)
+            verify_time_sync
             ;;
         nftables-bootstrap)
             verify_nftables_bootstrap

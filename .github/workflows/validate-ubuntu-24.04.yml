@@ -1,0 +1,63 @@
+name: Validate Ubuntu 24.04 platform
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-platform:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Validate Ubuntu Bash syntax
+        run: |
+          bash -n bootstrap/run-ubuntu-24.04.sh
+          bash -n bootstrap/ubuntu-24.04-ipv4.sh
+          bash -n install-ubuntu-24.04.sh
+
+      - name: Run ShellCheck on Ubuntu entrypoints
+        run: |
+          shellcheck \
+            bootstrap/run-ubuntu-24.04.sh \
+            bootstrap/ubuntu-24.04-ipv4.sh \
+            install-ubuntu-24.04.sh
+
+      - name: Validate Ubuntu platform contract
+        run: |
+          bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; check_platform'
+
+          fixture="${RUNNER_TEMP}/debian-os-release"
+          cat > "${fixture}" <<'EOF'
+          ID=debian
+          VERSION_ID="12"
+          EOF
+
+          if UBUNTU_OS_RELEASE_FILE="${fixture}" \
+            bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; check_platform'; then
+            echo 'Ubuntu entrypoint accepted Debian 12.' >&2
+            exit 1
+          fi
+
+      - name: Validate platform file separation
+        run: |
+          grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh
+          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'install-ubuntu-24.04.sh' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'bootstrap/run.sh' docs/bootstrap-platforms.md
+          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/bootstrap-platforms.md
+
+          test -f docs/bootstrap-from-zero.md
+          test -f bootstrap/run.sh
+          test -f bootstrap/debian-ipv4.sh
+          test -f install.sh

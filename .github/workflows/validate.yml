@@ -15,17 +15,33 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Upload validated source snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-source-snapshot
+          path: |
+            .
+            !.git
+          include-hidden-files: true
+          if-no-files-found: error
+
       - name: Install validators
         run: |
           sudo apt-get update
           sudo apt-get install -y fail2ban nftables openssh-server shellcheck
 
       - name: Validate Bash syntax
+        id: bash_syntax
+        continue-on-error: true
         run: |
-          while IFS= read -r -d '' file; do
-            echo "bash -n ${file}"
-            bash -n "${file}"
-          done < <(find . -type f -name '*.sh' -print0 | sort -z)
+          set -o pipefail
+          {
+            while IFS= read -r -d '' file; do
+              echo "bash -n ${file}"
+              bash -n "${file}"
+            done < <(find . -type f -name '*.sh' -print0 | sort -z)
+          } 2>&1 | tee bash-syntax.txt
 
       - name: Run ShellCheck on managed entrypoints
         id: shellcheck
@@ -46,41 +62,73 @@ jobs:
             scripts/verify.sh \
             2>&1 | tee shellcheck.txt
 
-      - name: Upload ShellCheck diagnostics
+      - name: Validate OpenSSH configuration
+        id: openssh
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            sudo mkdir -p /run/sshd
+            sudo sshd -t -f configs/ssh/00-discrete.conf
+            sudo sshd -T -f configs/ssh/00-discrete.conf | grep -x 'addressfamily inet'
+          } 2>&1 | tee openssh.txt
+
+      - name: Validate nftables configuration
+        id: nftables
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            sudo nft --check --file configs/nftables/nftables.conf
+            grep -Eq '^table ip discrete_filter' configs/nftables/nftables.conf
+            ! grep -Eq 'ipv6|ip6|table inet' configs/nftables/nftables.conf
+          } 2>&1 | tee nftables.txt
+
+      - name: Validate Fail2Ban configuration
+        id: fail2ban
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            sudo install -m 0644 configs/fail2ban/fail2ban.local /etc/fail2ban/fail2ban.local
+            sudo install -m 0644 configs/fail2ban/jail.local /etc/fail2ban/jail.local
+            sudo fail2ban-client -t
+            grep -Eq '^allowipv6 = no$' configs/fail2ban/fail2ban.local
+            grep -F 'table_family=ip' configs/fail2ban/jail.local
+          } 2>&1 | tee fail2ban.txt
+
+      - name: Validate IPv4-only policy contract
+        id: ipv4_contract
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            grep -Eq '^net.ipv6.conf.all.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
+            grep -Eq '^net.ipv6.conf.default.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
+            grep -Eq '^net.ipv6.conf.lo.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
+            grep -F $'nft list table ip discrete_filter' configs/manifest.tsv
+          } 2>&1 | tee ipv4-contract.txt
+
+      - name: Upload validation diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: shellcheck-diagnostics
-          path: shellcheck.txt
+          name: validation-diagnostics
+          path: |
+            bash-syntax.txt
+            shellcheck.txt
+            openssh.txt
+            nftables.txt
+            fail2ban.txt
+            ipv4-contract.txt
           if-no-files-found: error
 
-      - name: Validate OpenSSH configuration
-        run: |
-          sudo sshd -t -f configs/ssh/00-discrete.conf
-          sudo sshd -T -f configs/ssh/00-discrete.conf | grep -x 'addressfamily inet'
-
-      - name: Validate nftables configuration
-        run: |
-          sudo nft --check --file configs/nftables/nftables.conf
-          grep -Eq '^table ip discrete_filter' configs/nftables/nftables.conf
-          ! grep -Eq 'ipv6|ip6|table inet' configs/nftables/nftables.conf
-
-      - name: Validate Fail2Ban configuration
-        run: |
-          sudo install -m 0644 configs/fail2ban/fail2ban.local /etc/fail2ban/fail2ban.local
-          sudo install -m 0644 configs/fail2ban/jail.local /etc/fail2ban/jail.local
-          sudo fail2ban-client -t
-          grep -Eq '^allowipv6 = no$' configs/fail2ban/fail2ban.local
-          grep -F 'table_family=ip' configs/fail2ban/jail.local
-
-      - name: Validate IPv4-only policy contract
-        run: |
-          grep -Eq '^net.ipv6.conf.all.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
-          grep -Eq '^net.ipv6.conf.default.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
-          grep -Eq '^net.ipv6.conf.lo.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
-          grep -F $'nft list table ip discrete_filter' configs/manifest.tsv
-
-      - name: Enforce ShellCheck result
+      - name: Enforce validation results
         if: always()
         run: |
+          test '${{ steps.bash_syntax.outcome }}' = 'success'
           test '${{ steps.shellcheck.outcome }}' = 'success'
+          test '${{ steps.openssh.outcome }}' = 'success'
+          test '${{ steps.nftables.outcome }}' = 'success'
+          test '${{ steps.fail2ban.outcome }}' = 'success'
+          test '${{ steps.ipv4_contract.outcome }}' = 'success'

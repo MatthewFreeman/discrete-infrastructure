@@ -398,7 +398,44 @@ Server replied: pong
 
 ---
 
-## 10. Normal future updates
+## 10. Audit all listening ports
+
+The final verification checks the required SSH and firewall state, but it does not inventory
+every process that may have opened an additional TCP or UDP socket. Run the complete local
+port audit:
+
+```bash
+cd /opt/discrete-infrastructure
+
+./scripts/audit-ports.sh
+```
+
+The audit prints:
+
+- every listening TCP socket and owning process;
+- every listening UDP socket and owning process;
+- all active nftables tables;
+- the complete `inet discrete_filter input` chain.
+
+For the clean baseline before Discrete services are installed:
+
+- the only public TCP listener should be `sshd` on TCP `22822`;
+- there must be no public TCP listener on TCP `22`;
+- there should be no unexpected public UDP listeners;
+- nftables intentionally allows TCP `22822`, `9330`, `9331`, and `9332`;
+- TCP `9330` through `9332` may be allowed by nftables without a listening process until
+  the Discrete services are installed.
+
+Review every socket bound to `0.0.0.0`, `*`, `[::]`, a public address, or the VPS interface
+address. Loopback-only listeners are not externally reachable, but they must still be
+identified. Do not continue until every unexpected listener has been explained.
+
+This local audit does not prove provider-firewall behavior or Internet reachability. Those
+remain provider-specific and require a scan from a separate external host.
+
+---
+
+## 11. Normal future updates
 
 The VPS deploy key is read-only.
 

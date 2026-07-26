@@ -276,14 +276,20 @@ remove_ufw() {
     delete_ufw_table_if_present ip filter
     delete_ufw_table_if_present ip6 filter
 
-    nft list table ip filter >/dev/null 2>&1 \
-        && die "Legacy IPv4 filter table remains after UFW cleanup."
-    nft list table ip6 filter >/dev/null 2>&1 \
-        && die "Legacy IPv6 filter table remains after UFW cleanup."
+    assert_nft_table_absent \
+        ip \
+        filter \
+        "Legacy IPv4 filter table remains after UFW cleanup."
+    assert_nft_table_absent \
+        ip6 \
+        filter \
+        "Legacy IPv6 filter table remains after UFW cleanup."
 
     if nft list ruleset | grep -E '(^|[^[:alnum:]_])ufw6?-' >/dev/null; then
         die "Residual UFW rules remain in nftables."
     fi
+
+    return 0
 }
 
 install_bootstrap_firewall() (
@@ -473,6 +479,18 @@ fail2ban_rule_has_port() {
     ' <<<"${ruleset}"
 }
 
+assert_nft_table_absent() {
+    local family="$1"
+    local table="$2"
+    local error_message="$3"
+
+    if nft list table "${family}" "${table}" >/dev/null 2>&1; then
+        die "${error_message}"
+    fi
+
+    return 0
+}
+
 install_bootstrap_fail2ban() (
     local temporary_config
 
@@ -497,8 +515,13 @@ install_bootstrap_fail2ban() (
     fail2ban_rule_has_port "${FINAL_SSH_PORT}" \
         || die "Fail2Ban does not protect final SSH TCP ${FINAL_SSH_PORT}."
 
-    nft list table inet "${FAIL2BAN_TABLE}" >/dev/null 2>&1 \
-        && die "Legacy inet Fail2Ban table remains."
+    assert_nft_table_absent \
+        inet \
+        "${FAIL2BAN_TABLE}" \
+        "Legacy inet Fail2Ban table remains."
+
+    printf 'Temporary IPv4 Fail2Ban verification passed.\n'
+    return 0
 )
 
 apply_prepare_components() {
@@ -573,17 +596,19 @@ finalize_ssh() {
 }
 
 verify_no_ufw() {
-    dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
-        | grep -x 'install ok installed' >/dev/null \
-        && die "UFW is still installed."
+    if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
+        | grep -x 'install ok installed' >/dev/null; then
+        die "UFW is still installed."
+    fi
 
-    systemctl is-active --quiet ufw.service 2>/dev/null \
-        && die "UFW service is still active."
+    if systemctl is-active --quiet ufw.service 2>/dev/null; then
+        die "UFW service is still active."
+    fi
 
-    nft list table ip filter >/dev/null 2>&1 \
-        && die "Legacy IPv4 filter table remains."
-    nft list table ip6 filter >/dev/null 2>&1 \
-        && die "Legacy IPv6 filter table remains."
+    assert_nft_table_absent ip filter "Legacy IPv4 filter table remains."
+    assert_nft_table_absent ip6 filter "Legacy IPv6 filter table remains."
+
+    return 0
 }
 
 print_network_banner() {
@@ -782,4 +807,6 @@ main() {
     esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

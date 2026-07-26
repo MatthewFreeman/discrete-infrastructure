@@ -220,6 +220,11 @@ ADMIN_USER=serveradmin \
 If GitHub prompts for credentials during `git pull`, use the same temporary credentials
 specified in step 3. Re-running `prepare` before `finalize` is supported.
 
+Returning to the shell prompt without the final banner is a failed phase even when no `ERROR:` line
+was printed. Do not continue. A bootstrap helper must never use the expected failure of an absence
+probe, such as checking that a legacy nftables table does not exist, as the helper's final exit
+status.
+
 ---
 
 ## 5. Register the GitHub deploy key
@@ -593,6 +598,20 @@ restarts such as restarting Fail2Ban separately for `fail2ban.local` and `jail.l
 Provider images may start `apt-daily` or `unattended-upgrades` immediately after boot. The
 bootstrap entrypoint waits up to five minutes for dpkg locks and retries lock-related APT
 failures. It does not kill package-manager processes or delete lock files.
+
+</details>
+
+<details>
+<summary><strong>Explicit phase success and failure diagnostics</strong></summary>
+
+Bootstrap scripts run with `set -Eeuo pipefail`. A helper whose final operation is an expected
+negative probe must return success explicitly after the probe passes. For example,
+`nft list table ...` returning nonzero because a forbidden legacy table is absent must be handled
+inside an `if` statement and must not become the helper's final status.
+
+Any nonzero phase exit must print an `ERROR:` diagnostic before returning control to the shell. A
+silent return to the prompt without the documented completion banner is an implementation defect,
+not a successful or partially successful phase.
 
 </details>
 

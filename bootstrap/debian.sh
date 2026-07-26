@@ -52,6 +52,42 @@ check_platform() {
         || die "This bootstrap is validated for Debian 12, found ${VERSION_ID:-unknown}."
 }
 
+wait_for_tcp_listener() {
+    local port="$1"
+    local attempt
+    local listeners
+
+    for attempt in {1..40}; do
+        listeners="$(ss -H -lnt 2>/dev/null || true)"
+
+        if awk -v expected_port=":${port}" '
+            $4 ~ expected_port "$" {
+                found = 1
+            }
+
+            END {
+                exit !found
+            }
+        ' <<<"${listeners}"
+        then
+            return 0
+        fi
+
+        sleep 0.25
+    done
+
+    printf 'ERROR: TCP listener on port %s did not appear within 10 seconds.\n' \
+        "${port}" >&2
+
+    printf '\nCurrent listeners:\n' >&2
+    ss -lntp >&2 || true
+
+    printf '\nRecent SSH service log:\n' >&2
+    journalctl -u ssh -n 40 --no-pager >&2 || true
+
+    return 1
+}
+
 install_base_packages() {
     log "Installing base packages"
 
@@ -145,12 +181,10 @@ EOF
     sshd -t
     systemctl reload ssh
 
-    ss -lnt \
-        | grep -E "[:.]${BOOTSTRAP_SSH_PORT}[[:space:]]" >/dev/null \
+    wait_for_tcp_listener "${BOOTSTRAP_SSH_PORT}" \
         || die "sshd is not listening on bootstrap port ${BOOTSTRAP_SSH_PORT}."
 
-    ss -lnt \
-        | grep -E "[:.]${FINAL_SSH_PORT}[[:space:]]" >/dev/null \
+    wait_for_tcp_listener "${FINAL_SSH_PORT}" \
         || die "sshd is not listening on final port ${FINAL_SSH_PORT}."
 }
 

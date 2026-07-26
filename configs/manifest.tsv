@@ -1,5 +1,5 @@
 # component	source	target	mode	validate	reload	verify
 ssh	configs/ssh/00-discrete.conf	/etc/ssh/sshd_config.d/00-discrete.conf	0644	sshd -t	systemctl reload ssh	sshd -T
-nftables	configs/nftables/nftables.conf	/etc/nftables.conf	0644	bash scripts/apply-nftables.sh --check /etc/nftables.conf	bash scripts/apply-nftables.sh --apply /etc/nftables.conf	nft list table inet discrete_filter
+nftables	configs/nftables/nftables.conf	/etc/nftables.conf	0644	bash scripts/apply-nftables.sh --check /etc/nftables.conf	bash scripts/apply-nftables.sh --apply /etc/nftables.conf	nft list table ip discrete_filter
 fail2ban	configs/fail2ban/fail2ban.local	/etc/fail2ban/fail2ban.local	0644	fail2ban-client -t	bash scripts/restart-fail2ban.sh	fail2ban-client ping && fail2ban-client status sshd
 fail2ban	configs/fail2ban/jail.local	/etc/fail2ban/jail.local	0644	fail2ban-client -t	bash scripts/restart-fail2ban.sh	fail2ban-client ping && fail2ban-client status sshd

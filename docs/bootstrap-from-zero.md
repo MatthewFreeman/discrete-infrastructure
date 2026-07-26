@@ -104,7 +104,12 @@ apt-get update
 apt-get install -y ca-certificates git
 ```
 
-Clone the private repository:
+The repository is private. Before cloning it, create the temporary least-privilege token described
+in:
+
+[Create the temporary GitHub bootstrap token](create-github-access-token.md)
+
+Then clone the repository:
 
 ```bash
 git clone \
@@ -114,14 +119,15 @@ git clone \
 cd /opt/discrete-infrastructure
 ```
 
-GitHub will prompt for credentials. Use:
+When GitHub prompts for credentials, enter:
 
-- your GitHub username;
-- a temporary fine-grained personal access token as the password;
-- access limited to this repository;
-- repository permission: **Contents: Read-only**.
+```text
+Username: <your GitHub username>
+Password: <paste the temporary github_pat_ token>
+```
 
-Do not place the token directly in the clone URL.
+Do not use the GitHub account password. Do not place the token directly in the clone URL. Delete
+the temporary token after the deploy key verification in step 5 succeeds.
 
 ---
 

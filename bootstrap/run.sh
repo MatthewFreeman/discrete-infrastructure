@@ -2,11 +2,11 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REAL_APT_GET="/usr/bin/apt-get"
-readonly APT_LOCK_RETRY_INTERVAL_SECONDS=5
 
 apt-get() {
+    local real_apt_get="/usr/bin/apt-get"
     local lock_timeout="${APT_LOCK_TIMEOUT_SECONDS:-300}"
+    local retry_interval=5
     local deadline
     local output
     local status
@@ -16,9 +16,9 @@ apt-get() {
         return 2
     }
 
-    [[ -x "${REAL_APT_GET}" ]] || {
+    [[ -x "${real_apt_get}" ]] || {
         printf 'ERROR: Real apt-get executable is unavailable: %s\n' \
-            "${REAL_APT_GET}" >&2
+            "${real_apt_get}" >&2
         return 127
     }
 
@@ -27,7 +27,7 @@ apt-get() {
     while true; do
         output="$(mktemp)"
 
-        if "${REAL_APT_GET}" \
+        if "${real_apt_get}" \
             -o "DPkg::Lock::Timeout=${lock_timeout}" \
             "$@" 2>&1 | tee "${output}"; then
 
@@ -58,8 +58,8 @@ apt-get() {
         fi
 
         printf '\n==> Package manager is busy; retrying in %s seconds\n' \
-            "${APT_LOCK_RETRY_INTERVAL_SECONDS}" >&2
-        sleep "${APT_LOCK_RETRY_INTERVAL_SECONDS}"
+            "${retry_interval}" >&2
+        sleep "${retry_interval}"
     done
 }
 

@@ -27,54 +27,25 @@ jobs:
 
       - name: Commit documentation contract first
         run: |
-          set -o pipefail
-          {
-            set -eux
-            { cat .ci-fixes/docs-status.patch; printf '\n'; } \
-              | patch --batch --forward -p1
-            git diff --check
-            git add docs/bootstrap-from-zero.md
-            git commit -m 'Document explicit bootstrap phase status'
-          } 2>&1 | tee docs-fix.log
+          set -euxo pipefail
+          { cat .ci-fixes/docs-status.patch; printf '\n'; } \
+            | patch --batch --forward -p1
+          git diff --check
+          git add docs/bootstrap-from-zero.md
+          git commit -m 'Document explicit bootstrap phase status'
 
-      - name: Commit implementation and regression test
-        run: |
-          set -o pipefail
-          {
-            set -eux
-            temporary_patch="${RUNNER_TEMP}/implementation-status.patch"
-            cp .ci-fixes/implementation-status.patch "${temporary_patch}"
-            sed -i \
-              -e 's/@@ -118,6 +118,34 @@/@@ -118,6 +118,36 @@/' \
-              -e 's/@@ -276,6 +304,7 @@/@@ -276,6 +306,7 @@/' \
-              -e 's/@@ -289,6 +318,7 @@/@@ -289,6 +320,7 @@/' \
-              "${temporary_patch}"
-            printf '\n' >> "${temporary_patch}"
-            patch --batch --forward -p1 < "${temporary_patch}"
-            bash -n bootstrap/debian-ipv4.sh
-            git diff --check
-            git add bootstrap/debian-ipv4.sh .github/workflows/validate.yml
-            git commit -m 'Prevent silent success-probe bootstrap exits'
-          } 2>&1 | tee implementation-fix.log
-
-      - name: Upload fix diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: silent-bootstrap-fix-diagnostics
-          path: |
-            docs-fix.log
-            implementation-fix.log
-          if-no-files-found: warn
-
-      - name: Remove one-time fix machinery
+      - name: Commit bootstrap implementation fix
         run: |
           set -euxo pipefail
-          git rm \
-            .ci-fixes/docs-status.patch \
-            .ci-fixes/implementation-status.patch \
-            .github/workflows/apply-silent-bootstrap-fix.yml
-          git commit -m 'Remove one-time silent-exit fix workflow'
+          temporary_patch="${RUNNER_TEMP}/bootstrap-status.patch"
+          awk '/^--- a\/\.github\/workflows\/validate\.yml$/ { exit } { print }' \
+            .ci-fixes/implementation-status.patch > "${temporary_patch}"
+          printf '\n' >> "${temporary_patch}"
+          patch --batch --forward -p1 < "${temporary_patch}"
+          bash -n bootstrap/debian-ipv4.sh
+          git diff --check
+          git add bootstrap/debian-ipv4.sh
+          git commit -m 'Prevent silent success-probe bootstrap exits'
 
       - name: Push ordered commits
         run: git push origin HEAD:fix-silent-bootstrap-exit

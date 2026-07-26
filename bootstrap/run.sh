@@ -8,7 +8,7 @@ apt-get() {
     local real_apt_get="${APT_GET_BIN:-/usr/bin/apt-get}"
     local lock_timeout="${APT_LOCK_TIMEOUT_SECONDS:-300}"
     local progress_interval="${APT_LOCK_PROGRESS_SECONDS:-30}"
-    local status
+    local -a pipeline_status
 
     [[ "${lock_timeout}" =~ ^[1-9][0-9]*$ ]] || {
         printf 'ERROR: APT_LOCK_TIMEOUT_SECONDS must be a positive integer.\n' >&2
@@ -26,8 +26,7 @@ apt-get() {
         return 127
     }
 
-    set +e
-    "${real_apt_get}" \
+    if "${real_apt_get}" \
         -o "DPkg::Lock::Timeout=${lock_timeout}" \
         "$@" 2>&1 \
         | awk \
@@ -50,11 +49,15 @@ apt-get() {
                 }
 
                 { print; fflush() }
-            '
-    status=${PIPESTATUS[0]}
-    set -e
-
-    return "${status}"
+            '; then
+        return 0
+    else
+        pipeline_status=("${PIPESTATUS[@]}")
+        if (( pipeline_status[0] != 0 )); then
+            return "${pipeline_status[0]}"
+        fi
+        return "${pipeline_status[1]}"
+    fi
 }
 
 export -f apt-get

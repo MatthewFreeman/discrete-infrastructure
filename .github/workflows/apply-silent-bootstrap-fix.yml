@@ -30,6 +30,7 @@ jobs:
           set -o pipefail
           {
             set -eux
+            printf '\n' >> .ci-fixes/docs-status.patch
             patch --batch --forward -p1 < .ci-fixes/docs-status.patch
             git diff --check
             git add docs/bootstrap-from-zero.md
@@ -41,6 +42,12 @@ jobs:
           set -o pipefail
           {
             set -eux
+            sed -i \
+              -e 's/@@ -118,6 +118,34 @@/@@ -118,6 +118,36 @@/' \
+              -e 's/@@ -276,6 +304,7 @@/@@ -276,6 +306,7 @@/' \
+              -e 's/@@ -289,6 +318,7 @@/@@ -289,6 +320,7 @@/' \
+              .ci-fixes/implementation-status.patch
+            printf '\n' >> .ci-fixes/implementation-status.patch
             patch --batch --forward -p1 < .ci-fixes/implementation-status.patch
             bash -n bootstrap/debian-ipv4.sh
             git diff --check

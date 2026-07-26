@@ -17,8 +17,8 @@ jobs:
 
       - name: Install ShellCheck
         run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
 
       - name: Validate Ubuntu Bash syntax
         run: |
@@ -27,11 +27,27 @@ jobs:
           bash -n install-ubuntu-24.04.sh
 
       - name: Run ShellCheck on Ubuntu entrypoints
+        id: shellcheck
+        continue-on-error: true
         run: |
+          set -o pipefail
           shellcheck \
             bootstrap/run-ubuntu-24.04.sh \
             bootstrap/ubuntu-24.04-ipv4.sh \
-            install-ubuntu-24.04.sh
+            install-ubuntu-24.04.sh \
+            2>&1 | tee shellcheck-ubuntu.txt
+
+      - name: Upload Ubuntu ShellCheck diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-shellcheck-diagnostics
+          path: shellcheck-ubuntu.txt
+          if-no-files-found: error
+
+      - name: Enforce Ubuntu ShellCheck result
+        run: |
+          test '${{ steps.shellcheck.outcome }}' = 'success'
 
       - name: Validate Ubuntu platform contract
         run: |

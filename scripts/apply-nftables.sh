@@ -5,12 +5,15 @@ umask 077
 
 readonly MODE="${1:-}"
 readonly CONFIG="${2:-/etc/nftables.conf}"
-readonly FAMILY="inet"
 readonly TABLE="discrete_filter"
-readonly LEGACY_TABLE="filter"
+
+# Supported during migration and rollback:
+#   current: table ip discrete_filter
+#   previous managed state: table inet discrete_filter
+#   oldest state: flush ruleset + table inet filter
 
 die() {
-    echo "ERROR: $*" >&2
+    printf 'ERROR: %s\n' "$*" >&2
     exit 1
 }
 
@@ -25,75 +28,72 @@ esac
 [[ ${EUID} -eq 0 ]] || die "Run as root."
 [[ -r "${CONFIG}" ]] || die "Cannot read configuration: ${CONFIG}"
 
-temporary_batch="$(mktemp)"
+new_ipv4_config=0
+previous_inet_config=0
+legacy_flush_config=0
 
-cleanup() {
-    rm -f "${temporary_batch}"
-}
-
-trap cleanup EXIT
-
-new_config=0
-legacy_config=0
+if grep -Eq \
+    '^[[:space:]]*table[[:space:]]+ip[[:space:]]+discrete_filter[[:space:]]*\{' \
+    "${CONFIG}"; then
+    new_ipv4_config=1
+fi
 
 if grep -Eq \
     '^[[:space:]]*table[[:space:]]+inet[[:space:]]+discrete_filter[[:space:]]*\{' \
     "${CONFIG}"; then
-    new_config=1
+    previous_inet_config=1
 fi
 
 if grep -Eq '^[[:space:]]*flush[[:space:]]+ruleset' "${CONFIG}" \
    && grep -Eq \
       '^[[:space:]]*table[[:space:]]+inet[[:space:]]+filter[[:space:]]*\{' \
       "${CONFIG}"; then
-    legacy_config=1
+    legacy_flush_config=1
 fi
 
-if [[ ${new_config} -eq 0 && ${legacy_config} -eq 0 ]]; then
-    die "Configuration does not define a recognized Discrete firewall table."
+if [[ $((new_ipv4_config + previous_inet_config + legacy_flush_config)) -ne 1 ]]; then
+    die "Configuration does not define exactly one recognized Discrete firewall format."
 fi
 
-if [[ ${new_config} -eq 1 ]]; then
-    if nft list table "${FAMILY}" "${TABLE}" >/dev/null 2>&1; then
-        printf 'delete table %s %s\n' \
-            "${FAMILY}" "${TABLE}" >> "${temporary_batch}"
+temporary_batch="$(mktemp)"
+trap 'rm -f "${temporary_batch}"' EXIT
+
+# Remove only Discrete-owned tables before loading the selected configuration.
+# Both families are checked so a one-time IPv4 migration and an automatic rollback
+# can use the same transaction helper.
+for family in ip inet ip6; do
+    if nft list table "${family}" "${TABLE}" >/dev/null 2>&1; then
+        printf 'delete table %s %s\n' "${family}" "${TABLE}" \
+            >> "${temporary_batch}"
     fi
+done
 
-    legacy_rules="$(
-        nft list table "${FAMILY}" "${LEGACY_TABLE}" 2>/dev/null || true
-    )"
-
-    if grep -Fq 'comment "Discrete P2P"' <<<"${legacy_rules}" \
-       && grep -Eq 'tcp dport 22822' <<<"${legacy_rules}"; then
-
-        echo "Migrating legacy Discrete firewall table."
-
-        printf 'delete table %s %s\n' \
-            "${FAMILY}" "${LEGACY_TABLE}" >> "${temporary_batch}"
-    fi
+# Remove the oldest repository-managed table when it is recognizable. Do not
+# delete an unrelated table merely because it is named filter.
+legacy_rules="$(nft list table inet filter 2>/dev/null || true)"
+if grep -Fq 'comment "Discrete P2P"' <<<"${legacy_rules}" \
+   && grep -Eq 'tcp dport 22822' <<<"${legacy_rules}"; then
+    printf 'delete table inet filter\n' >> "${temporary_batch}"
 fi
 
 cat "${CONFIG}" >> "${temporary_batch}"
 
 case "${MODE}" in
     --check)
-        echo "Checking nftables transaction..."
+        printf 'Checking nftables transaction...\n'
         nft --check --file "${temporary_batch}"
-        echo "nftables transaction is valid."
+        printf 'nftables transaction is valid.\n'
         ;;
-
     --apply)
-        echo "Applying nftables transaction..."
+        printf 'Applying nftables transaction...\n'
         nft --file "${temporary_batch}"
 
-        # Compatibility path if apply-config rolls back to the old
-        # flush-ruleset configuration.
-        if [[ ${legacy_config} -eq 1 ]] \
+        if [[ ${legacy_flush_config} -eq 1 ]] \
            && systemctl is-active --quiet fail2ban; then
-            echo "Legacy ruleset flushed Fail2Ban rules; restoring them."
+            printf 'Legacy ruleset flushed Fail2Ban rules; restoring them.\n'
             bash scripts/restart-fail2ban.sh
         fi
 
-        echo "nftables transaction applied."
+        printf 'nftables transaction applied.\n'
         ;;
 esac

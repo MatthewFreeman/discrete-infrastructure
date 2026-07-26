@@ -1,0 +1,69 @@
+name: Validate infrastructure
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install validators
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fail2ban nftables openssh-server shellcheck
+
+      - name: Validate Bash syntax
+        run: |
+          while IFS= read -r -d '' file; do
+            echo "bash -n ${file}"
+            bash -n "${file}"
+          done < <(find . -type f -name '*.sh' -print0 | sort -z)
+
+      - name: Run ShellCheck on managed entrypoints
+        run: |
+          shellcheck \
+            bootstrap/run.sh \
+            bootstrap/debian-ipv4.sh \
+            bootstrap/create-admin.sh \
+            install.sh \
+            scripts/apply-config.sh \
+            scripts/apply-nftables.sh \
+            scripts/audit-ports.sh \
+            scripts/configure-ipv4-only.sh \
+            scripts/configure-time-sync.sh \
+            scripts/restart-fail2ban.sh \
+            scripts/verify.sh
+
+      - name: Validate OpenSSH configuration
+        run: |
+          sudo sshd -t -f configs/ssh/00-discrete.conf
+          sudo sshd -T -f configs/ssh/00-discrete.conf | grep -x 'addressfamily inet'
+
+      - name: Validate nftables configuration
+        run: |
+          sudo nft --check --file configs/nftables/nftables.conf
+          grep -Eq '^table ip discrete_filter' configs/nftables/nftables.conf
+          ! grep -Eq 'ipv6|ip6|table inet' configs/nftables/nftables.conf
+
+      - name: Validate Fail2Ban configuration
+        run: |
+          sudo install -m 0644 configs/fail2ban/fail2ban.local /etc/fail2ban/fail2ban.local
+          sudo install -m 0644 configs/fail2ban/jail.local /etc/fail2ban/jail.local
+          sudo fail2ban-client -t
+          grep -Eq '^allowipv6 = no$' configs/fail2ban/fail2ban.local
+          grep -F 'table_family=ip' configs/fail2ban/jail.local
+
+      - name: Validate IPv4-only policy contract
+        run: |
+          grep -Eq '^net.ipv6.conf.all.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
+          grep -Eq '^net.ipv6.conf.default.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
+          grep -Eq '^net.ipv6.conf.lo.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
+          grep -F $'nft list table ip discrete_filter' configs/manifest.tsv

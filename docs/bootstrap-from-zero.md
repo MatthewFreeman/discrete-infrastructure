@@ -310,3 +310,7 @@ Fail2Ban targets TCP 22822 and does not target TCP 22;
 neither table ip filter nor table ip6 filter remains;
 
 no UFW chains remain anywhere in the nftables ruleset.
+
+Fail2Ban nftables initialization
+
+Fail2Ban normally creates its f2b-table on demand when the first address isbanned. The infrastructure configuration disables that lazy start for thenftables actions with actionstart_on_demand=false. This makes the table andSSH port rules exist immediately after Fail2Ban starts, so deployment canverify the real enforcement path before exposing the server. Both bootstrapand final verification wait up to 10 seconds for the table to appear.

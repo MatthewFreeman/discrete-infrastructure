@@ -7,11 +7,14 @@ readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 readonly STATE_DIR="/var/lib/discrete-infrastructure"
 readonly FINALIZED_MARKER="${STATE_DIR}/bootstrap-finalized"
+
 readonly TEMP_SSH_CONFIG="/etc/ssh/sshd_config.d/00-discrete-bootstrap.conf"
 readonly DEPLOY_KEY="/root/.ssh/discrete_infrastructure_deploy"
 readonly SSH_CONFIG="/root/.ssh/config"
 readonly SSH_ALIAS="github-discrete"
-readonly SSH_PORT="22822"
+
+readonly BOOTSTRAP_SSH_PORT="22"
+readonly FINAL_SSH_PORT="22822"
 
 ADMIN_USER="${ADMIN_USER:-serveradmin}"
 
@@ -80,7 +83,8 @@ ensure_admin_user() {
     admin_home="$(getent passwd "${ADMIN_USER}" | cut -d: -f6)"
     admin_group="$(id -gn "${ADMIN_USER}")"
 
-    [[ -n "${admin_home}" ]] || die "Cannot determine home directory for ${ADMIN_USER}."
+    [[ -n "${admin_home}" ]] \
+        || die "Cannot determine home directory for ${ADMIN_USER}."
 
     install -d \
         -m 0700 \
@@ -116,13 +120,15 @@ write_temporary_ssh_config() {
         die "This server already appears finalized. Use '$0 status'. Do not run prepare again."
     fi
 
-    log "Installing temporary SSH configuration"
+    log "Installing temporary two-port SSH configuration"
 
-    cat > "${TEMP_SSH_CONFIG}" <<EOF2
+    cat > "${TEMP_SSH_CONFIG}" <<EOF
 # Temporary bootstrap configuration.
 # Removed by: bootstrap/debian.sh finalize
 
-Port ${SSH_PORT}
+Port ${BOOTSTRAP_SSH_PORT}
+Port ${FINAL_SSH_PORT}
+
 PermitRootLogin yes
 PasswordAuthentication yes
 PubkeyAuthentication yes
@@ -132,27 +138,114 @@ MaxAuthTries 3
 
 X11Forwarding no
 AllowAgentForwarding no
-EOF2
+EOF
 
     chmod 0644 "${TEMP_SSH_CONFIG}"
 
     sshd -t
     systemctl reload ssh
+
+    ss -lnt \
+        | grep -Eq "[:.]${BOOTSTRAP_SSH_PORT}[[:space:]]" \
+        || die "sshd is not listening on bootstrap port ${BOOTSTRAP_SSH_PORT}."
+
+    ss -lnt \
+        | grep -Eq "[:.]${FINAL_SSH_PORT}[[:space:]]" \
+        || die "sshd is not listening on final port ${FINAL_SSH_PORT}."
 }
 
-prepare_nftables_service() {
-    log "Preparing nftables service"
+build_bootstrap_nftables_config() {
+    local source_config="${REPO_DIR}/configs/nftables/nftables.conf"
+    local output_config="$1"
 
+    [[ -r "${source_config}" ]] \
+        || die "Cannot read nftables source config: ${source_config}"
+
+    awk -v port="${BOOTSTRAP_SSH_PORT}" '
+        /^[[:space:]]*tcp dport 22822[[:space:]]/ && !inserted {
+            printf "        tcp dport %s counter accept comment \"Temporary bootstrap SSH\"\n", port
+            inserted = 1
+        }
+
+        {
+            print
+        }
+
+        END {
+            if (!inserted) {
+                exit 42
+            }
+        }
+    ' "${source_config}" > "${output_config}" \
+        || die "Could not create the temporary bootstrap nftables configuration."
+}
+
+remove_ufw() {
+    local ufw_installed="no"
+
+    if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
+        | grep -qx 'install ok installed'; then
+        ufw_installed="yes"
+    fi
+
+    if command -v ufw >/dev/null 2>&1 || [[ "${ufw_installed}" == "yes" ]]; then
+        log "Removing UFW so nftables is the only host firewall"
+
+        if command -v ufw >/dev/null 2>&1; then
+            ufw --force disable >/dev/null 2>&1 || true
+        fi
+
+        systemctl disable --now ufw.service >/dev/null 2>&1 || true
+
+        if [[ "${ufw_installed}" == "yes" ]]; then
+            DEBIAN_FRONTEND=noninteractive apt-get purge -y ufw
+        fi
+    fi
+
+    # Some provider images leave nftables-compat UFW tables behind after the
+    # package or service is removed. Delete only tables that clearly contain
+    # UFW-owned chains.
+    if nft list table ip filter >/tmp/discrete-ufw-ip.$$ 2>/dev/null; then
+        if grep -q 'ufw-' /tmp/discrete-ufw-ip.$$; then
+            nft delete table ip filter
+        fi
+    fi
+    rm -f /tmp/discrete-ufw-ip.$$
+
+    if nft list table ip6 filter >/tmp/discrete-ufw-ip6.$$ 2>/dev/null; then
+        if grep -q 'ufw-' /tmp/discrete-ufw-ip6.$$; then
+            nft delete table ip6 filter
+        fi
+    fi
+    rm -f /tmp/discrete-ufw-ip6.$$
+
+    if nft list ruleset | grep -q 'ufw-'; then
+        die "Residual UFW rules are still present in nftables."
+    fi
+}
+
+install_bootstrap_firewall() (
+    local temporary_config
+
+    temporary_config="$(mktemp)"
+    trap 'rm -f "${temporary_config}"' EXIT
+
+    build_bootstrap_nftables_config "${temporary_config}"
+
+    log "Validating temporary bootstrap firewall"
+
+    bash "${REPO_DIR}/scripts/apply-nftables.sh" \
+        --check "${temporary_config}"
+
+    install -m 0644 "${temporary_config}" /etc/nftables.conf
     systemctl enable nftables >/dev/null
 
-    if ! systemctl is-active --quiet nftables; then
-        install \
-            -m 0644 \
-            "${REPO_DIR}/configs/nftables/nftables.conf" \
-            /etc/nftables.conf
-
-        nft --check --file /etc/nftables.conf
-
+    if systemctl is-active --quiet nftables; then
+        bash "${REPO_DIR}/scripts/apply-nftables.sh" \
+            --apply /etc/nftables.conf
+    else
+        # Start the service from the validated persistent config. Remove only
+        # our own table first if this is a rerun after an interrupted bootstrap.
         if nft list table inet discrete_filter >/dev/null 2>&1; then
             nft delete table inet discrete_filter
         fi
@@ -160,6 +253,27 @@ prepare_nftables_service() {
         systemctl reset-failed nftables >/dev/null 2>&1 || true
         systemctl start nftables
     fi
+
+    systemctl is-active --quiet nftables \
+        || die "nftables service is not active."
+
+    nft list chain inet discrete_filter input \
+        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" \
+        || die "Temporary firewall does not allow SSH port ${BOOTSTRAP_SSH_PORT}."
+
+    nft list chain inet discrete_filter input \
+        | grep -Eq "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" \
+        || die "Temporary firewall does not allow SSH port ${FINAL_SSH_PORT}."
+)
+
+prepare_firewall() {
+    # Build and activate the two-port nftables policy while any provider UFW
+    # rules still protect port 22. Then remove UFW and reapply our policy.
+    install_bootstrap_firewall
+    remove_ufw
+    install_bootstrap_firewall
+
+    log "Bootstrap firewall is active on ports ${BOOTSTRAP_SSH_PORT} and ${FINAL_SSH_PORT}"
 }
 
 repository_full_name() {
@@ -209,7 +323,7 @@ write_deploy_ssh_config() {
         }
     ' "${SSH_CONFIG}" > "${temporary_config}"
 
-    cat >> "${temporary_config}" <<EOF2
+    cat >> "${temporary_config}" <<EOF
 
 # BEGIN discrete-infrastructure deploy key
 Host ${SSH_ALIAS}
@@ -218,8 +332,9 @@ Host ${SSH_ALIAS}
     IdentityFile ${DEPLOY_KEY}
     IdentitiesOnly yes
     BatchMode yes
+    StrictHostKeyChecking accept-new
 # END discrete-infrastructure deploy key
-EOF2
+EOF
 
     install -m 0600 "${temporary_config}" "${SSH_CONFIG}"
     rm -f "${temporary_config}"
@@ -270,16 +385,72 @@ ensure_deploy_key() {
     return 1
 }
 
-apply_prepare_components() {
-    log "Applying nftables configuration"
-    bash "${REPO_DIR}/scripts/apply-config.sh" nftables
+build_bootstrap_fail2ban_config() {
+    local source_config="${REPO_DIR}/configs/fail2ban/jail.local"
+    local output_config="$1"
 
-    log "Applying Fail2Ban configuration"
-    bash "${REPO_DIR}/scripts/apply-config.sh" fail2ban
+    [[ -r "${source_config}" ]] \
+        || die "Cannot read Fail2Ban source config: ${source_config}"
+
+    awk -v bootstrap_port="${BOOTSTRAP_SSH_PORT}" \
+        -v final_port="${FINAL_SSH_PORT}" '
+        /^[[:space:]]*port[[:space:]]*=[[:space:]]*22822[[:space:]]*$/ && !replaced {
+            printf "port = %s,%s\n", bootstrap_port, final_port
+            replaced = 1
+            next
+        }
+
+        {
+            print
+        }
+
+        END {
+            if (!replaced) {
+                exit 42
+            }
+        }
+    ' "${source_config}" > "${output_config}" \
+        || die "Could not create temporary two-port Fail2Ban configuration."
+}
+
+install_bootstrap_fail2ban() (
+    local temporary_config
+
+    temporary_config="$(mktemp)"
+    trap 'rm -f "${temporary_config}"' EXIT
+
+    build_bootstrap_fail2ban_config "${temporary_config}"
+
+    log "Applying temporary two-port Fail2Ban configuration"
+
+    install -m 0644 "${temporary_config}" /etc/fail2ban/jail.local
+
+    fail2ban-client -t
+    bash "${REPO_DIR}/scripts/restart-fail2ban.sh"
+
+    fail2ban-client ping
+    fail2ban-client status sshd
+
+    fail2ban-client get sshd port \
+        | grep -Eq "(^|,|[[:space:]])${BOOTSTRAP_SSH_PORT}(,|[[:space:]]|$)" \
+        || die "Fail2Ban is not monitoring bootstrap SSH port ${BOOTSTRAP_SSH_PORT}."
+
+    fail2ban-client get sshd port \
+        | grep -Eq "(^|,|[[:space:]])${FINAL_SSH_PORT}(,|[[:space:]]|$)" \
+        || die "Fail2Ban is not monitoring final SSH port ${FINAL_SSH_PORT}."
+)
+
+apply_prepare_components() {
+    prepare_firewall
+    install_bootstrap_fail2ban
 
     log "Verifying prepared services"
     bash "${REPO_DIR}/scripts/verify.sh" nftables
     bash "${REPO_DIR}/scripts/verify.sh" fail2ban
+
+    nft list chain inet discrete_filter input \
+        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" \
+        || die "Bootstrap verification lost SSH port ${BOOTSTRAP_SSH_PORT}."
 }
 
 confirm_admin_ssh_test() {
@@ -292,7 +463,7 @@ confirm_admin_ssh_test() {
     printf '\n'
     printf 'Before finalizing, confirm that a NEW SSH session works:\n'
     printf '  user: %s\n' "${ADMIN_USER}"
-    printf '  port: %s\n' "${SSH_PORT}"
+    printf '  port: %s\n' "${FINAL_SSH_PORT}"
     printf 'and that "sudo -i" reaches root.\n\n'
 
     read -r -p "Type '${ADMIN_USER}' to confirm that test: " confirmation
@@ -324,6 +495,17 @@ finalize_ssh() {
     rm -f "${temporary_backup}"
 }
 
+verify_no_ufw() {
+    if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
+        | grep -qx 'install ok installed'; then
+        die "UFW is still installed."
+    fi
+
+    if nft list ruleset | grep -q 'ufw-'; then
+        die "UFW rules are still present."
+    fi
+}
+
 prepare() {
     [[ ! -e "${FINALIZED_MARKER}" ]] \
         || die "Bootstrap is already finalized. Use '$0 status'."
@@ -331,7 +513,6 @@ prepare() {
     install_base_packages
     ensure_admin_user
     write_temporary_ssh_config
-    prepare_nftables_service
     apply_prepare_components
 
     local deploy_key_ready="no"
@@ -344,18 +525,24 @@ prepare() {
     printf '============================================================\n'
     printf 'PREPARE PHASE COMPLETE\n'
     printf '============================================================\n'
-    printf 'SSH port:             %s\n' "${SSH_PORT}"
+    printf 'SSH ports:             %s and %s\n' \
+        "${BOOTSTRAP_SSH_PORT}" "${FINAL_SSH_PORT}"
     printf 'Administrative user:  %s\n' "${ADMIN_USER}"
     printf 'Root SSH login:        temporarily allowed\n'
+    printf 'UFW:                   removed\n'
+    printf 'Fail2Ban SSH ports:    %s and %s\n' \
+        "${BOOTSTRAP_SSH_PORT}" "${FINAL_SSH_PORT}"
     printf 'Deploy key ready:      %s\n' "${deploy_key_ready}"
     printf '\n'
-    printf 'Keep this root session open.\n'
+    printf 'Keep the original root session open.\n'
+    printf 'Verify that a NEW root session still works on port %s.\n' \
+        "${BOOTSTRAP_SSH_PORT}"
     printf 'Open a NEW SSH session as %s on port %s and test:\n' \
-        "${ADMIN_USER}" "${SSH_PORT}"
+        "${ADMIN_USER}" "${FINAL_SSH_PORT}"
     printf '  sudo -i\n'
     printf '  whoami\n'
     printf '\n'
-    printf 'After the deploy key is added and the admin login is tested, run:\n'
+    printf 'After the deploy key is added and both access paths are tested, run:\n'
     printf '  ADMIN_USER=%q bash %q finalize\n' \
         "${ADMIN_USER}" "${REPO_DIR}/bootstrap/debian.sh"
 }
@@ -371,6 +558,16 @@ finalize() {
         | grep -qx sudo \
         || die "${ADMIN_USER} is not a member of sudo."
 
+    verify_no_ufw
+
+    nft list chain inet discrete_filter input \
+        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)" \
+        || die "Bootstrap SSH port ${BOOTSTRAP_SSH_PORT} is not protected by the temporary firewall."
+
+    nft list chain inet discrete_filter input \
+        | grep -Eq "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" \
+        || die "Final SSH port ${FINAL_SSH_PORT} is not protected by the temporary firewall."
+
     ensure_deploy_key \
         || die "Register the printed deploy key in GitHub, then run finalize again."
 
@@ -379,12 +576,17 @@ finalize() {
     log "Applying final SSH configuration"
     finalize_ssh
 
-    log "Reapplying persistent firewall and Fail2Ban configuration"
+    log "Applying final single-port firewall and Fail2Ban configuration"
     bash "${REPO_DIR}/scripts/apply-config.sh" nftables
     bash "${REPO_DIR}/scripts/apply-config.sh" fail2ban
 
     log "Running complete verification"
     bash "${REPO_DIR}/scripts/verify.sh" all
+
+    if nft list chain inet discrete_filter input \
+        | grep -Eq "tcp dport ${BOOTSTRAP_SSH_PORT}([[:space:]]|$)"; then
+        die "Final firewall still exposes temporary SSH port ${BOOTSTRAP_SSH_PORT}."
+    fi
 
     install -d -m 0755 "${STATE_DIR}"
     date --utc --iso-8601=seconds > "${FINALIZED_MARKER}"
@@ -395,15 +597,18 @@ finalize() {
     printf 'BOOTSTRAP FINALIZED\n'
     printf '============================================================\n'
     printf 'Administrative SSH:    %s@server:%s\n' \
-        "${ADMIN_USER}" "${SSH_PORT}"
+        "${ADMIN_USER}" "${FINAL_SSH_PORT}"
     printf 'Direct root SSH:       disabled\n'
+    printf 'Temporary SSH port:    closed\n'
+    printf 'UFW:                   absent\n'
     printf 'Firewall:              inet discrete_filter\n'
     printf 'Fail2Ban:              active\n'
     printf 'Git origin:            %s\n' \
         "$(git -C "${REPO_DIR}" remote get-url origin)"
     printf '\n'
     printf 'Keep the current session open while performing two final tests:\n'
-    printf '  1. A new %s SSH session succeeds.\n' "${ADMIN_USER}"
+    printf '  1. A new %s SSH session succeeds on port %s.\n' \
+        "${ADMIN_USER}" "${FINAL_SSH_PORT}"
     printf '  2. A new root SSH session is denied.\n'
 }
 
@@ -427,6 +632,14 @@ status() {
     printf '\nnftables tables:\n'
     nft list tables
 
+    printf '\nUFW:\n'
+    if dpkg-query -W -f='${Status}\n' ufw 2>/dev/null \
+        | grep -qx 'install ok installed'; then
+        printf 'installed\n'
+    else
+        printf 'absent\n'
+    fi
+
     printf '\nFail2Ban:\n'
     if systemctl is-active --quiet fail2ban; then
         fail2ban-client ping
@@ -440,25 +653,27 @@ status() {
 }
 
 usage() {
-    cat <<EOF2
+    cat <<EOF
 Usage:
   ADMIN_USER=serveradmin $0 prepare
   ADMIN_USER=serveradmin $0 finalize
   ADMIN_USER=serveradmin $0 status
 
 prepare:
-  Installs packages, creates the admin account, moves SSH to port ${SSH_PORT},
-  keeps root SSH temporarily enabled, applies nftables and Fail2Ban, and
-  generates a read-only GitHub deploy key.
+  Installs packages, creates the admin account, keeps root SSH on port
+  ${BOOTSTRAP_SSH_PORT}, enables admin SSH on port ${FINAL_SSH_PORT}, removes
+  UFW, activates the Git-managed nftables baseline with both SSH ports,
+  configures Fail2Ban for both temporary SSH ports, and generates a read-only
+  GitHub deploy key.
 
 finalize:
-  Requires a tested admin SSH login and a registered deploy key. It removes
-  temporary root SSH access, applies all final configurations, and verifies
-  the complete baseline.
+  Requires tested root and admin SSH paths plus a registered deploy key.
+  It removes temporary root SSH access and port ${BOOTSTRAP_SSH_PORT}, applies
+  the final Git-managed configuration, and verifies the complete baseline.
 
 status:
-  Displays the effective SSH, nftables, Fail2Ban, Git, and bootstrap state.
-EOF2
+  Displays effective SSH, nftables, UFW, Fail2Ban, Git, and bootstrap state.
+EOF
 }
 
 main() {

@@ -105,3 +105,5 @@ verification succeed.
           git add .github/workflows/clarify-provider-firewall.yml
           git commit -m 'Remove one-time provider firewall workflow'
           git push origin main
+
+# Trigger after the workflow already exists on the default branch.

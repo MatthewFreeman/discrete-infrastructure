@@ -31,7 +31,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          shellcheck \
+          shellcheck -x \
             bootstrap/run-ubuntu-24.04.sh \
             bootstrap/ubuntu-24.04-ipv4.sh \
             install-ubuntu-24.04.sh \

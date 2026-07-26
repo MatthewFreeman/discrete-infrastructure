@@ -482,6 +482,31 @@ During the final state, only TCP `22822` may remain.
 </details>
 
 <details>
+<summary><strong>Fail2Ban IPv6 configuration</strong></summary>
+
+Debian 12's Fail2Ban 1.0.2 package may emit this warning when the global IPv6 policy
+is left implicit:
+
+```text
+WARNING 'allowipv6' not defined in 'Definition'. Using default one: 'auto'
+```
+
+The warning does not indicate a failed jail, but the managed baseline must keep
+configuration tests warning-free. The repository therefore installs a minimal
+`/etc/fail2ban/fail2ban.local` containing:
+
+```ini
+[DEFAULT]
+allowipv6 = auto
+```
+
+This preserves Fail2Ban's default IPv6 auto-detection while making the policy explicit.
+The setting belongs to Fail2Ban's global configuration and must not be placed in
+`jail.local`.
+
+</details>
+
+<details>
 <summary><strong>Fail2Ban nftables initialization</strong></summary>
 
 Fail2Ban normally creates `f2b-table` only after the first ban.

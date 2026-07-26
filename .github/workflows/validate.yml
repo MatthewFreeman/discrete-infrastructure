@@ -62,6 +62,107 @@ jobs:
             scripts/verify.sh \
             2>&1 | tee shellcheck.txt
 
+      - name: Test grouped component application
+        id: component_apply
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            test_root="${RUNNER_TEMP}/component-apply"
+            source_root="${GITHUB_WORKSPACE}/.ci-component-apply"
+            success_root="${test_root}/success"
+            rollback_root="${test_root}/rollback"
+
+            rm -rf "${test_root}" "${source_root}"
+            mkdir -p \
+              "${source_root}" \
+              "${success_root}/targets" \
+              "${success_root}/backups" \
+              "${rollback_root}/targets" \
+              "${rollback_root}/backups"
+
+            printf 'one\n' > "${source_root}/one"
+            printf 'two\n' > "${source_root}/two"
+
+            success_log="${success_root}/commands.log"
+            success_manifest="${success_root}/manifest.tsv"
+            success_output="${success_root}/output.txt"
+
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+              'demo' \
+              '.ci-component-apply/one' \
+              "${success_root}/targets/one" \
+              '0644' \
+              "echo validate >> ${success_log}" \
+              "echo reload >> ${success_log}" \
+              "echo verify >> ${success_log}" \
+              > "${success_manifest}"
+
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+              'demo' \
+              '.ci-component-apply/two' \
+              "${success_root}/targets/two" \
+              '0644' \
+              "echo validate >> ${success_log}" \
+              "echo reload >> ${success_log}" \
+              "echo verify >> ${success_log}" \
+              >> "${success_manifest}"
+
+            sudo env \
+              DISCRETE_MANIFEST="${success_manifest}" \
+              DISCRETE_BACKUP_ROOT="${success_root}/backups" \
+              bash scripts/apply-config.sh all \
+              | tee "${success_output}"
+
+            test "$(grep -c '^validate$' "${success_log}")" -eq 1
+            test "$(grep -c '^reload$' "${success_log}")" -eq 1
+            test "$(grep -c '^verify$' "${success_log}")" -eq 1
+            grep -x 'Applied components: 1' "${success_output}"
+            cmp "${source_root}/one" "${success_root}/targets/one"
+            cmp "${source_root}/two" "${success_root}/targets/two"
+
+            printf 'old-one\n' > "${rollback_root}/targets/one"
+            printf 'old-two\n' > "${rollback_root}/targets/two"
+
+            rollback_manifest="${rollback_root}/manifest.tsv"
+            rollback_output="${rollback_root}/output.txt"
+            rollback_log="${rollback_root}/commands.log"
+
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+              'demo' \
+              '.ci-component-apply/one' \
+              "${rollback_root}/targets/one" \
+              '0644' \
+              'false' \
+              "echo reload >> ${rollback_log}" \
+              'true' \
+              > "${rollback_manifest}"
+
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+              'demo' \
+              '.ci-component-apply/two' \
+              "${rollback_root}/targets/two" \
+              '0644' \
+              'false' \
+              "echo reload >> ${rollback_log}" \
+              'true' \
+              >> "${rollback_manifest}"
+
+            if sudo env \
+              DISCRETE_MANIFEST="${rollback_manifest}" \
+              DISCRETE_BACKUP_ROOT="${rollback_root}/backups" \
+              bash scripts/apply-config.sh all \
+              > "${rollback_output}" 2>&1; then
+              echo 'Rollback test unexpectedly succeeded.' >&2
+              exit 1
+            fi
+
+            grep -x 'old-one' "${rollback_root}/targets/one"
+            grep -x 'old-two' "${rollback_root}/targets/two"
+            test ! -e "${rollback_log}"
+            grep -F 'Rolling back component: demo' "${rollback_output}"
+          } 2>&1 | tee component-apply.txt
+
       - name: Validate OpenSSH configuration
         id: openssh
         continue-on-error: true
@@ -117,6 +218,7 @@ jobs:
           path: |
             bash-syntax.txt
             shellcheck.txt
+            component-apply.txt
             openssh.txt
             nftables.txt
             fail2ban.txt
@@ -128,6 +230,7 @@ jobs:
         run: |
           test '${{ steps.bash_syntax.outcome }}' = 'success'
           test '${{ steps.shellcheck.outcome }}' = 'success'
+          test '${{ steps.component_apply.outcome }}' = 'success'
           test '${{ steps.openssh.outcome }}' = 'success'
           test '${{ steps.nftables.outcome }}' = 'success'
           test '${{ steps.fail2ban.outcome }}' = 'success'

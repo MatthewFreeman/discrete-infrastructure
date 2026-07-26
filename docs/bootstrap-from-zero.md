@@ -669,3 +669,5 @@ The verification suite confirms:
 - UFW and residual UFW chains are absent.
 
 </details>
+
+Enjoy!

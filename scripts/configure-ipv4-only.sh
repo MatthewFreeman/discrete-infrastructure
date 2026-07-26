@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+readonly REPO_ROOT
 readonly SOURCE_CONFIG="${REPO_ROOT}/configs/sysctl/99-discrete-ipv4-only.conf"
 readonly TARGET_CONFIG="/etc/sysctl.d/99-discrete-ipv4-only.conf"
 

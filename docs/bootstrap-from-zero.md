@@ -26,6 +26,8 @@ The bootstrap installs and configures:
 - nftables as the only host firewall;
 - removal of UFW and residual UFW tables;
 - Fail2Ban protection;
+- client-only time synchronization through `systemd-timesyncd`;
+- removal of NTP server daemons that listen on UDP `123`;
 - a dedicated read-only GitHub deploy key;
 - Git-managed deployment, rollback, and verification.
 
@@ -53,6 +55,9 @@ Create a new VPS with:
 | TCP | `9331` | Discrete RPC HTTP |
 | TCP | `9332` | Discrete RPC HTTPS |
 | ICMP / ICMPv6 | n/a | Diagnostics and normal IPv6 operation |
+
+Do not add an inbound provider-firewall rule for UDP `123`. The server consumes time from
+remote NTP servers; it does not provide NTP service to other hosts.
 
 Do not remove provider access to TCP `22` yet.
 
@@ -109,15 +114,18 @@ The script will:
 
 1. validate Debian 12;
 2. wait for provider package-manager activity and install required packages;
-3. create `serveradmin`;
-4. ask for a strong password;
-5. add `serveradmin` to `sudo`;
-6. keep root SSH on TCP `22`;
-7. enable admin SSH on TCP `22822`;
-8. activate the temporary two-port nftables policy;
-9. remove UFW and residual UFW tables;
-10. configure Fail2Ban for TCP `22` and TCP `22822`;
-11. generate a dedicated GitHub deploy key.
+3. remove `ntp`, `ntpsec`, `chrony`, and `openntpd` when installed;
+4. install and enable the client-only `systemd-timesyncd` service;
+5. verify that the clock is synchronized and no process listens on UDP `123`;
+6. create `serveradmin`;
+7. ask for a strong password;
+8. add `serveradmin` to `sudo`;
+9. keep root SSH on TCP `22`;
+10. enable admin SSH on TCP `22822`;
+11. activate the temporary two-port nftables policy;
+12. remove UFW and residual UFW tables;
+13. configure Fail2Ban for TCP `22` and TCP `22822`;
+14. generate a dedicated GitHub deploy key.
 
 The bootstrap waits for up to five minutes when provider processes such as
 `unattended-upgrades` hold APT or dpkg locks. Lock-wait or retry messages during
@@ -133,8 +141,13 @@ Administrative user:  serveradmin
 Root SSH login:        temporarily allowed
 UFW:                   removed
 Fail2Ban SSH ports:    22 and 22822
+Time synchronization: systemd-timesyncd client
+UDP 123 listener:      none
 Deploy key ready:      no
 ```
+
+`Deploy key ready` may show `yes` on a supported rerun after the key has already been
+registered.
 
 Do not run `finalize` yet.
 
@@ -265,19 +278,20 @@ serveradmin
 
 The script will:
 
-1. verify that UFW is absent;
-2. verify both temporary SSH firewall rules;
-3. verify the read-only GitHub deploy key;
-4. require confirmation of the admin SSH test;
-5. apply the final SSH configuration on TCP `22822`;
-6. disable direct root SSH;
-7. remove temporary TCP `22` access;
-8. apply the final single-port nftables policy;
-9. apply the final Fail2Ban policy for TCP `22822`;
-10. verify the effective SSH configuration and real kernel listeners;
-11. remove any recreated UFW tables;
-12. run the complete final-state verification;
-13. write the finalized-state marker only after every check passes.
+1. revalidate client-only time synchronization;
+2. verify that UFW is absent;
+3. verify both temporary SSH firewall rules;
+4. verify the read-only GitHub deploy key;
+5. require confirmation of the admin SSH test;
+6. apply the final SSH configuration on TCP `22822`;
+7. disable direct root SSH;
+8. remove temporary TCP `22` access;
+9. apply the final single-port nftables policy;
+10. apply the final Fail2Ban policy for TCP `22822`;
+11. verify the effective SSH configuration and real kernel listeners;
+12. remove any recreated UFW tables;
+13. run the complete final-state verification;
+14. write the finalized-state marker only after every check passes.
 
 Expected final banner:
 
@@ -290,6 +304,8 @@ Temporary SSH port:    closed
 UFW:                   absent
 Firewall:              inet discrete_filter
 Fail2Ban:              active
+Time synchronization: systemd-timesyncd client
+UDP 123 listener:      none
 Git origin:            git@github-discrete:MatthewFreeman/discrete-infrastructure.git
 ```
 
@@ -365,6 +381,7 @@ SSH final-state verification passed.
 UFW is absent and no legacy UFW tables remain.
 nftables final-state verification passed.
 Fail2Ban final-state verification passed.
+Time synchronization final-state verification passed.
 Complete final-state verification passed.
 ```
 
@@ -394,15 +411,16 @@ no table ip6 filter
 
 UFW: absent
 Server replied: pong
+systemd-timesyncd: active
+NTP synchronized: yes
+no listener: UDP 123
 ```
 
 ---
 
 ## 10. Audit all listening ports
 
-The final verification checks the required SSH and firewall state, but it does not inventory
-every process that may have opened an additional TCP or UDP socket. Run the complete local
-port audit:
+Run the complete local port audit:
 
 ```bash
 cd /opt/discrete-infrastructure
@@ -421,7 +439,9 @@ For the clean baseline before Discrete services are installed:
 
 - the only public TCP listener should be `sshd` on TCP `22822`;
 - there must be no public TCP listener on TCP `22`;
-- there should be no unexpected public UDP listeners;
+- there must be no UDP listener on port `123`;
+- a provider DHCP client may listen on UDP `68`; this is expected and must not be removed
+  without first proving that the VPS uses static network configuration;
 - nftables intentionally allows TCP `22822`, `9330`, `9331`, and `9332`;
 - TCP `9330` through `9332` may be allowed by nftables without a listening process until
   the Discrete services are installed.
@@ -447,7 +467,11 @@ On the server:
 cd /opt/discrete-infrastructure
 git pull --ff-only
 ./install.sh
+./scripts/audit-ports.sh
 ```
+
+`./install.sh` reconciles client-only time synchronization before applying managed
+configuration and running the complete verification suite.
 
 Never edit Git-managed files directly under `/etc`, except during emergency recovery.
 
@@ -466,9 +490,7 @@ The finalized-state marker is not written unless all final checks pass.
 
 # Implementation notes
 
-These details explain why the scripts contain several checks that may otherwise
-look unnecessarily defensive. Linux administrators call this “experience.”
-Everyone else calls it “why is this script 700 lines?”
+These details explain why the scripts contain several defensive checks.
 
 <details>
 <summary><strong>APT and dpkg lock handling</strong></summary>
@@ -477,6 +499,23 @@ Provider images may start `apt-daily` or `unattended-upgrades` immediately after
 The bootstrap entrypoint wraps `apt-get`, waits up to five minutes for dpkg locks, and
 retries lock-related APT failures. It does not kill package-manager processes and does
 not delete lock files.
+
+</details>
+
+<details>
+<summary><strong>Client-only time synchronization</strong></summary>
+
+Some provider Debian images install `ntpsec`. Its `ntpd` process synchronizes the local
+clock but also binds UDP `123` on wildcard and interface addresses because the same daemon
+can provide NTP service to other hosts.
+
+The Discrete baseline does not operate an NTP server. It removes `ntp`, `ntpsec`, `chrony`,
+and `openntpd`, installs Debian's `systemd-timesyncd` package, enables the service, waits
+for `NTPSynchronized=yes`, and verifies that no process listens on UDP `123`.
+
+The firewall already drops unsolicited UDP traffic, but firewall blocking is not a reason
+to retain an unnecessary server listener. The service inventory and the firewall policy
+must both match the intended role.
 
 </details>
 
@@ -529,7 +568,7 @@ WARNING 'allowipv6' not defined in 'Definition'. Using default one: 'auto'
 ```
 
 The warning does not indicate a failed jail, but the managed baseline must keep
-configuration tests warning-free. The repository therefore installs a minimal
+configuration tests warning-free. The repository installs a minimal
 `/etc/fail2ban/fail2ban.local` containing:
 
 ```ini
@@ -579,6 +618,8 @@ The verification suite confirms:
 - `sshd` does not listen on TCP `22`;
 - nftables allows TCP `22822` and does not allow TCP `22`;
 - Fail2Ban protects TCP `22822` and does not target TCP `22`;
+- `systemd-timesyncd` is active and the clock reports synchronized;
+- no process listens on UDP `123`;
 - neither `table ip filter` nor `table ip6 filter` exists;
 - no UFW chains remain anywhere in the nftables ruleset.
 

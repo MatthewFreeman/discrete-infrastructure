@@ -19,7 +19,8 @@ if [[ ! -f "${MANIFEST}" ]]; then
 fi
 
 readonly REQUESTED_COMPONENT="${1:-all}"
-readonly TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+readonly TIMESTAMP
 readonly BACKUP_DIR="${BACKUP_ROOT}/${TIMESTAMP}"
 
 mkdir -p "${BACKUP_DIR}"

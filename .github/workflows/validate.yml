@@ -58,9 +58,58 @@ jobs:
             scripts/audit-ports.sh \
             scripts/configure-ipv4-only.sh \
             scripts/configure-time-sync.sh \
+            scripts/check-ipv6-listeners.sh \
             scripts/restart-fail2ban.sh \
             scripts/verify.sh \
             2>&1 | tee shellcheck.txt
+
+      - name: Test IPv6 listener migration classification
+        id: ipv6_listener_migration
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            fixture_root="${RUNNER_TEMP}/ipv6-listener-fixtures"
+            mkdir -p "${fixture_root}"
+
+            : > "${fixture_root}/empty"
+            printf '%s\n' \
+              'tcp LISTEN 0 128 [::1]:6010 [::]:* users:(("sshd",pid=943,fd=5))' \
+              > "${fixture_root}/x11-loopback"
+            printf '%s\n' \
+              'tcp LISTEN 0 128 [::]:6010 [::]:* users:(("sshd",pid=943,fd=5))' \
+              > "${fixture_root}/x11-wildcard"
+            printf '%s\n' \
+              'udp UNCONN 0 0 [::1]:123 [::]:* users:(("ntpd",pid=804,fd=16))' \
+              > "${fixture_root}/udp-loopback"
+            printf '%s\n' \
+              'tcp LISTEN 0 128 [::1]:6010 [::]:* users:(("other",pid=100,fd=5))' \
+              > "${fixture_root}/non-sshd"
+
+            test "$(
+              DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/empty" \
+                bash scripts/check-ipv6-listeners.sh prepare
+            )" = 'none'
+
+            test "$(
+              DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/x11-loopback" \
+                bash scripts/check-ipv6-listeners.sh prepare
+            )" = 'transient-x11'
+
+            if DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/x11-loopback" \
+              bash scripts/check-ipv6-listeners.sh strict; then
+              echo 'Strict mode accepted an IPv6 X11 listener.' >&2
+              exit 1
+            fi
+
+            for fixture in x11-wildcard udp-loopback non-sshd; do
+              if DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/${fixture}" \
+                bash scripts/check-ipv6-listeners.sh prepare; then
+                echo "Prepare mode accepted forbidden fixture: ${fixture}" >&2
+                exit 1
+              fi
+            done
+          } 2>&1 | tee ipv6-listener-migration.txt
 
       - name: Test grouped component application
         id: component_apply
@@ -219,6 +268,7 @@ jobs:
             bash-syntax.txt
             shellcheck.txt
             component-apply.txt
+            ipv6-listener-migration.txt
             openssh.txt
             nftables.txt
             fail2ban.txt
@@ -231,6 +281,7 @@ jobs:
           test '${{ steps.bash_syntax.outcome }}' = 'success'
           test '${{ steps.shellcheck.outcome }}' = 'success'
           test '${{ steps.component_apply.outcome }}' = 'success'
+          test '${{ steps.ipv6_listener_migration.outcome }}' = 'success'
           test '${{ steps.openssh.outcome }}' = 'success'
           test '${{ steps.nftables.outcome }}' = 'success'
           test '${{ steps.fail2ban.outcome }}' = 'success'

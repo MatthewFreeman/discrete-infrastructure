@@ -21,6 +21,7 @@ readonly FAIL2BAN_FAMILY="ip"
 readonly FAIL2BAN_TABLE="f2b-table"
 
 ADMIN_USER="${ADMIN_USER:-serveradmin}"
+PREPARE_IPV6_LISTENER_STATE="none"
 
 log() {
     printf '\n==> %s\n' "$*"
@@ -135,13 +136,13 @@ wait_for_ipv4_listener_absent() {
 }
 
 verify_no_ipv6_listener() {
-    local listeners
+    bash "${REPO_DIR}/scripts/check-ipv6-listeners.sh" strict >/dev/null
+}
 
-    listeners="$(ss -6 -H -lntup 2>/dev/null || true)"
-    if [[ -n "${listeners}" ]]; then
-        printf 'Unexpected IPv6 listeners:\n%s\n' "${listeners}" >&2
-        return 1
-    fi
+verify_prepare_ipv6_listener_state() {
+    PREPARE_IPV6_LISTENER_STATE="$(
+        bash "${REPO_DIR}/scripts/check-ipv6-listeners.sh" prepare
+    )" || return 1
 }
 
 ensure_admin_user() {
@@ -218,8 +219,8 @@ EOF
         || die "sshd is not listening on IPv4 bootstrap port ${BOOTSTRAP_SSH_PORT}."
     wait_for_ipv4_sshd_listener "${FINAL_SSH_PORT}" \
         || die "sshd is not listening on IPv4 final port ${FINAL_SSH_PORT}."
-    verify_no_ipv6_listener \
-        || die "OpenSSH still exposes an IPv6 listener."
+    verify_prepare_ipv6_listener_state \
+        || die "OpenSSH exposes an IPv6 listener that is not a transient loopback X11 proxy."
 }
 
 build_bootstrap_nftables_config() {
@@ -607,7 +608,13 @@ prepare() {
     printf '\n============================================================\n'
     printf 'PREPARE PHASE COMPLETE\n'
     printf '============================================================\n'
-    print_network_banner
+    printf 'Network stack:          IPv4 only\n'
+    printf 'IPv6 addresses/routes: none\n'
+    if [[ "${PREPARE_IPV6_LISTENER_STATE}" == "transient-x11" ]]; then
+        printf 'IPv6 listeners:        transient loopback X11; close original session before finalize\n'
+    else
+        printf 'IPv6 listeners:        none\n'
+    fi
     printf 'SSH ports:             %s and %s\n' \
         "${BOOTSTRAP_SSH_PORT}" "${FINAL_SSH_PORT}"
     printf 'Administrative user:  %s\n' "${ADMIN_USER}"

@@ -34,6 +34,8 @@ systemctl disable --now ssh.socket >/dev/null 2>&1 || true
 systemctl enable --now ssh.service
 
 bash "${REPO_ROOT}/scripts/configure-ipv4-only.sh"
+UBUNTU_IPV4_SERVICE_START_NOW=1 \
+    bash "${REPO_ROOT}/bootstrap/install-ubuntu-ipv4-reassertion.sh"
 bash "${REPO_ROOT}/scripts/configure-time-sync.sh"
 "${REPO_ROOT}/scripts/apply-config.sh" all
 "${REPO_ROOT}/scripts/verify.sh" all

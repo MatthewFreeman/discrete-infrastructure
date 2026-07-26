@@ -270,3 +270,7 @@ The bootstrap runs with set -Eeuo pipefail. Service-output checks must notuse gr
 Implementation note: SSH listener cutover
 
 systemctl reload ssh may return before sshd has reopened every configuredlistening socket. The bootstrap therefore polls the kernel listener table forup to 10 seconds before declaring either TCP 22 or TCP 22822 unavailable.On failure it prints the active listeners and recent SSH service logs.
+
+Implementation note: verifying Fail2Ban ports
+
+Fail2Ban 1.0.2 does not provide a get <JAIL> port client command. During thetwo-port bootstrap phase, the script verifies the active nftables actioninstead: the f2b-table rule for addr-set-sshd must include both TCP 22and TCP 22822. This checks the firewall state actually enforcing bans,rather than merely rereading the source configuration.

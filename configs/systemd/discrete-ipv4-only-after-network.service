@@ -1,0 +1,13 @@
+[Unit]
+Description=Reassert Discrete IPv4-only policy after network configuration
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/discrete-infrastructure/scripts/configure-ipv4-only.sh
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/discrete-infrastructure/scripts/configure-ipv4-only.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

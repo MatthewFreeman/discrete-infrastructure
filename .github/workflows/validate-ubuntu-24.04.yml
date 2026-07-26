@@ -24,6 +24,7 @@ jobs:
         run: |
           bash -n bootstrap/run-ubuntu-24.04.sh
           bash -n bootstrap/ubuntu-24.04-ipv4.sh
+          bash -n bootstrap/install-ubuntu-ipv4-reassertion.sh
           bash -n install-ubuntu-24.04.sh
 
       - name: Run ShellCheck on Ubuntu entrypoints
@@ -34,6 +35,7 @@ jobs:
           shellcheck -x \
             bootstrap/run-ubuntu-24.04.sh \
             bootstrap/ubuntu-24.04-ipv4.sh \
+            bootstrap/install-ubuntu-ipv4-reassertion.sh \
             install-ubuntu-24.04.sh \
             2>&1 | tee shellcheck-ubuntu.txt
 
@@ -107,6 +109,25 @@ jobs:
 
           grep -F 'Ubuntu finalize preflight found active IPv6 listeners.' "${blocked_output}"
           grep -F 'Temporary SSH access was not changed.' "${blocked_output}"
+
+      - name: Validate Ubuntu reboot persistence contract
+        run: |
+          test -x install-ubuntu-24.04.sh
+          test -f configs/systemd/discrete-ipv4-only-after-network.service
+          test -f bootstrap/install-ubuntu-ipv4-reassertion.sh
+
+          grep -F 'After=network-online.target' \
+            configs/systemd/discrete-ipv4-only-after-network.service
+          grep -F 'ExecStart=/bin/bash /opt/discrete-infrastructure/scripts/configure-ipv4-only.sh' \
+            configs/systemd/discrete-ipv4-only-after-network.service
+          grep -F 'WantedBy=multi-user.target' \
+            configs/systemd/discrete-ipv4-only-after-network.service
+          grep -F 'install-ubuntu-ipv4-reassertion.sh' \
+            bootstrap/run-ubuntu-24.04.sh
+          grep -F 'UBUNTU_IPV4_SERVICE_START_NOW=1' \
+            install-ubuntu-24.04.sh
+          grep -F 'systemctl enable "${UNIT_NAME}"' \
+            bootstrap/install-ubuntu-ipv4-reassertion.sh
 
       - name: Validate platform file separation
         run: |

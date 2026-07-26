@@ -37,8 +37,6 @@ printf '\nIPv4 UDP listening sockets:\n'
 printf '%s\n' '---------------------------'
 print_or_none "${ipv4_udp}"
 
-printf '\nIPv6 interface flags:\n'
-printf '%s\n' '---------------------'
 shopt -s nullglob
 flags=(/proc/sys/net/ipv6/conf/*/disable_ipv6)
 shopt -u nullglob
@@ -46,10 +44,12 @@ shopt -u nullglob
 
 for flag in "${flags[@]}"; do
     value="$(cat "${flag}")"
-    printf '%-18s %s\n' "$(basename "$(dirname "${flag}")")" "${value}"
+    interface="$(basename "$(dirname "${flag}")")"
     [[ "${value}" == "1" ]] \
-        || fail "IPv6 is enabled by ${flag}: ${value}"
+        || fail "IPv6 is enabled on ${interface}: ${flag}=${value}"
 done
+
+printf '\nIPv6 interface policy: all current and future interfaces disabled\n'
 
 printf '\nIPv6 addresses:\n'
 printf '%s\n' '---------------'

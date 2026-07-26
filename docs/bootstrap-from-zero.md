@@ -102,13 +102,13 @@ Do not place the token directly in the clone URL.
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
-  bash bootstrap/debian.sh prepare
+  bash bootstrap/run.sh prepare
 ```
 
 The script will:
 
 1. validate Debian 12;
-2. install required packages;
+2. wait for provider package-manager activity and install required packages;
 3. create `serveradmin`;
 4. ask for a strong password;
 5. add `serveradmin` to `sudo`;
@@ -118,6 +118,10 @@ The script will:
 9. remove UFW and residual UFW tables;
 10. configure Fail2Ban for TCP `22` and TCP `22822`;
 11. generate a dedicated GitHub deploy key.
+
+The bootstrap waits for up to five minutes when provider processes such as
+`unattended-upgrades` hold APT or dpkg locks. Lock-wait or retry messages during
+this period are expected. Do not kill package-manager processes or delete lock files.
 
 Expected final banner:
 
@@ -133,6 +137,25 @@ Deploy key ready:      no
 ```
 
 Do not run `finalize` yet.
+
+### If `prepare` stops before the final banner
+
+Do not continue to the next deployment step.
+
+After the repository implementation has been corrected, update the checkout and rerun
+the same documented phase:
+
+```bash
+cd /opt/discrete-infrastructure
+
+git pull --ff-only
+
+ADMIN_USER=serveradmin \
+  bash bootstrap/run.sh prepare
+```
+
+If GitHub prompts for credentials during `git pull`, use the same temporary credentials
+specified in step 3. Re-running `prepare` before `finalize` is supported.
 
 ---
 
@@ -231,7 +254,7 @@ From the still-open root or administrative session:
 cd /opt/discrete-infrastructure
 
 ADMIN_USER=serveradmin \
-  bash bootstrap/debian.sh finalize
+  bash bootstrap/run.sh finalize
 ```
 
 When prompted, type:
@@ -349,7 +372,7 @@ Inspect the recorded state:
 
 ```bash
 ADMIN_USER=serveradmin \
-  bash bootstrap/debian.sh status
+  bash bootstrap/run.sh status
 ```
 
 Expected important state:
@@ -411,6 +434,16 @@ look unnecessarily defensive. Linux administrators call this “experience.”
 Everyone else calls it “why is this script 700 lines?”
 
 <details>
+<summary><strong>APT and dpkg lock handling</strong></summary>
+
+Provider images may start `apt-daily` or `unattended-upgrades` immediately after boot.
+The bootstrap entrypoint wraps `apt-get`, waits up to five minutes for dpkg locks, and
+retries lock-related APT failures. It does not kill package-manager processes and does
+not delete lock files.
+
+</details>
+
+<details>
 <summary><strong>pipefail and service checks</strong></summary>
 
 The bootstrap uses:
@@ -444,7 +477,6 @@ Fail2Ban 1.0.2 does not provide a direct `get <jail> port` client command.
 
 During `prepare`, the bootstrap verifies the active nftables rule instead. The
 `f2b-table` rule for `addr-set-sshd` must contain both TCP `22` and TCP `22822`.
-
 During the final state, only TCP `22822` may remain.
 
 </details>

@@ -3,12 +3,25 @@ set -Eeuo pipefail
 
 readonly MAX_ATTEMPTS=20
 readonly SLEEP_SECONDS=0.5
+readonly TABLE="f2b-table"
 
 echo "Enabling Fail2Ban..."
 systemctl enable fail2ban >/dev/null
 
-echo "Restarting Fail2Ban..."
-systemctl restart fail2ban
+echo "Stopping Fail2Ban..."
+systemctl stop fail2ban
+
+# Remove only Fail2Ban's dedicated table. This guarantees a clean migration
+# from the previous inet family to the IPv4-only ip family, even after an
+# interrupted or failed daemon shutdown.
+for family in ip inet ip6; do
+    if nft list table "${family}" "${TABLE}" >/dev/null 2>&1; then
+        nft delete table "${family}" "${TABLE}"
+    fi
+done
+
+echo "Starting Fail2Ban..."
+systemctl start fail2ban
 
 echo "Waiting for the Fail2Ban control socket..."
 

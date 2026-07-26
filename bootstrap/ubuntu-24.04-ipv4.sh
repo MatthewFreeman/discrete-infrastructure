@@ -158,6 +158,29 @@ EOF
         || die "OpenSSH exposes an IPv6 listener that is not a transient loopback X11 proxy."
 }
 
+confirm_admin_ssh_test() {
+    if ! verify_no_ipv6_listener; then
+        printf '\nERROR: Ubuntu finalize preflight found active IPv6 listeners.\n' >&2
+        ss -6 -H -lntup >&2 || true
+        die "Close the original SSH/X11 session, verify that 'ss -6 -H -lntup' prints nothing, then rerun finalize. Temporary SSH access was not changed."
+    fi
+
+    if [[ "${ADMIN_SSH_CONFIRMED:-0}" == "1" ]]; then
+        return
+    fi
+
+    local confirmation
+
+    printf '\nBefore finalizing, confirm that a NEW IPv4 SSH session works:\n'
+    printf '  user: %s\n' "${ADMIN_USER}"
+    printf '  port: %s\n' "${FINAL_SSH_PORT}"
+    printf 'and that "sudo -i" reaches root.\n\n'
+
+    read -r -p "Type '${ADMIN_USER}' to confirm that test: " confirmation
+    [[ "${confirmation}" == "${ADMIN_USER}" ]] \
+        || die "Administrative IPv4 SSH test was not confirmed."
+}
+
 prepare() {
     [[ ! -e "${FINALIZED_MARKER}" ]] \
         || die "Bootstrap is already finalized. Use '$0 status'."

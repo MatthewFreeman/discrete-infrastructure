@@ -86,6 +86,28 @@ jobs:
           grep -F 'ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>' \
             docs/bootstrap-ubuntu-24.04-from-zero.md
 
+      - name: Validate Ubuntu finalize IPv6 preflight
+        run: |
+          bash -c '
+            source bootstrap/ubuntu-24.04-ipv4.sh
+            verify_no_ipv6_listener() { return 0; }
+            ADMIN_SSH_CONFIRMED=1 confirm_admin_ssh_test
+          '
+
+          blocked_output="${RUNNER_TEMP}/ubuntu-finalize-preflight.txt"
+          if bash -c '
+            source bootstrap/ubuntu-24.04-ipv4.sh
+            verify_no_ipv6_listener() { return 1; }
+            ss() { printf "%s\n" "tcp LISTEN 0 128 [::1]:6010 [::]:* users:((\"sshd\",pid=1222,fd=5))"; }
+            ADMIN_SSH_CONFIRMED=1 confirm_admin_ssh_test
+          ' >"${blocked_output}" 2>&1; then
+            echo 'Ubuntu finalize preflight accepted an IPv6 listener.' >&2
+            exit 1
+          fi
+
+          grep -F 'Ubuntu finalize preflight found active IPv6 listeners.' "${blocked_output}"
+          grep -F 'Temporary SSH access was not changed.' "${blocked_output}"
+
       - name: Validate platform file separation
         run: |
           grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh

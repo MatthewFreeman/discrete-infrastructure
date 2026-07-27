@@ -56,6 +56,10 @@ jobs:
 
       - name: Commit migration result
         run: |
+          # The GitHub Actions token has contents:write but not workflows:write.
+          # Add the permanent validation workflow separately through the GitHub app.
+          rm -f .github/workflows/validate-public-access.yml
+
           if git diff --quiet && git diff --cached --quiet; then
             echo 'Migration produced no changes.'
             exit 0

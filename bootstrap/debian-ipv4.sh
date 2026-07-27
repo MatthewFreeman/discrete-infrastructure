@@ -642,6 +642,8 @@ finalize() {
         "$(git -C "${REPO_DIR}" remote get-url origin)"
 }
 
+STATUS_FAILURES=0
+
 status_report_line() {
     local state="$1"
     local label="$2"
@@ -654,7 +656,9 @@ status_print_diagnostics() {
     local line
 
     while IFS= read -r line; do
-        [[ -n "${line}" ]] && printf '         %s\n' "${line}"
+        if [[ -n "${line}" ]]; then
+            printf '         %s\n' "${line}"
+        fi
     done <<<"${output}"
 }
 
@@ -670,14 +674,15 @@ status_check() {
 
     status_report_line FAIL "${label}"
     status_print_diagnostics "${output}"
-    return 1
+    STATUS_FAILURES=$((STATUS_FAILURES + 1))
+    return 0
 }
 
 status() {
-    local failures=0
     local origin
     local git_state
 
+    STATUS_FAILURES=0
     origin="$(git -C "${REPO_DIR}" remote get-url origin 2>/dev/null || echo unavailable)"
 
     printf '============================================================\n'
@@ -693,7 +698,7 @@ status() {
             "Bootstrap finalized at $(cat "${FINALIZED_MARKER}")"
     else
         status_report_line FAIL 'Bootstrap finalized marker'
-        failures=$((failures + 1))
+        STATUS_FAILURES=$((STATUS_FAILURES + 1))
     fi
 
     case "${origin}" in
@@ -702,7 +707,7 @@ status() {
             ;;
         *)
             status_report_line FAIL "Canonical public Git origin (${origin})"
-            failures=$((failures + 1))
+            STATUS_FAILURES=$((STATUS_FAILURES + 1))
             ;;
     esac
 
@@ -711,19 +716,14 @@ status() {
         status_report_line PASS "Administrative user ${ADMIN_USER} with sudo access"
     else
         status_report_line FAIL "Administrative user ${ADMIN_USER} with sudo access"
-        failures=$((failures + 1))
+        STATUS_FAILURES=$((STATUS_FAILURES + 1))
     fi
 
-    status_check 'IPv4-only network state' ipv4 \
-        || failures=$((failures + 1))
-    status_check 'SSH configuration and listeners' ssh \
-        || failures=$((failures + 1))
-    status_check 'nftables firewall and UFW removal' nftables \
-        || failures=$((failures + 1))
-    status_check 'Fail2Ban configuration' fail2ban \
-        || failures=$((failures + 1))
-    status_check 'Time synchronization and UDP 123' timesync \
-        || failures=$((failures + 1))
+    status_check 'IPv4-only network state' ipv4
+    status_check 'SSH configuration and listeners' ssh
+    status_check 'nftables firewall and UFW removal' nftables
+    status_check 'Fail2Ban configuration' fail2ban
+    status_check 'Time synchronization and UDP 123' timesync
 
     git_state="$(git -C "${REPO_DIR}" status --short)"
     if [[ -z "${git_state}" ]]; then
@@ -731,16 +731,16 @@ status() {
     else
         status_report_line FAIL 'Git working tree clean'
         status_print_diagnostics "${git_state}"
-        failures=$((failures + 1))
+        STATUS_FAILURES=$((STATUS_FAILURES + 1))
     fi
 
     printf '\n'
-    if (( failures == 0 )); then
+    if (( STATUS_FAILURES == 0 )); then
         printf 'Overall status: PASS\n'
         return 0
     fi
 
-    printf 'Overall status: FAIL (%s failed check(s))\n' "${failures}"
+    printf 'Overall status: FAIL (%s failed check(s))\n' "${STATUS_FAILURES}"
     return 1
 }
 

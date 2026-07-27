@@ -6,9 +6,9 @@ The finished host is intentionally IPv4-only. Discrete services use TCP only.
 > **Important**
 >
 > Keep the original root SSH session open until fresh root and `serveradmin` IPv4 sessions have
-> been tested. If `prepare` reports a transient X11 listener from the original session, close that
-> original session before `finalize` and continue from the fresh administrative session.
-> Use the VPS IPv4 address for every access test.
+> been tested. Then close both root sessions and continue from the fresh administrative session,
+> exactly as described in step 6. Closing the original session also removes any transient X11
+> listener reported by `prepare`. Use the VPS IPv4 address for every access test.
 > Do not remove provider access to IPv4 TCP `22` before `finalize` succeeds and a fresh
 > `serveradmin` login on IPv4 TCP `22822` has been tested.
 
@@ -97,7 +97,7 @@ verification succeed.
 Open the first SSH connection **from your local computer**. Do not run an SSH connection command
 inside another VPS shell.
 
-Use the provider-supplied root credentials and these connection settings:
+Use the provider-supplied authentication method and these connection settings:
 
 | Host | Username | TCP port |
 |---|---|---:|
@@ -110,8 +110,8 @@ steps.
 ### MobaXterm or PuTTY
 
 Use the client's **New session** or **Session** window to create an SSH connection with the
-settings in the table. Leave X11 forwarding disabled if the client offers that option, then
-connect with the provider-supplied root password.
+settings in the table. Leave X11 forwarding disabled if the client offers that option. Authenticate
+with the password supplied by the provider, or select the private key used when the VPS was created.
 
 ### OpenSSH from a local terminal
 
@@ -122,7 +122,9 @@ terminal in MobaXterm, and run:
 ssh -4 -p 22 root@<VPS_IPV4>
 ```
 
-Enter the provider-supplied root password when prompted.
+Authenticate with the password supplied by the provider. If the VPS was created with an SSH key,
+use the matching private key instead. On the first connection, SSH may also ask you to confirm the
+server host key; compare its fingerprint with the provider's value when one is available.
 
 Keep the original root terminal open until fresh root and `serveradmin` IPv4 sessions have been
 tested in step 6.
@@ -145,11 +147,7 @@ printf 'ID=%s VERSION_ID=%s VERSION_CODENAME=%s\n' \
   "$ID" "$VERSION_ID" "$VERSION_CODENAME"
 ```
 
-Required output:
-
-```text
-ID=debian VERSION_ID=12 VERSION_CODENAME=bookworm
-```
+Required output: `ID=debian VERSION_ID=12 VERSION_CODENAME=bookworm`.
 
 Install Git and the CA certificate bundle:
 
@@ -182,6 +180,15 @@ ADMIN_USER=serveradmin \
   bash bootstrap/run.sh prepare
 ```
 
+When `serveradmin` is created for the first time, `prepare` pauses and asks for a password:
+
+- at `New password:`, enter a strong password; the terminal deliberately displays no characters
+  while you type;
+- at `Retype new password:`, enter the same password again.
+
+Store this password securely. Step 6 uses it for the fresh `serveradmin` login and the first
+`sudo` check.
+
 The script will:
 
 1. validate Debian 12;
@@ -194,7 +201,7 @@ The script will:
 7. remove `ntp`, `ntpsec`, `chrony`, and `openntpd` when installed;
 8. install and enable client-only `systemd-timesyncd`;
 9. verify that the clock is synchronized and no process listens on UDP `123`;
-10. create `serveradmin` and add it to `sudo`;
+10. create `serveradmin`, set its password interactively when needed, and add it to `sudo`;
 11. keep root SSH on IPv4 TCP `22`;
 12. enable admin SSH on IPv4 TCP `22822`;
 13. activate the temporary IPv4 two-port nftables policy;
@@ -206,31 +213,26 @@ The bootstrap waits for up to five minutes when provider processes such as
 `unattended-upgrades` hold APT or dpkg locks. Lock-wait or retry messages during this
 period are expected. Do not kill package-manager processes or delete lock files.
 
-Expected final banner:
+The final banner must begin with **PREPARE PHASE COMPLETE** and report:
 
-```text
-PREPARE PHASE COMPLETE
+| Field | Required value |
+|---|---|
+| Network stack | `IPv4 only` |
+| IPv6 addresses/routes | `none` |
+| IPv6 listeners | `none` |
+| SSH ports | `22 and 22822` |
+| Administrative user | `serveradmin` |
+| Root SSH login | `temporarily allowed` |
+| Firewall | `ip discrete_filter` |
+| UFW | `removed` |
+| Fail2Ban table | `ip f2b-table` |
+| Fail2Ban SSH ports | `22 and 22822` |
+| Time synchronization | `systemd-timesyncd client` |
+| UDP 123 listener | `none` |
+| Repository access | `public anonymous HTTPS` |
 
-Network stack:          IPv4 only
-IPv6 addresses/routes: none
-IPv6 listeners:        none
-SSH ports:             22 and 22822
-Administrative user:  serveradmin
-Root SSH login:        temporarily allowed
-Firewall:              ip discrete_filter
-UFW:                   removed
-Fail2Ban table:        ip f2b-table
-Fail2Ban SSH ports:    22 and 22822
-Time synchronization: systemd-timesyncd client
-UDP 123 listener:      none
-Repository access:     public anonymous HTTPS
-```
-
-`IPv6 listeners` may instead show:
-
-```text
-IPv6 listeners:        transient loopback X11; close original session before finalize
-```
+`IPv6 listeners` may instead report
+`transient loopback X11; close original session before finalize`.
 
 Look for this line in the final `PREPARE PHASE COMPLETE` banner printed in the original root
 terminal where step 4 ran `bash bootstrap/run.sh prepare`. The fresh login commands in step 6 do
@@ -296,14 +298,27 @@ Enter the VPS IPv4 address literally, not a hostname. Keep both new connections 
 local windows or tabs, and leave X11 forwarding disabled.
 
 - **MobaXterm or PuTTY:** create one new GUI session for each row in the table.
-- **OpenSSH:** open two new local terminals and run one command in each:
+- **OpenSSH:** open two new local terminals. In the fresh root test terminal, run:
 
   ```bash
   ssh -4 -p 22 root@<VPS_IPV4>
+  ```
+
+  In the fresh administrative terminal, run:
+
+  ```bash
   ssh -4 -p 22822 serveradmin@<VPS_IPV4>
   ```
 
-Inside the administrative session:
+Inside the fresh root test session, verify the account:
+
+```bash
+whoami
+```
+
+The result must be `root`.
+
+Inside the fresh administrative session:
 
 ```bash
 whoami
@@ -312,12 +327,9 @@ sudo -i
 whoami
 ```
 
-Expected output:
-
-```text
-serveradmin
-root
-```
+The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. When `sudo -v`
+asks for a password, enter the `serveradmin` password created during step 4. The terminal
+deliberately displays no characters while you type it.
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
@@ -365,11 +377,7 @@ Before running `finalize`, verify the current user:
 whoami
 ```
 
-Expected output:
-
-```text
-root
-```
+The result must be `root`.
 
 If `whoami` prints anything other than `root`, enter a root login shell and verify again:
 
@@ -389,11 +397,7 @@ ADMIN_USER=serveradmin \
   bash bootstrap/run.sh finalize
 ```
 
-When prompted, type:
-
-```text
-serveradmin
-```
+When prompted, type `serveradmin`.
 
 The script will:
 
@@ -412,66 +416,103 @@ The script will:
 13. run the complete final-state verification;
 14. write the finalized-state marker only after every check passes.
 
-Expected final banner:
+The final banner must begin with **BOOTSTRAP FINALIZED** and report:
 
-```text
-BOOTSTRAP FINALIZED
-
-Network stack:          IPv4 only
-IPv6 addresses/routes: none
-IPv6 listeners:        none
-Administrative SSH:    serveradmin@server:22822
-Direct root SSH:       disabled
-Temporary SSH port:    closed
-Firewall:              ip discrete_filter
-UFW:                   absent
-Fail2Ban table:        ip f2b-table
-Fail2Ban:              active
-Time synchronization: systemd-timesyncd client
-UDP 123 listener:      none
-Git origin:            https://github.com/MatthewFreeman/discrete-infrastructure.git
-```
+| Field | Required value |
+|---|---|
+| Network stack | `IPv4 only` |
+| IPv6 addresses/routes | `none` |
+| IPv6 listeners | `none` |
+| Administrative SSH | `serveradmin@server:22822` |
+| Direct root SSH | `disabled` |
+| Temporary SSH port | `closed` |
+| Firewall | `ip discrete_filter` |
+| UFW | `absent` |
+| Fail2Ban table | `ip f2b-table` |
+| Fail2Ban | `active` |
+| Time synchronization | `systemd-timesyncd client` |
+| UDP 123 listener | `none` |
+| Git origin | `https://github.com/MatthewFreeman/discrete-infrastructure.git` |
 
 ---
 
 ## 8. Perform final access tests
 
-Keep the current session open until these tests finish.
+Keep the existing `serveradmin` terminal that ran `finalize` open until a fresh post-finalization
+login has succeeded.
 
-Fresh IPv4 admin login must succeed:
+From your local computer, create one **additional** SSH connection using the same client method
+introduced in step 2:
+
+| Session name used below | Host | Username | TCP port |
+|---|---|---|---:|
+| Fresh post-finalization admin | `<VPS_IPV4>` | `serveradmin` | `22822` |
+
+- **MobaXterm or PuTTY:** create a new GUI session with the settings in the table.
+- **OpenSSH:** open a new local terminal and run:
+
+  ```bash
+  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ```
+
+Inside the fresh post-finalization admin session:
 
 ```bash
-ssh -4 -p 22822 serveradmin@<VPS_IPV4>
-```
-
-Then:
-
-```bash
+whoami
 sudo -i
 whoami
 ```
 
-Expected result: `root`.
+The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. Enter the
+`serveradmin` password from step 4 if `sudo` asks for it.
 
-Direct root SSH must be denied:
+### Confirm that direct root SSH is denied
 
-```bash
-ssh -4 -o ConnectTimeout=5 -p 22822 root@<VPS_IPV4>
-```
+From another new local window or tab, attempt a connection with these settings:
 
-IPv4 TCP `22` must be closed. From PowerShell:
+| Host | Username | TCP port |
+|---|---|---:|
+| `<VPS_IPV4>` | `root` | `22822` |
 
-```powershell
-Test-NetConnection <VPS_IPV4> -Port 22
-Test-NetConnection <VPS_IPV4> -Port 22822
-```
+- **MobaXterm or PuTTY:** create a temporary GUI session with the settings in the table.
+- **OpenSSH:** run this from a new local terminal:
 
-Expected:
+  ```bash
+  ssh -4 -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
+  ```
 
-```text
-TCP 22:     False
-TCP 22822:  True
-```
+The test passes only if no root shell opens. An OpenSSH client should finish with an
+authentication error such as `Permission denied`. A successful root shell is a failed test.
+
+### Confirm that temporary TCP port 22 is closed
+
+From your local computer:
+
+- **MobaXterm or PuTTY:** attempt a temporary SSH session to `<VPS_IPV4>` as `root` on TCP `22`;
+  it must not open a shell.
+- **OpenSSH:** run this from a new local terminal:
+
+  ```bash
+  ssh -4 -o ConnectTimeout=5 -p 22 root@<VPS_IPV4>
+  ```
+
+  The connection must be refused or time out without opening a shell.
+- **PowerShell, optional numeric check:**
+
+  ```powershell
+  Test-NetConnection <VPS_IPV4> -Port 22
+  Test-NetConnection <VPS_IPV4> -Port 22822
+  ```
+
+  `TcpTestSucceeded` must be `False` for TCP `22` and `True` for TCP `22822`.
+
+After all tests succeed:
+
+1. Keep the fresh post-finalization `serveradmin` terminal open; it is already in a root login
+   shell.
+2. Close the older `serveradmin` terminal that ran `finalize` and close the failed root/port-22
+   test windows.
+3. Continue with steps 9 and 10 in the remaining fresh post-finalization terminal.
 
 The root account itself is not deleted or locked. Root remains available through `sudo -i`,
 the provider console or recovery environment, and provider password-reset facilities when
@@ -481,23 +522,32 @@ offered.
 
 ## 9. Run final verification
 
+Continue in the fresh post-finalization `serveradmin` terminal retained at the end of step 8.
+It must still be in a root login shell. Confirm before continuing:
+
+```bash
+whoami
+```
+
+The result must be `root`.
+
+Run the complete verification:
+
 ```bash
 cd /opt/discrete-infrastructure
 
 ./scripts/verify.sh all
 ```
 
-Expected output:
+A successful verification includes all of these messages:
 
-```text
-IPv4-only final-state verification passed.
-SSH final-state verification passed.
-UFW is absent and no legacy UFW tables remain.
-nftables final-state verification passed.
-Fail2Ban final-state verification passed.
-Time synchronization final-state verification passed.
-Complete final-state verification passed.
-```
+- `IPv4-only final-state verification passed.`
+- `SSH final-state verification passed.`
+- `UFW is absent and no legacy UFW tables remain.`
+- `nftables final-state verification passed.`
+- `Fail2Ban final-state verification passed.`
+- `Time synchronization final-state verification passed.`
+- `Complete final-state verification passed.`
 
 Inspect recorded state:
 
@@ -506,39 +556,23 @@ ADMIN_USER=serveradmin \
   bash bootstrap/run.sh status
 ```
 
-Expected important state:
+Review the status output and confirm:
 
-```text
-addressfamily inet
-port 22822
-permitrootlogin no
-passwordauthentication yes
-pubkeyauthentication yes
-
-IPv6 interface flags: all disabled
-IPv6 addresses: none
-IPv6 routes: none
-IPv6 listeners: none
-
-sshd listener: IPv4 TCP 22822
-no sshd listener: TCP 22
-
-table ip discrete_filter
-table ip f2b-table
-no table inet discrete_filter
-no table inet f2b-table
-no table ip6 filter
-
-UFW: absent
-Server replied: pong
-systemd-timesyncd: active
-NTP synchronized: yes
-no listener: UDP 123
-```
+- the SSH configuration contains `addressfamily inet`, only `port 22822`,
+  `permitrootlogin no`, `passwordauthentication yes`, and `pubkeyauthentication yes`;
+- every value under **IPv6 interface flags** is `1`, and the IPv6 address, route, and listener
+  sections are empty;
+- the IPv4 socket list contains an `sshd` listener on TCP `22822` and none on TCP `22`;
+- the nftables table list contains `table ip discrete_filter` and `table ip f2b-table`, with no
+  corresponding `inet`, `ip6`, or legacy UFW table;
+- UFW is `absent`, Fail2Ban reports `Server replied: pong`, `systemd-timesyncd` is active,
+  `NTP synchronized` is `yes`, and no process listens on UDP `123`.
 
 ---
 
 ## 10. Audit all listening ports
+
+Continue in the same verified root shell:
 
 ```bash
 cd /opt/discrete-infrastructure
@@ -565,12 +599,7 @@ For the clean baseline before Discrete services are installed:
 - nftables allows IPv4 TCP `22822`, `9330`, `9331`, and `9332`;
 - TCP `9330` through `9332` may be allowed without listeners until Discrete is installed.
 
-The successful audit ends with:
-
-```text
-IPv4-only verification passed.
-Port audit result: PASS
-```
+The successful audit ends with `IPv4-only verification passed.` and `Port audit result: PASS`.
 
 This local audit does not prove provider-firewall behavior or Internet reachability. Those
 remain provider-specific and require a scan from a separate external host.
@@ -582,7 +611,21 @@ remain provider-specific and require a scan from a separate external host.
 The VPS uses anonymous HTTPS for read-only pulls. Edit and commit managed configuration from
 GitHub or a trusted workstation.
 
-On the server:
+For each future update, open a fresh local SSH connection as `serveradmin` on IPv4 TCP `22822`,
+using the same MobaXterm, PuTTY, or OpenSSH method described in step 2. For OpenSSH:
+
+```bash
+ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+```
+
+Inside the VPS session, enter a root login shell and verify it:
+
+```bash
+sudo -i
+whoami
+```
+
+`whoami` must print `root`. Then update and apply the repository:
 
 ```bash
 cd /opt/discrete-infrastructure
@@ -590,6 +633,9 @@ git pull --ff-only
 ./install.sh
 ./scripts/audit-ports.sh
 ```
+
+Do not run the update commands as the unprivileged `serveradmin` user; the checkout and installer
+are managed by root.
 
 `./install.sh` reconciles IPv4-only networking and client-only time synchronization before
 applying managed configuration and running the complete verification suite.

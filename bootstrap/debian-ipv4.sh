@@ -642,7 +642,109 @@ finalize() {
         "$(git -C "${REPO_DIR}" remote get-url origin)"
 }
 
+STATUS_FAILURES=0
+
+status_report_line() {
+    local state="$1"
+    local label="$2"
+
+    printf '  [%-4s] %s\n' "${state}" "${label}"
+}
+
+status_print_diagnostics() {
+    local output="$1"
+    local line
+
+    while IFS= read -r line; do
+        if [[ -n "${line}" ]]; then
+            printf '         %s\n' "${line}"
+        fi
+    done <<<"${output}"
+}
+
+status_check() {
+    local label="$1"
+    local mode="$2"
+    local output
+
+    if output="$(bash "${REPO_DIR}/scripts/verify.sh" "${mode}" 2>&1)"; then
+        status_report_line PASS "${label}"
+        return 0
+    fi
+
+    status_report_line FAIL "${label}"
+    status_print_diagnostics "${output}"
+    STATUS_FAILURES=$((STATUS_FAILURES + 1))
+    return 0
+}
+
 status() {
+    local origin
+    local git_state
+
+    STATUS_FAILURES=0
+    origin="$(git -C "${REPO_DIR}" remote get-url origin 2>/dev/null || echo unavailable)"
+
+    printf '============================================================\n'
+    printf 'BOOTSTRAP STATUS\n'
+    printf '============================================================\n'
+    printf 'Repository: %s\n' "${REPO_DIR}"
+    printf 'Origin:     %s\n' "${origin}"
+    printf 'Admin user: %s\n' "${ADMIN_USER}"
+    printf '\nChecks:\n'
+
+    if [[ -r "${FINALIZED_MARKER}" ]]; then
+        status_report_line PASS \
+            "Bootstrap finalized at $(cat "${FINALIZED_MARKER}")"
+    else
+        status_report_line FAIL 'Bootstrap finalized marker'
+        STATUS_FAILURES=$((STATUS_FAILURES + 1))
+    fi
+
+    case "${origin}" in
+        https://github.com/MatthewFreeman/discrete-infrastructure|https://github.com/MatthewFreeman/discrete-infrastructure.git)
+            status_report_line PASS 'Canonical public Git origin'
+            ;;
+        *)
+            status_report_line FAIL "Canonical public Git origin (${origin})"
+            STATUS_FAILURES=$((STATUS_FAILURES + 1))
+            ;;
+    esac
+
+    if id -u "${ADMIN_USER}" >/dev/null 2>&1 \
+       && id -nG "${ADMIN_USER}" | tr ' ' '\n' | grep -x sudo >/dev/null; then
+        status_report_line PASS "Administrative user ${ADMIN_USER} with sudo access"
+    else
+        status_report_line FAIL "Administrative user ${ADMIN_USER} with sudo access"
+        STATUS_FAILURES=$((STATUS_FAILURES + 1))
+    fi
+
+    status_check 'IPv4-only network state' ipv4
+    status_check 'SSH configuration and listeners' ssh
+    status_check 'nftables firewall and UFW removal' nftables
+    status_check 'Fail2Ban configuration' fail2ban
+    status_check 'Time synchronization and UDP 123' timesync
+
+    git_state="$(git -C "${REPO_DIR}" status --short)"
+    if [[ -z "${git_state}" ]]; then
+        status_report_line PASS 'Git working tree clean'
+    else
+        status_report_line FAIL 'Git working tree clean'
+        status_print_diagnostics "${git_state}"
+        STATUS_FAILURES=$((STATUS_FAILURES + 1))
+    fi
+
+    printf '\n'
+    if (( STATUS_FAILURES == 0 )); then
+        printf 'Overall status: PASS\n'
+        return 0
+    fi
+
+    printf 'Overall status: FAIL (%s failed check(s))\n' "${STATUS_FAILURES}"
+    return 1
+}
+
+status_verbose() {
     printf 'Repository: %s\n' "${REPO_DIR}"
     printf 'Origin:     %s\n' \
         "$(git -C "${REPO_DIR}" remote get-url origin 2>/dev/null || echo unavailable)"
@@ -702,13 +804,13 @@ status() {
     printf '\nGit working tree:\n'
     git -C "${REPO_DIR}" status --short
 }
-
 usage() {
     cat <<EOF
 Usage:
   ADMIN_USER=serveradmin $0 prepare
   ADMIN_USER=serveradmin $0 finalize
   ADMIN_USER=serveradmin $0 status
+  ADMIN_USER=serveradmin $0 status --verbose
 EOF
 }
 
@@ -726,7 +828,18 @@ main() {
             finalize
             ;;
         status)
-            status
+            case "${2:-}" in
+                '')
+                    status
+                    ;;
+                --verbose)
+                    status_verbose
+                    ;;
+                *)
+                    usage
+                    exit 2
+                    ;;
+            esac
             ;;
         *)
             usage

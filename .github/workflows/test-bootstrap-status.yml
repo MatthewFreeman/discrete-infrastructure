@@ -104,6 +104,47 @@ jobs:
           (( require_root_line < dispatch_line )) \
             || { echo 'Bootstrap checks root only after phase dispatch.' >&2; exit 1; }
 
+      - name: Validate readable bootstrap status contract
+        run: |
+          set -Eeuo pipefail
+
+          bash -n bootstrap/debian-ipv4.sh
+
+          status_section="$(
+            awk '/^status\(\) \{$/,/^}/' bootstrap/debian-ipv4.sh
+          )"
+          verbose_section="$(
+            awk '/^status_verbose\(\) \{$/,/^}/' bootstrap/debian-ipv4.sh
+          )"
+          status_doc="$(
+            awk '/^## 9\. Run final verification$/,/^## 10\./' \
+              docs/bootstrap-from-zero.md
+          )"
+
+          grep -F "status_check 'IPv4-only network state' ipv4" <<<"${status_section}"
+          grep -F "status_check 'SSH configuration and listeners' ssh" <<<"${status_section}"
+          grep -F "status_check 'nftables firewall and UFW removal' nftables" <<<"${status_section}"
+          grep -F "status_check 'Fail2Ban configuration' fail2ban" <<<"${status_section}"
+          grep -F "status_check 'Time synchronization and UDP 123' timesync" <<<"${status_section}"
+          grep -F "printf 'Overall status: PASS\\n'" <<<"${status_section}"
+
+          for raw_heading in \
+            'IPv6 interface flags:' \
+            'SSH effective configuration:' \
+            'IPv4 listening sockets:' \
+            'Fail2Ban:'; do
+            if grep -F "${raw_heading}" <<<"${status_section}"; then
+              echo "Compact status still contains raw section: ${raw_heading}" >&2
+              exit 1
+            fi
+            grep -F "${raw_heading}" <<<"${verbose_section}"
+          done
+
+          grep -F 'status --verbose' bootstrap/debian-ipv4.sh
+          grep -F 'Every row must begin with `[PASS]`' <<<"${status_doc}"
+          grep -F 'Overall status: PASS' <<<"${status_doc}"
+          grep -F 'status --verbose' <<<"${status_doc}"
+
       - name: Validate compact IPv6 audit output
         run: |
           set -Eeuo pipefail

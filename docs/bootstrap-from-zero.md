@@ -528,42 +528,39 @@ whoami
 
 The result must be `root`.
 
-Run the complete verification:
+Run the human-readable final status:
 
 ```bash
 cd /opt/discrete-infrastructure
 
-./scripts/verify.sh all
-```
-
-A successful verification includes all of these messages:
-
-- `IPv4-only final-state verification passed.`
-- `SSH final-state verification passed.`
-- `UFW is absent and no legacy UFW tables remain.`
-- `nftables final-state verification passed.`
-- `Fail2Ban final-state verification passed.`
-- `Time synchronization final-state verification passed.`
-- `Complete final-state verification passed.`
-
-Inspect recorded state:
-
-```bash
 ADMIN_USER=serveradmin \
   bash bootstrap/run.sh status
 ```
 
-Review the status output and confirm:
+The command performs the complete final-state verification and prints one result per category in
+this order:
 
-- the SSH configuration contains `addressfamily inet`, only `port 22822`,
-  `permitrootlogin no`, `passwordauthentication yes`, and `pubkeyauthentication yes`;
-- every value under **IPv6 interface flags** is `1`, and the IPv6 address, route, and listener
-  sections are empty;
-- the IPv4 socket list contains an `sshd` listener on TCP `22822` and none on TCP `22`;
-- the nftables table list contains `table ip discrete_filter` and `table ip f2b-table`, with no
-  corresponding `inet`, `ip6`, or legacy UFW table;
-- UFW is `absent`, Fail2Ban reports `Server replied: pong`, `systemd-timesyncd` is active,
-  `NTP synchronized` is `yes`, and no process listens on UDP `123`.
+1. finalized-state marker;
+2. canonical Git origin;
+3. administrative user and `sudo` access;
+4. IPv4-only network state;
+5. SSH configuration and listeners;
+6. nftables firewall and UFW removal;
+7. Fail2Ban configuration;
+8. time synchronization and UDP `123`;
+9. Git working tree.
+
+Every row must begin with `[PASS]`, and the final line must be `Overall status: PASS`. If a check
+fails, `[FAIL]` appears in the expected position and its diagnostic is printed immediately below
+it. Do not continue until every check passes.
+
+For low-level troubleshooting only, print the original raw socket, service, and configuration
+details:
+
+```bash
+ADMIN_USER=serveradmin \
+  bash bootstrap/run.sh status --verbose
+```
 
 ---
 

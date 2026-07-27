@@ -619,11 +619,12 @@ remain provider-specific and require a scan from a separate external host.
 Repeat this procedure whenever the repository contains an approved infrastructure update.
 
 > [!IMPORTANT]
-> Run the commands in steps 2 through 4 **inside the VPS session**, not in a local PowerShell,
-> Command Prompt, or MobaXterm local terminal. Run the update commands from a root login shell;
+> After establishing the SSH connection, run all remaining commands **inside the VPS session**,
+> not in a local PowerShell, Command Prompt, or MobaXterm local terminal. Run the update commands
+> from a root login shell;
 > do not run them as the unprivileged `serveradmin` user.
 
-### 1. Open a fresh administrative SSH session
+### Open a fresh administrative SSH session
 
 Connect from your local computer using the same SSH client method introduced in step 2:
 
@@ -639,7 +640,7 @@ Connect from your local computer using the same SSH client method introduced in 
   ssh -4 -p 22822 serveradmin@<VPS_IPV4>
   ```
 
-### 2. Enter and verify a root login shell
+### Enter and verify a root login shell
 
 Inside the new VPS session:
 
@@ -650,7 +651,7 @@ whoami
 
 Required result: `root`. Do not continue if `whoami` prints anything else.
 
-### 3. Pull and apply the update
+### Pull and apply the update
 
 From the verified root shell:
 
@@ -663,7 +664,7 @@ git pull --ff-only
 `git pull` must use anonymous read-only HTTPS and must not request a GitHub username, password,
 token, or SSH key. Stop if the pull is not a fast-forward or if the installer reports an error.
 
-### 4. Run the readable port audit
+### Run the readable port audit
 
 After the installer succeeds:
 

@@ -307,10 +307,10 @@ perform these steps in order:
    Expected output from `ss`: none.
 4. Continue to `finalize` from that same fresh `serveradmin` session.
 
-The transient listener would have been an `sshd` X11 listener on `[::1]:6000` through
-`[::1]:6063` attached to the original session. New sessions cannot recreate it because the
-managed temporary SSH configuration already sets `X11Forwarding no`. Do not run `finalize`
-while the original X11-enabled session is still open.
+> **Why this works:** The transient `sshd` X11 listener on `[::1]:6000` through
+> `[::1]:6063` belongs to the original SSH session and disappears when that session closes.
+> New sessions cannot recreate it because the managed SSH configuration sets
+> `X11Forwarding no`.
 
 ---
 

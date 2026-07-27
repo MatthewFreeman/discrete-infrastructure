@@ -281,24 +281,36 @@ root
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
-Return to the final `PREPARE PHASE COMPLETE` banner in the original root terminal used in
-step 4. Only if its `IPv6 listeners:` line reported:
+After both fresh SSH access tests have succeeded, return to the final
+`PREPARE PHASE COMPLETE` banner in the original root terminal that ran `prepare`. Only if its
+`IPv6 listeners:` line reported:
 
 ```text
 IPv6 listeners:        transient loopback X11; close original session before finalize
 ```
 
-keep the fresh `serveradmin` session open, close the original root session, and verify from the
-fresh administrative session:
+perform these steps in order:
 
-```bash
-ss -6 -H -lntup
-```
+1. Keep the fresh `serveradmin` session on IPv4 TCP `22822` open. This is the administrative
+   session that will continue into `finalize`.
+2. Close the **original root session that ran `prepare`**. Do not close the fresh
+   `serveradmin` session. The separate fresh root session on TCP `22` was opened only to test
+   the temporary root access path; it is not the original session and may remain open or be closed.
+3. From the fresh `serveradmin` session, enter a root login shell if necessary and verify that
+   the original session's X11 listener is gone:
 
-Expected output: none. The transient listener would have been an `sshd` X11 listener on
-`[::1]:6000` through `[::1]:6063` attached to the original session. New sessions cannot recreate
-it because the managed temporary SSH configuration already sets `X11Forwarding no`. Do not run
-`finalize` while the original X11-enabled session is still open.
+   ```bash
+   sudo -i
+   ss -6 -H -lntup
+   ```
+
+   Expected output from `ss`: none.
+4. Continue to `finalize` from that same fresh `serveradmin` session.
+
+The transient listener would have been an `sshd` X11 listener on `[::1]:6000` through
+`[::1]:6063` attached to the original session. New sessions cannot recreate it because the
+managed temporary SSH configuration already sets `X11Forwarding no`. Do not run `finalize`
+while the original X11-enabled session is still open.
 
 ---
 

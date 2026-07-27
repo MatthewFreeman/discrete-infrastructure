@@ -22,7 +22,7 @@ The finished host is intentionally IPv4-only. Discrete services use TCP only.
 | Discrete P2P | IPv4 TCP `9330` |
 | Discrete RPC HTTP | IPv4 TCP `9331` |
 | Discrete RPC HTTPS | IPv4 TCP `9332` |
-| Inbound UDP | none |
+| Host firewall inbound UDP | no inbound accept rules |
 | Host firewall | nftables `table ip discrete_filter` |
 | Fail2Ban | nftables `table ip f2b-table` |
 | Time synchronization | client-only `systemd-timesyncd` |
@@ -233,8 +233,8 @@ The final banner must begin with **PREPARE PHASE COMPLETE** and report:
 
 Look for this line in the final `PREPARE PHASE COMPLETE` banner printed in the original root
 terminal where step 4 ran `bash bootstrap/run.sh prepare`. The fresh login commands in step 6 do
-not print this status. If the line appears, note it but do not close the original root session yet.
-Continue to step 6, verify both fresh SSH paths, and then follow the X11 cleanup instructions there.
+not print this status. If the line appears, note it and keep the original root terminal open.
+Step 6 tells you exactly when to close it, after both fresh SSH access paths have been tested.
 
 Do not run `finalize` yet.
 
@@ -255,9 +255,7 @@ ADMIN_USER=serveradmin \
 `git pull` must not prompt for credentials. Re-running `prepare` before `finalize` is supported.
 
 Returning to the shell prompt without the final banner is a failed phase even when no `ERROR:` line
-was printed. Do not continue. A bootstrap helper must never use the expected failure of an absence
-probe, such as checking that a legacy nftables table does not exist, as the helper's final exit
-status.
+was printed. Do not continue.
 
 ---
 
@@ -430,6 +428,29 @@ The final banner must begin with **BOOTSTRAP FINALIZED** and report:
 | Time synchronization | `systemd-timesyncd client` |
 | UDP 123 listener | `none` |
 | Git origin | `https://github.com/MatthewFreeman/discrete-infrastructure.git` |
+
+### If `finalize` stops before the final banner
+
+Keep the current `serveradmin` terminal open. Do not reboot, disconnect, rerun `finalize`, or
+continue to step 8. The phase may already have changed SSH or firewall state, so the correct
+recovery depends on where it stopped.
+
+From the same root shell, collect the detailed status and port-audit output:
+
+```bash
+cd /opt/discrete-infrastructure
+
+ADMIN_USER=serveradmin \
+  bash bootstrap/run.sh status --verbose
+
+./scripts/audit-ports.sh --verbose
+```
+
+The status and audit commands may report failures because finalization is incomplete; that output
+is diagnostic. Save the complete `finalize` output, especially the first `ERROR:` line, together
+with both diagnostic outputs. Use them to correct the repository implementation or obtain
+failure-specific recovery instructions before running `finalize` again. If the SSH connection
+drops, use the provider console or recovery access instead of repeatedly attempting SSH.
 
 ---
 
@@ -688,22 +709,6 @@ Do not close the working administrative session until the update and audit both 
 - Never edit Git-managed files under `/etc` except during emergency recovery.
 - Keep the VPS checkout read-only: future updates must continue to use anonymous HTTPS pulls.
 
-<details>
-<summary><strong>Implementation detail: grouped component updates</strong></summary>
-
-`./install.sh` reconciles IPv4-only networking and client-only time synchronization before
-applying managed configuration and running the complete verification suite.
-
-`configs/manifest.tsv` may contain multiple files for one logical component. The installer
-stages and backs up every file in that component, validates the complete staged configuration,
-reloads the service once, and verifies it once. `Applied components` therefore counts logical
-components rather than manifest rows.
-
-With the current manifest, a normal full update applies three components: `ssh`, `nftables`,
-and `fail2ban`. The two managed Fail2Ban files must produce one Fail2Ban restart, not two.
-
-</details>
-
 ---
 
 # Safety and recovery behavior
@@ -745,6 +750,9 @@ does not permit this exception.
 <details>
 <summary><strong>Grouped component application</strong></summary>
 
+`./install.sh` first reconciles IPv4-only networking and client-only time synchronization. It
+then applies the managed configuration and runs the complete verification suite.
+
 `configs/manifest.tsv` may describe several managed files with the same component name. Those
 rows form one transactional component. The installer backs up and installs all of the component's
 files before validation, executes each distinct validation command once, and requires one shared
@@ -754,6 +762,10 @@ If validation, reload, or verification fails, every target in the component is r
 same backup set. After a reload or verification failure, the installer reloads the restored
 configuration once. This prevents partial multi-file service updates and avoids unnecessary
 restarts such as restarting Fail2Ban separately for `fail2ban.local` and `jail.local`.
+
+`Applied components` counts logical components rather than manifest rows. With the current
+manifest, a normal full update applies three components: `ssh`, `nftables`, and `fail2ban`.
+The two managed Fail2Ban files therefore produce one Fail2Ban restart, not two.
 
 </details>
 
@@ -816,5 +828,3 @@ The verification suite confirms:
 - UFW and residual UFW chains are absent.
 
 </details>
-
-Enjoy!

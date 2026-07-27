@@ -94,8 +94,38 @@ verification succeed.
 
 ## 2. Log in as root over IPv4
 
-Use the provider-supplied root credentials and the public IPv4 address.
-Keep this session open until fresh root and `serveradmin` IPv4 sessions have been tested.
+Open the first SSH connection **from your local computer**. Do not run an SSH connection command
+inside another VPS shell.
+
+Use the provider-supplied root credentials and these connection settings:
+
+| Host | Username | TCP port |
+|---|---|---:|
+| `<VPS_IPV4>` | `root` | `22` |
+
+Enter the public VPS IPv4 address literally, not a hostname. Choose one of the two methods below.
+Whichever method you use, this first connection is called the **original root terminal** in later
+steps.
+
+### MobaXterm or PuTTY
+
+Use the client's **New session** or **Session** window to create an SSH connection with the
+settings in the table. Leave X11 forwarding disabled if the client offers that option, then
+connect with the provider-supplied root password.
+
+### OpenSSH from a local terminal
+
+Open PowerShell, Command Prompt, Windows Terminal, a macOS or Linux terminal, or the local
+terminal in MobaXterm, and run:
+
+```bash
+ssh -4 -p 22 root@<VPS_IPV4>
+```
+
+Enter the provider-supplied root password when prompted.
+
+Keep the original root terminal open until fresh root and `serveradmin` IPv4 sessions have been
+tested in step 6.
 
 Some SSH clients, including MobaXterm configurations, may request X11 forwarding automatically.
 The bootstrap disables X11 forwarding for all new sessions. A loopback-only listener such as
@@ -249,10 +279,11 @@ prompt. Do not continue if anonymous HTTPS access fails.
 
 ## 6. Test both IPv4 SSH access paths
 
-Do not close the original root session.
+Do not close the original root terminal.
 
-Create two additional SSH connections **from your local computer**. Do not run connection
-commands inside the original VPS shell or any other existing VPS session.
+Using the same local SSH client method described in step 2, create two **additional** SSH
+connections from your local computer. Do not run an SSH connection command inside the original
+VPS shell or any other existing VPS session.
 
 Use these connection settings:
 
@@ -264,27 +295,13 @@ Use these connection settings:
 Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate
 local windows or tabs, and leave X11 forwarding disabled.
 
-### MobaXterm or PuTTY
+- **MobaXterm or PuTTY:** create one new GUI session for each row in the table.
+- **OpenSSH:** open two new local terminals and run one command in each:
 
-Use the client's **New session** or **Session** window to create two new SSH sessions with the
-settings in the table. Do not type the OpenSSH commands shown below into an existing VPS terminal.
-
-### OpenSSH from a local terminal
-
-Open two new terminals on your local computer. Suitable terminals include PowerShell, Command
-Prompt, Windows Terminal, a macOS or Linux terminal, and the local terminal in MobaXterm.
-
-In the first new local terminal, test temporary root access:
-
-```bash
-ssh -4 -p 22 root@<VPS_IPV4>
-```
-
-In the second new local terminal, test administrative access:
-
-```bash
-ssh -4 -p 22822 serveradmin@<VPS_IPV4>
-```
+  ```bash
+  ssh -4 -p 22 root@<VPS_IPV4>
+  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ```
 
 Inside the administrative session:
 

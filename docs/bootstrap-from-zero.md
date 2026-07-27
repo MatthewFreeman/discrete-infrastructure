@@ -3,16 +3,13 @@
 This runbook builds the standard Discrete server baseline from a newly created Debian 12 VPS.
 The finished host is intentionally IPv4-only. Discrete services use TCP only.
 
-> **Important**
->
+> [!IMPORTANT]
 > Keep the original root SSH session open until fresh root and `serveradmin` IPv4 sessions have
 > been tested. Then close both root sessions and continue from the fresh administrative session,
 > exactly as described in step 6. Closing the original session also removes any transient X11
 > listener reported by `prepare`. Use the VPS IPv4 address for every access test.
 > Do not remove provider access to IPv4 TCP `22` before `finalize` succeeds and a fresh
 > `serveradmin` login on IPv4 TCP `22822` has been tested.
-
----
 
 ## Final network contract
 

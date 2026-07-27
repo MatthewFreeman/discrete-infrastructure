@@ -28,6 +28,9 @@ jobs:
           fi
 
           grep -F 'verify_public_repository_access()' bootstrap/debian-ipv4.sh
+          grep -F 'Git origin must be the canonical public repository' bootstrap/debian-ipv4.sh
+          grep -F -- '-c credential.helper=' bootstrap/debian-ipv4.sh
+          grep -F -- '-c http.https://github.com/.extraheader=' bootstrap/debian-ipv4.sh
           grep -F 'Repository access:     public anonymous HTTPS' bootstrap/debian-ipv4.sh
           grep -F 'https://github.com/MatthewFreeman/discrete-infrastructure.git' \
             docs/bootstrap-from-zero.md

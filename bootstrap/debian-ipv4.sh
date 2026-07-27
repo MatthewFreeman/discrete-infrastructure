@@ -338,10 +338,18 @@ verify_public_repository_access() {
     origin="$(git -C "${REPO_DIR}" remote get-url origin 2>/dev/null)" \
         || die "Cannot read Git origin."
 
-    [[ "${origin}" =~ ^https://github\.com/[^/]+/[^/]+(\.git)?$ ]] \
-        || die "Git origin must use public GitHub HTTPS: ${origin}"
+    case "${origin}" in
+        https://github.com/MatthewFreeman/discrete-infrastructure|https://github.com/MatthewFreeman/discrete-infrastructure.git)
+            ;;
+        *)
+            die "Git origin must be the canonical public repository: ${origin}"
+            ;;
+    esac
 
-    GIT_TERMINAL_PROMPT=0 git ls-remote "${origin}" HEAD >/dev/null 2>&1 \
+    GIT_TERMINAL_PROMPT=0 git \
+        -c credential.helper= \
+        -c http.https://github.com/.extraheader= \
+        ls-remote "${origin}" HEAD >/dev/null 2>&1 \
         || die "Anonymous HTTPS access to Git origin failed: ${origin}"
 }
 

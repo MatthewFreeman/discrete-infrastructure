@@ -251,13 +251,36 @@ prompt. Do not continue if anonymous HTTPS access fails.
 
 Do not close the original root session.
 
-From a new terminal, test root on temporary IPv4 TCP `22`:
+Create two additional SSH connections **from your local computer**. Do not run connection
+commands inside the original VPS shell or any other existing VPS session.
+
+Use these connection settings:
+
+| Session name used below | Host | Username | TCP port |
+|---|---|---|---:|
+| Fresh root test | `<VPS_IPV4>` | `root` | `22` |
+| Fresh administrative | `<VPS_IPV4>` | `serveradmin` | `22822` |
+
+Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate
+local windows or tabs, and leave X11 forwarding disabled.
+
+### MobaXterm or PuTTY
+
+Use the client's **New session** or **Session** window to create two new SSH sessions with the
+settings in the table. Do not type the OpenSSH commands shown below into an existing VPS terminal.
+
+### OpenSSH from a local terminal
+
+Open two new terminals on your local computer. Suitable terminals include PowerShell, Command
+Prompt, Windows Terminal, a macOS or Linux terminal, and the local terminal in MobaXterm.
+
+In the first new local terminal, test temporary root access:
 
 ```bash
 ssh -4 -p 22 root@<VPS_IPV4>
 ```
 
-From another new terminal, test `serveradmin` on IPv4 TCP `22822`:
+In the second new local terminal, test administrative access:
 
 ```bash
 ssh -4 -p 22822 serveradmin@<VPS_IPV4>
@@ -281,34 +304,34 @@ root
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
-After both fresh SSH access tests have succeeded, return to the final
-`PREPARE PHASE COMPLETE` banner in the original root terminal that ran `prepare`. Only if its
-`IPv6 listeners:` line reported:
+After both fresh SSH access tests have succeeded, three SSH terminals are open:
 
-```text
-IPv6 listeners:        transient loopback X11; close original session before finalize
-```
+1. the **original root terminal** that ran `prepare`;
+2. the **fresh root test terminal** on IPv4 TCP `22`;
+3. the **fresh `serveradmin` terminal** on IPv4 TCP `22822`, currently in a root login shell
+   because `sudo -i` was run above.
 
-perform these steps in order:
+Before continuing, leave only the fresh `serveradmin` terminal open:
 
-1. Keep the fresh `serveradmin` session on IPv4 TCP `22822` open. This is the administrative
-   session that will continue into `finalize`.
-2. Close the **original root session that ran `prepare`**. Do not close the fresh
-   `serveradmin` session. The separate fresh root session on TCP `22` was opened only to test
-   the temporary root access path; it is not the original session and may remain open or be closed.
-3. From the fresh `serveradmin` session, enter a root login shell if necessary and verify that
-   the original session's X11 listener is gone:
+1. Keep the fresh `serveradmin` terminal on TCP `22822` open.
+2. Close the fresh root test terminal on TCP `22`. Its access test is complete.
+3. Close the original root terminal that ran `prepare`. It is now safe to close because both
+   fresh access paths have been tested.
+4. Return to the remaining `serveradmin` terminal and verify its current state:
 
    ```bash
-   sudo -i
+   whoami
    ss -6 -H -lntup
    ```
 
-   Expected output from `ss`: none.
-4. Continue to `finalize` from that same fresh `serveradmin` session.
+   `whoami` must print `root`. The `ss` command must print nothing. If `whoami` does not
+   print `root`, run `sudo -i` and repeat both checks.
 
-> **Why this works:** The transient `sshd` X11 listener on `[::1]:6000` through
-> `[::1]:6063` belongs to the original SSH session and disappears when that session closes.
+Do not continue unless the `serveradmin` terminal remains connected, `whoami` prints `root`,
+and `ss -6 -H -lntup` prints nothing.
+
+> **Why closing the original terminal matters:** If `prepare` reported a transient X11 listener,
+> that listener belongs to the original SSH session and disappears when that session closes.
 > New sessions cannot recreate it because the managed SSH configuration sets
 > `X11Forwarding no`.
 
@@ -316,12 +339,12 @@ perform these steps in order:
 
 ## 7. Run the `finalize` phase
 
-Run `finalize` as root from a fresh IPv4 session.
+Continue in the same fresh `serveradmin` terminal retained at the end of step 6. That terminal
+is already connected over IPv4 TCP `22822`, and step 6 confirmed that it is in a root login shell.
 
-If continuing from the fresh `serveradmin` session, enter a root login shell first:
+Before running `finalize`, verify the current user:
 
 ```bash
-sudo -i
 whoami
 ```
 
@@ -331,11 +354,16 @@ Expected output:
 root
 ```
 
-If `prepare` reported a transient X11 listener, use the fresh `serveradmin` session after closing
-the original root session and confirming in step 6 that no IPv6 listeners remain. Then enter the
-root login shell as shown above.
+If `whoami` prints anything other than `root`, enter a root login shell and verify again:
 
-From the root shell:
+```bash
+sudo -i
+whoami
+```
+
+Do not continue until `whoami` prints `root`.
+
+From the verified root shell:
 
 ```bash
 cd /opt/discrete-infrastructure

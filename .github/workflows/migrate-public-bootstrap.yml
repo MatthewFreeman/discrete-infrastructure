@@ -1,0 +1,48 @@
+name: Migrate bootstrap to public access
+
+on:
+  push:
+    branches:
+      - public/anonymous-bootstrap
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: public/anonymous-bootstrap
+          fetch-depth: 0
+
+      - name: Apply public repository migration
+        run: python3 .github/scripts/migrate-public-bootstrap.py
+
+      - name: Validate generated shell and documentation state
+        run: |
+          bash -n bootstrap/debian-ipv4.sh
+          bash -n bootstrap/ubuntu-24.04-ipv4.sh
+          bash -n bootstrap/run.sh
+          bash -n bootstrap/run-ubuntu-24.04.sh
+
+          test ! -e docs/create-github-access-token.md
+          grep -F 'verify_public_repository_access()' bootstrap/debian-ipv4.sh
+          grep -F 'Repository access:     public anonymous HTTPS' bootstrap/debian-ipv4.sh
+
+      - name: Commit migration result
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo 'Migration produced no changes.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Remove private GitHub bootstrap authentication'
+          git push origin HEAD:public/anonymous-bootstrap

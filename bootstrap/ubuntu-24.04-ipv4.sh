@@ -191,8 +191,7 @@ prepare() {
     write_temporary_ssh_config
     apply_prepare_components
 
-    local deploy_key_ready="no"
-    ensure_deploy_key && deploy_key_ready="yes"
+    verify_public_repository_access
 
     printf '\n============================================================\n'
     printf 'PREPARE PHASE COMPLETE\n'
@@ -222,7 +221,7 @@ prepare() {
         "${BOOTSTRAP_SSH_PORT}" "${FINAL_SSH_PORT}"
     printf 'Time synchronization: systemd-timesyncd client\n'
     printf 'UDP 123 listener:      none\n'
-    printf 'Deploy key ready:      %s\n\n' "${deploy_key_ready}"
+    printf 'Repository access:     public anonymous HTTPS\n\n'
     printf 'Keep the original IPv4 SSH session open.\n'
 }
 

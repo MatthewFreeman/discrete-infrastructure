@@ -150,7 +150,7 @@ Do not continue until the provider image has completed first-boot provisioning s
 
 ---
 
-## 4. Install Git and clone the private repository
+## 4. Install Git and clone the public repository
 
 From the root shell:
 
@@ -159,11 +159,7 @@ apt-get update
 apt-get install -y ca-certificates git
 ```
 
-Create the temporary least-privilege GitHub token described in:
-
-[`create-github-access-token.md`](create-github-access-token.md)
-
-Then clone:
+Clone the public repository anonymously over HTTPS:
 
 ```bash
 git clone \
@@ -173,14 +169,8 @@ git clone \
 cd /opt/discrete-infrastructure
 ```
 
-When GitHub prompts for credentials:
-
-```text
-Username: <your GitHub username>
-Password: <paste the temporary github_pat_ token>
-```
-
-Do not use the GitHub account password and do not embed the token in the clone URL.
+A GitHub account, personal access token, deploy key, username, and password are not required.
+Do not configure a Git credential helper on the VPS.
 
 Confirm the selected operating system before changing the host:
 
@@ -240,7 +230,7 @@ The script will:
 12. install the temporary two-port nftables policy;
 13. remove UFW and residual UFW tables;
 14. configure Fail2Ban for TCP `22` and `22822`;
-15. generate a dedicated read-only GitHub deploy key.
+15. verify anonymous HTTPS access to the public repository.
 
 ### Expected banner for Path A
 
@@ -260,7 +250,7 @@ Fail2Ban table:        ip f2b-table
 Fail2Ban SSH ports:    22 and 22822
 Time synchronization: systemd-timesyncd client
 UDP 123 listener:      none
-Deploy key ready:      no
+Repository access:     public anonymous HTTPS
 ```
 
 ### Expected banner for Path B
@@ -283,10 +273,8 @@ Fail2Ban table:        ip f2b-table
 Fail2Ban SSH ports:    22 and 22822
 Time synchronization: systemd-timesyncd client
 UDP 123 listener:      none
-Deploy key ready:      no
+Repository access:     public anonymous HTTPS
 ```
-
-`Deploy key ready` may show `yes` on a supported rerun after the key was registered.
 
 If `IPv6 listeners` reports a transient loopback X11 listener, keep a fresh `serveradmin` session
 open, close the original session, verify that `ss -6 -H -lntup` prints nothing, and only then run
@@ -335,42 +323,18 @@ Returning to the prompt without the final banner is a failed phase.
 
 ---
 
-## 6. Register the read-only GitHub deploy key
-
-Display the generated public key:
-
-```bash
-cat /root/.ssh/discrete_infrastructure_deploy.pub
-```
-
-In GitHub open:
-
-```text
-Repository
-→ Settings
-→ Deploy keys
-→ Add deploy key
-```
-
-Recommended title:
-
-```text
-<server-name> ubuntu-24.04 discrete infrastructure pull key
-```
-
-Paste the complete `ssh-ed25519` line and leave **Allow write access** disabled.
+## 6. Verify anonymous repository access
 
 Verify from the VPS:
 
 ```bash
-git ls-remote \
-  git@github-discrete:MatthewFreeman/discrete-infrastructure.git \
+GIT_TERMINAL_PROMPT=0 git ls-remote \
+  https://github.com/MatthewFreeman/discrete-infrastructure.git \
   HEAD
 ```
 
-Expected: a commit SHA followed by `HEAD`, with no username or token prompt.
-
-Delete the temporary GitHub token after this succeeds.
+Expected result: a commit SHA followed by `HEAD`, without a username, password, token, or SSH-key
+prompt. Do not continue if anonymous HTTPS access fails.
 
 ---
 
@@ -501,7 +465,7 @@ Fail2Ban table:        ip f2b-table
 Fail2Ban:              active
 Time synchronization: systemd-timesyncd client
 UDP 123 listener:      none
-Git origin:            git@github-discrete:MatthewFreeman/discrete-infrastructure.git
+Git origin:            https://github.com/MatthewFreeman/discrete-infrastructure.git
 ```
 
 Do not close the working session yet.
@@ -689,6 +653,8 @@ Provider-firewall behavior can only be proven by this external test.
 ---
 
 ## 13. Normal future Ubuntu updates
+
+The VPS uses anonymous HTTPS for read-only pulls.
 
 ```bash
 cd /opt/discrete-infrastructure

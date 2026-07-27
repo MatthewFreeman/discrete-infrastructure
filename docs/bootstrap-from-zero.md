@@ -43,7 +43,7 @@ The bootstrap installs and configures:
 - IPv4-only Fail2Ban protection;
 - client-only time synchronization through `systemd-timesyncd`;
 - removal of NTP server daemons that listen on UDP `123`;
-- a dedicated read-only GitHub deploy key;
+- anonymous read-only access to the public GitHub repository over HTTPS;
 - Git-managed deployment, rollback, audit, and verification.
 
 The bootstrap does **not** create the VPS itself. Provider plans, regions, IPv4 addresses,
@@ -105,19 +105,30 @@ The `prepare` phase treats only an existing `sshd` listener on `[::1]:6000` thro
 
 ---
 
-## 3. Install Git and clone the repository
+## 3. Verify Debian 12, install Git, and clone the public repository
+
+Confirm the provider created the requested operating system before changing the host:
+
+```bash
+. /etc/os-release
+printf 'ID=%s VERSION_ID=%s VERSION_CODENAME=%s\n' \
+  "$ID" "$VERSION_ID" "$VERSION_CODENAME"
+```
+
+Required output:
+
+```text
+ID=debian VERSION_ID=12 VERSION_CODENAME=bookworm
+```
+
+Install Git and the CA certificate bundle:
 
 ```bash
 apt-get update
 apt-get install -y ca-certificates git
 ```
 
-The repository is private. Before cloning it, create the temporary least-privilege token described
-in:
-
-[Create the temporary GitHub bootstrap token](create-github-access-token.md)
-
-Then clone the repository:
+Clone the public repository anonymously over HTTPS:
 
 ```bash
 git clone \
@@ -127,15 +138,8 @@ git clone \
 cd /opt/discrete-infrastructure
 ```
 
-When GitHub prompts for credentials, enter:
-
-```text
-Username: <your GitHub username>
-Password: <paste the temporary github_pat_ token>
-```
-
-Do not use the GitHub account password. Do not place the token directly in the clone URL. Delete
-the temporary token after the deploy key verification in step 5 succeeds.
+A GitHub account, personal access token, deploy key, username, and password are not required.
+Do not configure a Git credential helper on the VPS.
 
 ---
 
@@ -166,7 +170,7 @@ The script will:
 13. activate the temporary IPv4 two-port nftables policy;
 14. remove UFW and residual UFW tables;
 15. configure IPv4-only Fail2Ban for TCP `22` and TCP `22822`;
-16. generate a dedicated GitHub deploy key.
+16. verify anonymous HTTPS access to the public repository.
 
 The bootstrap waits for up to five minutes when provider processes such as
 `unattended-upgrades` hold APT or dpkg locks. Lock-wait or retry messages during this
@@ -189,7 +193,7 @@ Fail2Ban table:        ip f2b-table
 Fail2Ban SSH ports:    22 and 22822
 Time synchronization: systemd-timesyncd client
 UDP 123 listener:      none
-Deploy key ready:      no
+Repository access:     public anonymous HTTPS
 ```
 
 `IPv6 listeners` may instead show:
@@ -197,9 +201,6 @@ Deploy key ready:      no
 ```text
 IPv6 listeners:        transient loopback X11; close original session before finalize
 ```
-
-`Deploy key ready` may show `yes` on a supported rerun after the key has already been
-registered.
 
 Do not run `finalize` yet.
 
@@ -217,8 +218,7 @@ ADMIN_USER=serveradmin \
   bash bootstrap/run.sh prepare
 ```
 
-If GitHub prompts for credentials during `git pull`, use the same temporary credentials
-specified in step 3. Re-running `prepare` before `finalize` is supported.
+`git pull` must not prompt for credentials. Re-running `prepare` before `finalize` is supported.
 
 Returning to the shell prompt without the final banner is a failed phase even when no `ERROR:` line
 was printed. Do not continue. A bootstrap helper must never use the expected failure of an absence
@@ -227,42 +227,18 @@ status.
 
 ---
 
-## 5. Register the GitHub deploy key
+## 5. Verify anonymous repository access
 
-Display the public key:
-
-```bash
-cat /root/.ssh/discrete_infrastructure_deploy.pub
-```
-
-Copy the complete line beginning with `ssh-ed25519`.
-
-In GitHub, open:
-
-```text
-Repository
-→ Settings
-→ Deploy keys
-→ Add deploy key
-```
-
-Recommended title:
-
-```text
-<server-name> discrete infrastructure pull key
-```
-
-Paste the public key and leave **Allow write access** disabled.
-
-Verify the deploy key from the VPS:
+Verify that the checkout can read the public repository without credentials:
 
 ```bash
-git ls-remote \
-  git@github-discrete:MatthewFreeman/discrete-infrastructure.git \
+GIT_TERMINAL_PROMPT=0 git ls-remote \
+  https://github.com/MatthewFreeman/discrete-infrastructure.git \
   HEAD
 ```
 
-Expected result: a commit SHA followed by `HEAD`, without a username or token prompt.
+Expected result: a commit SHA followed by `HEAD`, without a username, password, token, or SSH-key
+prompt. Do not continue if anonymous HTTPS access fails.
 
 ---
 
@@ -355,7 +331,7 @@ The script will:
 2. revalidate client-only time synchronization;
 3. verify that UFW is absent;
 4. verify both temporary IPv4 SSH firewall rules;
-5. verify the read-only GitHub deploy key;
+5. verify anonymous HTTPS access to the public repository;
 6. require confirmation of the admin SSH test;
 7. apply final IPv4-only SSH on TCP `22822`;
 8. disable direct root SSH;
@@ -383,7 +359,7 @@ Fail2Ban table:        ip f2b-table
 Fail2Ban:              active
 Time synchronization: systemd-timesyncd client
 UDP 123 listener:      none
-Git origin:            git@github-discrete:MatthewFreeman/discrete-infrastructure.git
+Git origin:            https://github.com/MatthewFreeman/discrete-infrastructure.git
 ```
 
 ---
@@ -533,8 +509,8 @@ remain provider-specific and require a scan from a separate external host.
 
 ## 11. Normal future updates
 
-The VPS deploy key is read-only. Edit and commit managed configuration from GitHub or a
-trusted workstation.
+The VPS uses anonymous HTTPS for read-only pulls. Edit and commit managed configuration from
+GitHub or a trusted workstation.
 
 On the server:
 

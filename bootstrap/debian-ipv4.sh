@@ -10,9 +10,6 @@ readonly REPO_DIR
 readonly STATE_DIR="/var/lib/discrete-infrastructure"
 readonly FINALIZED_MARKER="${STATE_DIR}/bootstrap-finalized"
 readonly TEMP_SSH_CONFIG="/etc/ssh/sshd_config.d/00-discrete-bootstrap.conf"
-readonly DEPLOY_KEY="/root/.ssh/discrete_infrastructure_deploy"
-readonly SSH_CONFIG="/root/.ssh/config"
-readonly SSH_ALIAS="github-discrete"
 readonly BOOTSTRAP_SSH_PORT="22"
 readonly FINAL_SSH_PORT="22822"
 readonly FIREWALL_FAMILY="ip"
@@ -335,92 +332,25 @@ prepare_firewall() {
     log "IPv4 bootstrap firewall is active on TCP ${BOOTSTRAP_SSH_PORT} and ${FINAL_SSH_PORT}"
 }
 
-repository_full_name() {
-    local remote_url
-    local repo_path
+verify_public_repository_access() {
+    local origin
 
-    remote_url="$(git -C "${REPO_DIR}" remote get-url origin)"
+    origin="$(git -C "${REPO_DIR}" remote get-url origin 2>/dev/null)" \
+        || die "Cannot read Git origin."
 
-    if [[ "${remote_url}" =~ ^https://([^/@]+@)?github\.com/(.+)$ ]]; then
-        repo_path="${BASH_REMATCH[2]}"
-    elif [[ "${remote_url}" =~ ^ssh://git@github\.com/(.+)$ ]]; then
-        repo_path="${BASH_REMATCH[1]}"
-    elif [[ "${remote_url}" =~ ^git@[^:]+:(.+)$ ]]; then
-        repo_path="${BASH_REMATCH[1]}"
-    else
-        die "Cannot derive GitHub repository from origin: ${remote_url}"
-    fi
+    case "${origin}" in
+        https://github.com/MatthewFreeman/discrete-infrastructure|https://github.com/MatthewFreeman/discrete-infrastructure.git)
+            ;;
+        *)
+            die "Git origin must be the canonical public repository: ${origin}"
+            ;;
+    esac
 
-    repo_path="${repo_path%.git}"
-    [[ "${repo_path}" == */* ]] || die "Invalid GitHub repository path: ${repo_path}"
-    printf '%s\n' "${repo_path}"
-}
-
-write_deploy_ssh_config() {
-    local temporary_config
-
-    install -d -m 0700 /root/.ssh
-    touch "${SSH_CONFIG}"
-    chmod 0600 "${SSH_CONFIG}"
-    temporary_config="$(mktemp)"
-
-    awk '
-        $0 == "# BEGIN discrete-infrastructure deploy key" { skip = 1; next }
-        $0 == "# END discrete-infrastructure deploy key" { skip = 0; next }
-        !skip { print }
-    ' "${SSH_CONFIG}" > "${temporary_config}"
-
-    cat >> "${temporary_config}" <<EOF
-
-# BEGIN discrete-infrastructure deploy key
-Host ${SSH_ALIAS}
-    HostName github.com
-    User git
-    AddressFamily inet
-    IdentityFile ${DEPLOY_KEY}
-    IdentitiesOnly yes
-    BatchMode yes
-    StrictHostKeyChecking accept-new
-# END discrete-infrastructure deploy key
-EOF
-
-    install -m 0600 "${temporary_config}" "${SSH_CONFIG}"
-    rm -f "${temporary_config}"
-}
-
-ensure_deploy_key() {
-    local repo_name
-    local ssh_remote
-
-    repo_name="$(repository_full_name)"
-    ssh_remote="git@${SSH_ALIAS}:${repo_name}.git"
-
-    install -d -m 0700 /root/.ssh
-
-    if [[ ! -f "${DEPLOY_KEY}" ]]; then
-        log "Generating dedicated GitHub deploy key"
-        ssh-keygen -q -t ed25519 -N "" \
-            -C "discrete-infrastructure-$(hostname)-deploy" \
-            -f "${DEPLOY_KEY}"
-    fi
-
-    chmod 0600 "${DEPLOY_KEY}"
-    chmod 0644 "${DEPLOY_KEY}.pub"
-    write_deploy_ssh_config
-
-    if git ls-remote "${ssh_remote}" HEAD >/dev/null 2>&1; then
-        git -C "${REPO_DIR}" remote set-url origin "${ssh_remote}"
-        log "Read-only GitHub deploy key is working"
-        printf 'Origin: %s\n' "${ssh_remote}"
-        return 0
-    fi
-
-    printf '\nThe deploy key is not registered in GitHub yet.\n'
-    printf 'Add this PUBLIC key as a read-only repository deploy key:\n\n'
-    cat "${DEPLOY_KEY}.pub"
-    printf '\nRepository Settings -> Deploy keys -> Add deploy key\n'
-    printf 'Leave "Allow write access" DISABLED.\n'
-    return 1
+    GIT_TERMINAL_PROMPT=0 git \
+        -c credential.helper= \
+        -c http.https://github.com/.extraheader= \
+        ls-remote "${origin}" HEAD >/dev/null 2>&1 \
+        || die "Anonymous HTTPS access to Git origin failed: ${origin}"
 }
 
 build_bootstrap_fail2ban_config() {
@@ -627,8 +557,7 @@ prepare() {
     write_temporary_ssh_config
     apply_prepare_components
 
-    local deploy_key_ready="no"
-    ensure_deploy_key && deploy_key_ready="yes"
+    verify_public_repository_access
 
     printf '\n============================================================\n'
     printf 'PREPARE PHASE COMPLETE\n'
@@ -651,7 +580,7 @@ prepare() {
         "${BOOTSTRAP_SSH_PORT}" "${FINAL_SSH_PORT}"
     printf 'Time synchronization: systemd-timesyncd client\n'
     printf 'UDP 123 listener:      none\n'
-    printf 'Deploy key ready:      %s\n\n' "${deploy_key_ready}"
+    printf 'Repository access:     public anonymous HTTPS\n\n'
     printf 'Keep the original IPv4 root session open.\n'
 }
 
@@ -675,8 +604,7 @@ finalize() {
         | grep -E "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Temporary firewall does not protect IPv4 TCP ${FINAL_SSH_PORT}."
 
-    ensure_deploy_key \
-        || die "Register the printed deploy key in GitHub, then run finalize again."
+    verify_public_repository_access
     confirm_admin_ssh_test
 
     log "Applying final IPv4-only SSH configuration"

@@ -342,7 +342,28 @@ and `ss -6 -H -lntup` prints nothing.
 Continue in the same fresh `serveradmin` terminal retained at the end of step 6. That terminal
 is already connected over IPv4 TCP `22822`, and step 6 confirmed that it is in a root login shell.
 
-From that root shell:
+Before running `finalize`, verify the current user:
+
+```bash
+whoami
+```
+
+Expected output:
+
+```text
+root
+```
+
+If `whoami` prints anything other than `root`, enter a root login shell and verify again:
+
+```bash
+sudo -i
+whoami
+```
+
+Do not continue until `whoami` prints `root`.
+
+From the verified root shell:
 
 ```bash
 cd /opt/discrete-infrastructure

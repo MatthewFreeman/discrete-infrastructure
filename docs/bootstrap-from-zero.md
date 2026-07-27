@@ -574,26 +574,40 @@ cd /opt/discrete-infrastructure
 ./scripts/audit-ports.sh
 ```
 
-The audit prints:
+The default output is a concise checklist in the same order a human should review it:
 
-- every listening TCP socket and owning process;
-- every listening UDP socket and owning process;
-- IPv6 interface, address, route, and listener state;
-- all active nftables tables;
-- the complete `ip discrete_filter input` chain.
+| Check | Required clean-baseline result |
+|---|---|
+| Public TCP listeners | `sshd` on IPv4 TCP `22822` only |
+| Temporary SSH port | no listener on TCP `22` |
+| NTP server port | no listener on IPv4 UDP `123` |
+| Public UDP listeners | none, or only the provider DHCP exception on UDP `68` |
+| IPv6 interface policy | disabled on every current and future interface scope |
+| IPv6 addresses | none |
+| IPv6 routes | none |
+| IPv6 listeners | none |
+| nftables tables | exactly `table ip discrete_filter` and `table ip f2b-table` |
+| Firewall default policy | `drop` |
+| Firewall TCP allowlist | only `22822`, `9330`, `9331`, and `9332` |
 
-For the clean baseline before Discrete services are installed:
+Every automated check must begin with `[PASS]`. When a provider DHCP client listens on UDP
+`68`, the public-UDP check still passes and an `[INFO]` explanation follows it. A failed check
+begins with `[FAIL]`, prints the relevant diagnostic immediately below it, and makes the command
+exit nonzero.
 
-- the only public TCP listener is `sshd` on IPv4 TCP `22822`;
-- there is no TCP listener on port `22`;
-- there are no IPv6 addresses, routes, or listening sockets;
-- there is no UDP listener on port `123`;
-- a provider DHCP client may listen on IPv4 UDP `68` and must not be removed without proving
-  that the VPS uses static network configuration;
-- nftables allows IPv4 TCP `22822`, `9330`, `9331`, and `9332`;
-- TCP `9330` through `9332` may be allowed without listeners until Discrete is installed.
+The final summary must report all checks passed, followed by `IPv4-only verification passed.`
+and `Port audit result: PASS`. The script now checks the documented baseline itself; do not
+manually search a raw socket or nftables dump when all summary rows pass.
 
-The successful audit ends with `IPv4-only verification passed.` and `Port audit result: PASS`.
+For troubleshooting, append the complete raw socket lists, nftables table list, and
+`ip discrete_filter input` chain:
+
+```bash
+./scripts/audit-ports.sh --verbose
+```
+
+Use `--verbose` after a failed check or when preserving low-level diagnostics. The default
+output deliberately omits those dumps so the pass/fail path remains readable.
 
 This local audit does not prove provider-firewall behavior or Internet reachability. Those
 remain provider-specific and require a scan from a separate external host.

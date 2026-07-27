@@ -145,28 +145,61 @@ jobs:
           grep -F 'Overall status: PASS' <<<"${status_doc}"
           grep -F 'status --verbose' <<<"${status_doc}"
 
-      - name: Validate compact IPv6 audit output
+      - name: Validate readable port audit contract
         run: |
           set -Eeuo pipefail
 
-          bash -n scripts/audit-ports.sh
+          audit_script='scripts/audit-ports.sh'
+          bash -n "${audit_script}"
+
+          for check_label in \
+            'Public TCP listeners' \
+            'Temporary SSH port' \
+            'NTP server port' \
+            'Public UDP listeners' \
+            'IPv6 interface policy' \
+            'IPv6 addresses' \
+            'IPv6 routes' \
+            'IPv6 listeners' \
+            'nftables tables' \
+            'Firewall default policy' \
+            'Firewall TCP allowlist'; do
+            grep -F "\"${check_label}\"" "${audit_script}"
+          done
+
+          grep -F 'fail_check() {' "${audit_script}"
+          grep -F 'failures=$((failures + 1))' "${audit_script}"
+          grep -F 'exit 1' "${audit_script}"
+          grep -F "printf 'Port audit result: PASS\\n'" "${audit_script}"
 
           grep -F 'flags=(/proc/sys/net/ipv6/conf/*/disable_ipv6)' \
-            scripts/audit-ports.sh
-          grep -F 'for flag in "${flags[@]}"; do' \
-            scripts/audit-ports.sh
-          grep -F '[[ "${value}" == "1" ]]' \
-            scripts/audit-ports.sh
-          grep -F 'IPv6 is enabled on ${interface}' \
-            scripts/audit-ports.sh
-          grep -F 'IPv6 interface policy: all current and future interfaces disabled' \
-            scripts/audit-ports.sh
+            "${audit_script}"
+          grep -F 'enabled_ipv6_interfaces+=("${interface}: ${flag}=${value}")' \
+            "${audit_script}"
+          grep -F 'required_tables=(' "${audit_script}"
+          grep -F 'required_tcp_ports=(22822 9330 9331 9332)' "${audit_script}"
 
-          if grep -F "printf '%-18s %s" scripts/audit-ports.sh; then
-            echo 'Audit still prints raw per-interface IPv6 flag rows.' >&2
-            exit 1
-          fi
+          verbose_gate_line="$(
+            grep -n -F 'if [[ "${verbose}" == "true" ]]; then' "${audit_script}" \
+              | cut -d: -f1
+          )"
+          first_raw_line="$(
+            grep -n -F 'print_verbose_section "IPv4 TCP listening sockets"' \
+              "${audit_script}" \
+              | cut -d: -f1
+          )"
+          [[ "${verbose_gate_line}" =~ ^[0-9]+$ ]]
+          [[ "${first_raw_line}" =~ ^[0-9]+$ ]]
+          (( verbose_gate_line < first_raw_line )) \
+            || { echo 'Raw audit diagnostics are not gated by --verbose.' >&2; exit 1; }
 
+          audit_doc="$(
+            awk '/^## 10\. Audit all listening ports$/,/^## 11\./' \
+              docs/bootstrap-from-zero.md
+          )"
+          grep -F 'Every automated check must begin with `[PASS]`.' <<<"${audit_doc}"
+          grep -F './scripts/audit-ports.sh --verbose' <<<"${audit_doc}"
+          grep -F '`Port audit result: PASS`' <<<"${audit_doc}"
       - name: Validate compact APT lock output
         run: |
           set -Eeuo pipefail

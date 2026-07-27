@@ -251,13 +251,36 @@ prompt. Do not continue if anonymous HTTPS access fails.
 
 Do not close the original root session.
 
-From a new terminal, test root on temporary IPv4 TCP `22`:
+Create two additional SSH connections **from your local computer**. Do not run connection
+commands inside the original VPS shell or any other existing VPS session.
+
+Use these connection settings:
+
+| Session name used below | Host | Username | TCP port |
+|---|---|---|---:|
+| Fresh root test | `<VPS_IPV4>` | `root` | `22` |
+| Fresh administrative | `<VPS_IPV4>` | `serveradmin` | `22822` |
+
+Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate
+local windows or tabs, and leave X11 forwarding disabled.
+
+### MobaXterm or PuTTY
+
+Use the client's **New session** or **Session** window to create two new SSH sessions with the
+settings in the table. Do not type the OpenSSH commands shown below into an existing VPS terminal.
+
+### OpenSSH from a local terminal
+
+Open two new terminals on your local computer. Suitable terminals include PowerShell, Command
+Prompt, Windows Terminal, a macOS or Linux terminal, and the local terminal in MobaXterm.
+
+In the first new local terminal, test temporary root access:
 
 ```bash
 ssh -4 -p 22 root@<VPS_IPV4>
 ```
 
-From another new terminal, test `serveradmin` on IPv4 TCP `22822`:
+In the second new local terminal, test administrative access:
 
 ```bash
 ssh -4 -p 22822 serveradmin@<VPS_IPV4>

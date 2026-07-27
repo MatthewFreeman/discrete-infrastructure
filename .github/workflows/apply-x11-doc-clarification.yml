@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - docs/clarify-x11-banner-source
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -102,5 +105,3 @@ it because the managed temporary SSH configuration already sets `X11Forwarding n
           git add docs/bootstrap-from-zero.md
           git commit -m 'Clarify source of prepare X11 status'
           git push origin HEAD:docs/clarify-x11-banner-source
-
-# temporary workflow; delete after it commits the documentation change

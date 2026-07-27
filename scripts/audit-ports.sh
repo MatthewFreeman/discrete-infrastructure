@@ -75,7 +75,7 @@ print_verbose_section() {
 
 [[ ${EUID} -eq 0 ]] || fatal "Run the port audit as root."
 
-for command in ss ip nft awk grep sort; do
+for command in ss ip nft awk grep sed sort; do
     command -v "${command}" >/dev/null 2>&1 \
         || fatal "The ${command} command is unavailable."
 done
@@ -254,7 +254,7 @@ else
         "${firewall_diagnostic}"
 fi
 
-if ${verbose}; then
+if [[ "${verbose}" == "true" ]]; then
     printf '\nRaw diagnostics (--verbose)\n'
     printf '%s\n' '==========================='
     print_verbose_section "IPv4 TCP listening sockets" "${ipv4_tcp}"

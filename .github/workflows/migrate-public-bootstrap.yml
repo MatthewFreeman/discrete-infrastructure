@@ -21,10 +21,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: public/anonymous-bootstrap
-          fetch-depth: 0
+          fetch-depth: 1
+          show-progress: false
 
       - name: Apply public repository migration
-        run: python3 .github/scripts/migrate-public-bootstrap.py
+        id: migration
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python3 .github/scripts/migrate-public-bootstrap.py 2>&1 | tee migration.log
+
+      - name: Report migration failure
+        if: steps.migration.outcome != 'success'
+        run: |
+          echo 'Migration failed. Final diagnostic:' >&2
+          tail -n 30 migration.log >&2
+          exit 1
 
       - name: Validate generated shell and documentation state
         run: |

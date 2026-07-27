@@ -202,6 +202,11 @@ Repository access:     public anonymous HTTPS
 IPv6 listeners:        transient loopback X11; close original session before finalize
 ```
 
+Look for this line in the final `PREPARE PHASE COMPLETE` banner printed in the original root
+terminal where step 4 ran `bash bootstrap/run.sh prepare`. The fresh login commands in step 6 do
+not print this status. If the line appears, note it but do not close the original root session yet.
+Continue to step 6, verify both fresh SSH paths, and then follow the X11 cleanup instructions there.
+
 Do not run `finalize` yet.
 
 ### If `prepare` stops before the final banner
@@ -276,16 +281,24 @@ root
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
-If `prepare` reported a transient `[::1]:60xx` X11 listener, keep the fresh administrative
-session open, close the original root session, and verify from the fresh session:
+Return to the final `PREPARE PHASE COMPLETE` banner in the original root terminal used in
+step 4. Only if its `IPv6 listeners:` line reported:
+
+```text
+IPv6 listeners:        transient loopback X11; close original session before finalize
+```
+
+keep the fresh `serveradmin` session open, close the original root session, and verify from the
+fresh administrative session:
 
 ```bash
 ss -6 -H -lntup
 ```
 
-Expected output: none. New sessions cannot recreate the listener because the managed temporary
-SSH configuration already sets `X11Forwarding no`. Do not run `finalize` while the original
-X11-enabled session is still open.
+Expected output: none. The transient listener would have been an `sshd` X11 listener on
+`[::1]:6000` through `[::1]:6063` attached to the original session. New sessions cannot recreate
+it because the managed temporary SSH configuration already sets `X11Forwarding no`. Do not run
+`finalize` while the original X11-enabled session is still open.
 
 ---
 

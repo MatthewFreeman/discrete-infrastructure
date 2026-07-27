@@ -616,46 +616,92 @@ remain provider-specific and require a scan from a separate external host.
 
 ## 11. Normal future updates
 
-The VPS uses anonymous HTTPS for read-only pulls. Edit and commit managed configuration from
-GitHub or a trusted workstation.
+Repeat this procedure whenever the repository contains an approved infrastructure update.
 
-For each future update, open a fresh local SSH connection as `serveradmin` on IPv4 TCP `22822`,
-using the same MobaXterm, PuTTY, or OpenSSH method described in step 2. For OpenSSH:
+> [!IMPORTANT]
+> Run the commands in steps 2 through 4 **inside the VPS session**, not in a local PowerShell,
+> Command Prompt, or MobaXterm local terminal. Run the update commands from a root login shell;
+> do not run them as the unprivileged `serveradmin` user.
 
-```bash
-ssh -4 -p 22822 serveradmin@<VPS_IPV4>
-```
+### 1. Open a fresh administrative SSH session
 
-Inside the VPS session, enter a root login shell and verify it:
+Connect from your local computer using the same SSH client method introduced in step 2:
+
+| Host | Username | TCP port |
+|---|---|---:|
+| `<VPS_IPV4>` | `serveradmin` | `22822` |
+
+- **MobaXterm or PuTTY:** open the saved administrative session, or create one with the settings
+  in the table.
+- **OpenSSH:** open a new local terminal and run:
+
+  ```bash
+  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ```
+
+### 2. Enter and verify a root login shell
+
+Inside the new VPS session:
 
 ```bash
 sudo -i
 whoami
 ```
 
-`whoami` must print `root`. Then update and apply the repository:
+Required result: `root`. Do not continue if `whoami` prints anything else.
+
+### 3. Pull and apply the update
+
+From the verified root shell:
 
 ```bash
 cd /opt/discrete-infrastructure
 git pull --ff-only
 ./install.sh
+```
+
+`git pull` must use anonymous read-only HTTPS and must not request a GitHub username, password,
+token, or SSH key. Stop if the pull is not a fast-forward or if the installer reports an error.
+
+### 4. Run the readable port audit
+
+After the installer succeeds:
+
+```bash
 ./scripts/audit-ports.sh
 ```
 
-Do not run the update commands as the unprivileged `serveradmin` user; the checkout and installer
-are managed by root.
+Every check must begin with `[PASS]`, and the summary must end with
+`Port audit result: PASS`. If a check fails, print the low-level diagnostics with:
+
+```bash
+./scripts/audit-ports.sh --verbose
+```
+
+Do not close the working administrative session until the update and audit both succeed.
+
+### Operating rules
+
+- Edit and commit managed configuration on GitHub or a trusted workstation, not directly on
+  the VPS.
+- Never edit Git-managed files under `/etc` except during emergency recovery.
+- Keep the VPS checkout read-only: future updates must continue to use anonymous HTTPS pulls.
+
+<details>
+<summary><strong>Implementation detail: grouped component updates</strong></summary>
 
 `./install.sh` reconciles IPv4-only networking and client-only time synchronization before
 applying managed configuration and running the complete verification suite.
 
-The manifest may contain multiple files for one logical component. The installer stages and
-backs up every file in that component, validates the complete staged configuration, reloads the
-service once, and verifies it once. `Applied components` counts logical components rather than
-manifest rows. With the current manifest, a normal full update applies three components: `ssh`,
-`nftables`, and `fail2ban`. The two managed Fail2Ban files must therefore produce one Fail2Ban
-restart, not two.
+`configs/manifest.tsv` may contain multiple files for one logical component. The installer
+stages and backs up every file in that component, validates the complete staged configuration,
+reloads the service once, and verifies it once. `Applied components` therefore counts logical
+components rather than manifest rows.
 
-Never edit Git-managed files directly under `/etc`, except during emergency recovery.
+With the current manifest, a normal full update applies three components: `ssh`, `nftables`,
+and `fail2ban`. The two managed Fail2Ban files must produce one Fail2Ban restart, not two.
+
+</details>
 
 ---
 

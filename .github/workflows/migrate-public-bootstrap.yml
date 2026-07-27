@@ -17,12 +17,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out migration branch
-        uses: actions/checkout@v4
-        with:
-          ref: public/anonymous-bootstrap
-          fetch-depth: 1
-          show-progress: false
+      - name: Clone migration branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone -q \
+            --depth 1 \
+            --branch public/anonymous-bootstrap \
+            https://github.com/MatthewFreeman/discrete-infrastructure.git \
+            .
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/MatthewFreeman/discrete-infrastructure.git"
 
       - name: Apply public repository migration
         id: migration

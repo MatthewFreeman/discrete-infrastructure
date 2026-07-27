@@ -1,0 +1,44 @@
+name: Validate public repository access
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-public-access:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reject private-bootstrap authentication
+        run: |
+          test ! -e docs/create-github-access-token.md
+
+          if git grep -n -E \
+            'github-discrete|discrete_infrastructure_deploy|github_pat_|create-github-access-token|DEPLOY_KEY|SSH_ALIAS' \
+            -- . \
+            ':(exclude).github/workflows/validate-public-access.yml'; then
+            echo 'Private-repository authentication remains in the current tree.' >&2
+            exit 1
+          fi
+
+          grep -F 'verify_public_repository_access()' bootstrap/debian-ipv4.sh
+          grep -F 'Repository access:     public anonymous HTTPS' bootstrap/debian-ipv4.sh
+          grep -F 'https://github.com/MatthewFreeman/discrete-infrastructure.git' \
+            docs/bootstrap-from-zero.md
+          grep -F 'https://github.com/MatthewFreeman/discrete-infrastructure.git' \
+            docs/bootstrap-ubuntu-24.04-from-zero.md
+
+      - name: Prove anonymous HTTPS read access
+        run: |
+          GIT_TERMINAL_PROMPT=0 git \
+            -c credential.helper= \
+            -c http.https://github.com/.extraheader= \
+            ls-remote \
+            https://github.com/MatthewFreeman/discrete-infrastructure.git \
+            HEAD

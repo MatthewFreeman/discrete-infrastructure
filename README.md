@@ -2,6 +2,9 @@
 
 Infrastructure-as-code repository for deploying and maintaining public Discrete.cash nodes.
 
+This repository is public. Cloning and pulling over HTTPS require no GitHub account, personal
+access token, deploy key, username, or password.
+
 ## Supported platforms
 
 | Operating system | Status | Runbook |

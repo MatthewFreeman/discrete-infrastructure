@@ -336,18 +336,36 @@ whoami
 
 The result must be `root`.
 
-Inside the fresh administrative session:
+Inside the fresh administrative session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`.
+
+Validate `sudo` separately:
+
+```bash
 sudo -v
+```
+
+When prompted, enter the `serveradmin` password created during step 4. The terminal deliberately
+displays no characters while you type. Wait until `sudo -v` returns to the shell prompt.
+
+Then enter a root login shell by running this command by itself:
+
+```bash
 sudo -i
+```
+
+Wait for the root shell prompt, then verify it:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. When `sudo -v`
-asks for a password, enter the `serveradmin` password created during step 4. The terminal
-deliberately displays no characters while you type it.
+The result must be `root`.
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
@@ -397,10 +415,15 @@ whoami
 
 The result must be `root`.
 
-If `whoami` prints anything other than `root`, enter a root login shell and verify again:
+If `whoami` prints anything other than `root`, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
@@ -496,16 +519,28 @@ introduced in step 2:
   ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
-Inside the fresh post-finalization admin session:
+Inside the fresh post-finalization admin session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`.
+
+Then run this command by itself:
+
+```bash
 sudo -i
+```
+
+Enter the `serveradmin` password from step 4 if prompted and wait for the root shell prompt. Then
+verify the new shell:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. Enter the
-`serveradmin` password from step 4 if `sudo` asks for it.
+The result must be `root`.
 
 ### Confirm that direct root SSH is denied
 
@@ -691,10 +726,15 @@ Connect from your local computer using the same SSH client method introduced in 
 
 ### Enter and verify a root login shell
 
-Inside the new VPS session:
+Inside the new VPS session, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 

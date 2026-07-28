@@ -758,7 +758,7 @@ local terminal with Nmap installed, such as PowerShell, Windows Terminal, a macO
 or MobaXterm's local terminal. A trusted external port-scanning service is also acceptable when it
 can scan the complete TCP range and the specific ports below.
 
-Verify the intended ports first:
+For every newly bootstrapped VPS, verify the intended ports first:
 
 ```bash
 nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>
@@ -772,19 +772,44 @@ Required result:
 | `22822` | open |
 | `9330`–`9332` | closed or filtered because no service is listening |
 
-After the targeted scan matches the required result, scan every TCP port. The full scan probes all
-65,535 TCP ports and may take from several minutes to an hour or longer, especially when a
+The targeted scan is the required external check for every newly bootstrapped VPS. Save its output
+with that VPS's deployment record.
+
+### Optional fast all-port confidence check
+
+For an additional best-effort check during routine deployment, scan all TCP ports with an
+aggressively bounded profile:
+
+```bash
+nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>
+```
+
+This optional scan trades some accuracy for speed. An unexpected `open` port is actionable and must
+be investigated, but a clean result is supplemental evidence only: packet loss, filtering, or rate
+limiting can hide responses. It does not replace the required targeted scan or a formal
+accuracy-first qualification scan.
+
+### Accuracy-first qualification scan
+
+The full 65,535-port scan is qualification evidence, not a per-VPS bootstrap requirement. Run it
+only when qualifying a new or changed OS/provider image, after changing host or provider firewall
+policy, or when investigating unexpected exposure.
+
+An accuracy-first full scan may take from several minutes to an hour or longer, especially when a
 provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
-`--stats-every 30s` prints progress without changing which ports are scanned.
+`--stats-every 30s` prints progress without changing which ports are scanned. Do not add aggressive
+`--min-rate` or low `--max-retries` values to qualification evidence, because they can reduce
+accuracy on lossy or rate-limited paths.
 
 ```bash
 nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
 ```
 
-Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
+Before Discrete services are installed, a completed full scan must show `22822/tcp` as the only
+open TCP port. An interrupted, timed-out, or incomplete scan is not a passing qualification result.
 
-Provider-firewall behavior and Internet reachability can be proven only by this external test.
-Save the scan output as clean-room validation evidence.
+Provider-firewall behavior and Internet reachability can be proven only by an external test.
+Save full scan output whenever a qualification scan is required.
 
 ---
 

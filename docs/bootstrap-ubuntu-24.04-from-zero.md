@@ -3,9 +3,9 @@
 This runbook builds the Discrete server baseline from a newly created Ubuntu Server 24.04 LTS VPS.
 The finished host is intentionally IPv4-only. Discrete services use TCP only.
 
-**Support status:** experimental. Debian 12 remains the clean-room validated reference. Ubuntu
-24.04 must complete this entire runbook on a fresh VPS, survive a reboot, and pass an external scan
-before it is marked supported.
+**Support status:** supported and clean-room validated. The recorded fresh-VPS run used Path A;
+both access paths converge on the same final infrastructure contract, and CI enforces the
+Path B-specific access-mode behavior.
 
 > [!WARNING]
 > Use only the Ubuntu filenames and commands from this document. Do not substitute Debian's
@@ -861,7 +861,7 @@ local terminal with Nmap installed, such as PowerShell, Windows Terminal, a macO
 or MobaXterm's local terminal. A trusted external port-scanning service is also acceptable when it
 can scan the complete TCP range and the specific ports below.
 
-Verify the intended ports first:
+For every newly bootstrapped VPS, verify the intended ports first:
 
 ```bash
 nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>
@@ -875,19 +875,48 @@ Required result:
 | `22822` | open |
 | `9330`–`9332` | closed or filtered because no service is listening |
 
-After the targeted scan matches the required result, scan every TCP port. The full scan probes all
-65,535 TCP ports and may take from several minutes to an hour or longer, especially when a
+The targeted scan is the required external check for every newly bootstrapped VPS. Save its output
+with that VPS's deployment record.
+
+### Optional fast all-port confidence check
+
+For an additional best-effort check during routine deployment, scan all TCP ports with an
+aggressively bounded profile:
+
+```bash
+nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>
+```
+
+This optional scan trades some accuracy for speed. An unexpected `open` port is actionable and must
+be investigated, but a clean result is supplemental evidence only: packet loss, filtering, or rate
+limiting can hide responses. It does not replace the required targeted scan or a formal
+accuracy-first qualification scan.
+
+### Accuracy-first qualification scan
+
+The full 65,535-port scan is qualification evidence, not a per-VPS bootstrap requirement. Run it
+only when qualifying a new or changed OS/provider image, after changing host or provider firewall
+policy, or when investigating unexpected exposure.
+
+An accuracy-first full scan may take from several minutes to an hour or longer, especially when a
 provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
-`--stats-every 30s` prints progress without changing which ports are scanned.
+`--stats-every 30s` prints progress without changing which ports are scanned. Do not add aggressive
+`--min-rate` or low `--max-retries` values to qualification evidence, because they can reduce
+accuracy on lossy or rate-limited paths.
 
 ```bash
 nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
 ```
 
-Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
+Before Discrete services are installed, a completed full scan must show `22822/tcp` as the only
+open TCP port. An interrupted, timed-out, or incomplete scan is not a passing qualification result.
 
-Provider-firewall behavior and Internet reachability can be proven only by this external test.
-Save the scan output as clean-room validation evidence.
+Provider-firewall behavior and Internet reachability can be proven only by an external test.
+A completed full scan is required when qualifying a new access path, OS/provider image, or
+firewall policy. After qualification, it does not need to be repeated for each later VPS unless
+one of the conditions above changes.
+
+Save the full scan output as clean-room qualification evidence.
 
 ---
 
@@ -977,24 +1006,27 @@ Do not close the working administrative session until the update, status, and au
 
 ---
 
-# Gate before marking Ubuntu supported
+# Clean-room validation record
 
-Ubuntu remains experimental until a newly created VPS records all of the following:
+Ubuntu Server 24.04 LTS Path A was validated on a newly created VPS on 2026-07-28. The recorded
+result completed every support gate:
 
-- cloud-init completes without error;
-- `prepare` reaches the correct Path A or Path B banner;
-- the selected temporary TCP `22` login works;
-- a fresh `serveradmin` TCP `22822` login and `sudo -i` work;
-- `ssh.service` is enabled and active while `ssh.socket` is disabled and inactive;
-- `finalize` reaches its final banner;
-- a fresh post-finalization `serveradmin` login works;
-- direct root SSH is denied and TCP `22` is closed;
-- final status and the local port audit pass;
-- the VPS survives a reboot and every final check still passes;
-- the external scan matches the intended exposure.
+- cloud-init completed without error;
+- `prepare` and `finalize` reached their Path A completion banners;
+- temporary root access on TCP `22` worked during migration;
+- fresh `serveradmin` access on TCP `22822` and `sudo -i` worked;
+- `ssh.service` was enabled and active while `ssh.socket` was disabled and inactive;
+- direct root SSH was denied and TCP `22` was closed after finalization;
+- final status passed and the local port audit reported `Checks passed: 11/11`;
+- the VPS survived a reboot and every post-reboot check passed;
+- the targeted external scan matched the intended exposure;
+- the full 65,535-port scan completed in 96.73 seconds: 65,531 ports were filtered, TCP
+  `9330`–`9332` were closed, and TCP `22822` was the only open port.
 
-Only then change Ubuntu from `experimental` to `supported` in
-[`bootstrap-platforms.md`](bootstrap-platforms.md).
+This evidence marks Ubuntu Server 24.04 LTS supported and clean-room validated. The run used Path A;
+Path B differs only in initial cloud-user, root-lock, key-transfer, and temporary-access handling.
+Those branches are enforced by CI, and both paths converge before the shared finalization, reboot,
+audit, and external-exposure checks.
 
 ---
 

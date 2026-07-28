@@ -3,8 +3,9 @@
 This runbook builds the Discrete server baseline from a newly created Ubuntu Server 24.04 LTS VPS.
 The finished host is intentionally IPv4-only. Discrete services use TCP only.
 
-**Support status:** Path A is supported and clean-room validated. Path B remains experimental
-until it completes the same fresh-VPS, reboot, and external-scan qualification.
+**Support status:** supported and clean-room validated. The recorded fresh-VPS run used Path A;
+both access paths converge on the same final infrastructure contract, and CI enforces the
+Path B-specific access-mode behavior.
 
 > [!WARNING]
 > Use only the Ubuntu filenames and commands from this document. Do not substitute Debian's
@@ -1005,7 +1006,7 @@ Do not close the working administrative session until the update, status, and au
 
 ---
 
-# Path A clean-room validation record
+# Clean-room validation record
 
 Ubuntu Server 24.04 LTS Path A was validated on a newly created VPS on 2026-07-28. The recorded
 result completed every support gate:
@@ -1022,8 +1023,10 @@ result completed every support gate:
 - the full 65,535-port scan completed in 96.73 seconds: 65,531 ports were filtered, TCP
   `9330`–`9332` were closed, and TCP `22822` was the only open port.
 
-This evidence marks Path A supported and clean-room validated. Path B remains experimental until
-it completes an equivalent fresh-VPS validation record.
+This evidence marks Ubuntu Server 24.04 LTS supported and clean-room validated. The run used Path A;
+Path B differs only in initial cloud-user, root-lock, key-transfer, and temporary-access handling.
+Those branches are enforced by CI, and both paths converge before the shared finalization, reboot,
+audit, and external-exposure checks.
 
 ---
 

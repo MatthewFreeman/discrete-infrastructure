@@ -353,6 +353,20 @@ verify_public_repository_access() {
         || die "Anonymous HTTPS access to Git origin failed: ${origin}"
 }
 
+verify_repository_preflight() {
+    local git_state
+
+    verify_public_repository_access
+
+    git_state="$(git -C "${REPO_DIR}" status --short)" \
+        || die "Cannot inspect the Git working tree."
+
+    if [[ -n "${git_state}" ]]; then
+        printf 'ERROR: Git working tree is not clean:\n%s\n' "${git_state}" >&2
+        die "Commit, discard, or preserve local changes outside the VPS checkout before running bootstrap."
+    fi
+}
+
 build_bootstrap_fail2ban_config() {
     local source_config="${REPO_DIR}/configs/fail2ban/jail.local"
     local output_config="$1"
@@ -551,13 +565,13 @@ prepare() {
     [[ ! -e "${FINALIZED_MARKER}" ]] \
         || die "Bootstrap is already finalized. Use '$0 status'."
 
+    verify_repository_preflight
+
     install_base_packages
     configure_host_baseline
     ensure_admin_user
     write_temporary_ssh_config
     apply_prepare_components
-
-    verify_public_repository_access
 
     printf '\n============================================================\n'
     printf 'PREPARE PHASE COMPLETE\n'
@@ -585,6 +599,8 @@ prepare() {
 }
 
 finalize() {
+    verify_repository_preflight
+
     rm -f "${FINALIZED_MARKER}"
 
     install_base_packages
@@ -604,7 +620,6 @@ finalize() {
         | grep -E "tcp dport ${FINAL_SSH_PORT}([[:space:]]|$)" >/dev/null \
         || die "Temporary firewall does not protect IPv4 TCP ${FINAL_SSH_PORT}."
 
-    verify_public_repository_access
     confirm_admin_ssh_test
 
     log "Applying final IPv4-only SSH configuration"

@@ -5,7 +5,7 @@ Use exactly one runbook and its matching commands. Do not mix Debian and Ubuntu 
 | Operating system | Support status | Clean-server runbook | Bootstrap entrypoint | Future-update installer |
 |---|---|---|---|---|
 | Debian 12 (bookworm) | Supported and clean-room validated | [`bootstrap-from-zero.md`](bootstrap-from-zero.md) | `bootstrap/run.sh` | `install.sh` |
-| Ubuntu Server 24.04 LTS (noble) | Experimental until clean-room validation succeeds | [`bootstrap-ubuntu-24.04-from-zero.md`](bootstrap-ubuntu-24.04-from-zero.md) | `bootstrap/run-ubuntu-24.04.sh` | `install-ubuntu-24.04.sh` |
+| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated via Path A; Path B experimental | [`bootstrap-ubuntu-24.04-from-zero.md`](bootstrap-ubuntu-24.04-from-zero.md) | `bootstrap/run-ubuntu-24.04.sh` | `install-ubuntu-24.04.sh` |
 
 ## Debian 12
 
@@ -27,4 +27,4 @@ Start here:
 docs/bootstrap-ubuntu-24.04-from-zero.md
 ```
 
-Do not mark Ubuntu as supported until the complete runbook has succeeded on a newly created Ubuntu Server 24.04 LTS VPS and the final external access tests have been recorded.
+Path A is supported and clean-room validated after completing the full runbook on a newly created Ubuntu Server 24.04 LTS VPS, including reboot and external access validation. Path B remains experimental until it records the equivalent clean-room evidence.

@@ -10,7 +10,7 @@ access token, deploy key, username, or password.
 | Operating system | Status | Runbook |
 |---|---|---|
 | Debian 12 (bookworm) | Supported and clean-room validated | [`docs/bootstrap-from-zero.md`](docs/bootstrap-from-zero.md) |
-| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated via Path A; Path B experimental | [`docs/bootstrap-ubuntu-24.04-from-zero.md`](docs/bootstrap-ubuntu-24.04-from-zero.md) |
+| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated | [`docs/bootstrap-ubuntu-24.04-from-zero.md`](docs/bootstrap-ubuntu-24.04-from-zero.md) |
 
 Start with the platform chooser:
 
@@ -57,9 +57,10 @@ matching runbook disagree, correct the runbook first and then correct and retest
 GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, the IPv4-only
 configuration contract, and platform-entrypoint separation on every push and pull request.
 
-CI validation does not replace a complete clean-room test on a newly created VPS. Ubuntu 24.04
-Path A is supported after completing its runbook, reboot test, targeted external scan, and full
-qualification scan. Path B remains experimental until it completes the same validation.
+CI validation does not replace a complete clean-room test on a newly created VPS. Ubuntu 24.04 is
+supported after completing the runbook, reboot test, targeted external scan, and full qualification
+scan through Path A. Both access paths converge on the same final infrastructure contract; CI
+enforces the Path B-specific cloud-user, root-lock, key-transfer, and temporary-access behavior.
 
 ## Repository layout
 

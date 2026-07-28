@@ -228,6 +228,8 @@ Do not configure a Git credential helper on the VPS.
 Before running any repository code, verify the checkout:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 git remote get-url origin
 git status --short --branch
 ```
@@ -722,6 +724,8 @@ it. Do not continue until every check passes.
 Run the readable listening-port audit:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh
 ```
 
@@ -745,6 +749,8 @@ Every automated check must begin with `[PASS]`. The summary must end with
 For low-level troubleshooting only, use:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ADMIN_USER=serveradmin \
   bash bootstrap/run-ubuntu-24.04.sh status --verbose
 
@@ -890,6 +896,8 @@ Do not use Debian's `install.sh` as the Ubuntu update path.
 After the installer succeeds:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ADMIN_USER=serveradmin \
   bash bootstrap/run-ubuntu-24.04.sh status
 

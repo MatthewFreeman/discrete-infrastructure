@@ -49,10 +49,14 @@ jobs:
           printf '%s\n' "${reboot_section}" | grep -F './scripts/audit-ports.sh'
           printf '%s\n' "${reboot_section}" | grep -F 'ss -6 -H -lntup'
 
-          printf '%s\n' "${scan_section}" | grep -F '65,535 TCP ports'
+          printf '%s\n' "${scan_section}" | grep -F 'required external check for every newly bootstrapped VPS'
+          printf '%s\n' "${scan_section}" | grep -F 'not a per-VPS bootstrap requirement'
+          printf '%s\n' "${scan_section}" | grep -F '65,535-port scan'
           printf '%s\n' "${scan_section}" | grep -F 'an hour or longer'
           printf '%s\n' "${scan_section}" | grep -F -- '--stats-every 30s'
-          printf '%s\n' "${scan_section}" | grep -F 'only open TCP port must be `22822/tcp`'
+          printf '%s\n' "${scan_section}" | grep -F -- '--min-rate'
+          printf '%s\n' "${scan_section}" | grep -F -- '--max-retries'
+          printf '%s\n' "${scan_section}" | grep -F 'incomplete scan is not a passing qualification result'
       - name: Install validators
         run: |
           sudo apt-get update

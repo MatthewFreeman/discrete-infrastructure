@@ -193,13 +193,23 @@ jobs:
           (( verbose_gate_line < first_raw_line )) \
             || { echo 'Raw audit diagnostics are not gated by --verbose.' >&2; exit 1; }
 
-          audit_doc="$(
+          debian_audit_doc="$(
             awk '/^## 10\. Audit all listening ports$/,/^## 11\./' \
               docs/bootstrap-from-zero.md
           )"
-          grep -F 'Every automated check must begin with `[PASS]`.' <<<"${audit_doc}"
-          grep -F './scripts/audit-ports.sh --verbose' <<<"${audit_doc}"
-          grep -F '`Port audit result: PASS`' <<<"${audit_doc}"
+          ubuntu_audit_doc="$(
+            awk '/^## 10\. Run final verification and the local port audit$/,/^## 11\./' \
+              docs/bootstrap-ubuntu-24.04-from-zero.md
+          )"
+
+          for audit_doc in "${debian_audit_doc}" "${ubuntu_audit_doc}"; do
+            grep -F 'All 11 automated pass/fail checks must begin with `[PASS]`' \
+              <<<"${audit_doc}"
+            grep -F '`Checks passed` must report' <<<"${audit_doc}"
+            grep -F 'Additional `[INFO]` rows may appear' <<<"${audit_doc}"
+            grep -F './scripts/audit-ports.sh --verbose' <<<"${audit_doc}"
+            grep -F '`Port audit result: PASS`' <<<"${audit_doc}"
+          done
       - name: Validate compact APT lock output
         run: |
           set -Eeuo pipefail

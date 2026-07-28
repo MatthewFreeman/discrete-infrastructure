@@ -775,6 +775,22 @@ Required result:
 The targeted scan is the required external check for every newly bootstrapped VPS. Save its output
 with that VPS's deployment record.
 
+### Optional fast all-port confidence check
+
+For an additional best-effort check during routine deployment, scan all TCP ports with an
+aggressively bounded profile:
+
+```bash
+nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>
+```
+
+This optional scan trades some accuracy for speed. An unexpected `open` port is actionable and must
+be investigated, but a clean result is supplemental evidence only: packet loss, filtering, or rate
+limiting can hide responses. It does not replace the required targeted scan or a formal
+accuracy-first qualification scan.
+
+### Accuracy-first qualification scan
+
 The full 65,535-port scan is qualification evidence, not a per-VPS bootstrap requirement. Run it
 only when qualifying a new or changed OS/provider image, after changing host or provider firewall
 policy, or when investigating unexpected exposure.

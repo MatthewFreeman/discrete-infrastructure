@@ -166,6 +166,19 @@ cd /opt/discrete-infrastructure
 A GitHub account, personal access token, deploy key, username, and password are not required.
 Do not configure a Git credential helper on the VPS.
 
+Before running any repository code, verify the checkout:
+
+```bash
+git remote get-url origin
+git status --short --branch
+```
+
+The first command must print
+`https://github.com/MatthewFreeman/discrete-infrastructure.git`. The second command must print
+exactly one line: `## main...origin/main`. Do not run `prepare` if the URL or branch differs, if
+the branch reports that it is ahead or behind, or if any additional line reports a modified,
+staged, or untracked file.
+
 ---
 
 ## 4. Run the `prepare` phase
@@ -189,22 +202,22 @@ Store this password securely. Step 6 uses it for the fresh `serveradmin` login a
 The script will:
 
 1. validate Debian 12;
-2. wait for provider package-manager activity and install required packages;
-3. install and apply the managed IPv4-only sysctl policy;
-4. remove all guest IPv6 addresses and routes;
-5. reject every IPv6 listener except a loopback-only `sshd` X11 listener on `[::1]:6000`
+2. verify the canonical Git origin, a clean working tree, and anonymous HTTPS access;
+3. wait for provider package-manager activity and install required packages;
+4. install and apply the managed IPv4-only sysctl policy;
+5. remove all guest IPv6 addresses and routes;
+6. reject every IPv6 listener except a loopback-only `sshd` X11 listener on `[::1]:6000`
    through `[::1]:6063` that belongs to the already-open original SSH session;
-6. disable X11 forwarding for all new SSH sessions;
-7. remove `ntp`, `ntpsec`, `chrony`, and `openntpd` when installed;
-8. install and enable client-only `systemd-timesyncd`;
-9. verify that the clock is synchronized and no process listens on UDP `123`;
-10. create `serveradmin`, set its password interactively when needed, and add it to `sudo`;
-11. keep root SSH on IPv4 TCP `22`;
-12. enable admin SSH on IPv4 TCP `22822`;
-13. activate the temporary IPv4 two-port nftables policy;
-14. remove UFW and residual UFW tables;
-15. configure IPv4-only Fail2Ban for TCP `22` and TCP `22822`;
-16. verify anonymous HTTPS access to the public repository.
+7. disable X11 forwarding for all new SSH sessions;
+8. remove `ntp`, `ntpsec`, `chrony`, and `openntpd` when installed;
+9. install and enable client-only `systemd-timesyncd`;
+10. verify that the clock is synchronized and no process listens on UDP `123`;
+11. create `serveradmin`, set its password interactively when needed, and add it to `sudo`;
+12. keep root SSH on IPv4 TCP `22`;
+13. enable admin SSH on IPv4 TCP `22822`;
+14. activate the temporary IPv4 two-port nftables policy;
+15. remove UFW and residual UFW tables;
+16. configure IPv4-only Fail2Ban for TCP `22` and TCP `22822`.
 
 The bootstrap waits for up to five minutes when provider processes such as
 `unattended-upgrades` hold APT or dpkg locks. Lock-wait or retry messages during this

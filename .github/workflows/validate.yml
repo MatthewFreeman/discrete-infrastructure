@@ -35,11 +35,13 @@ jobs:
           scan_line="$(grep -nF '## 12. Run an external IPv4 scan' "${runbook}" | cut -d: -f1)"
           updates_line="$(grep -nF '## 13. Normal future updates' "${runbook}" | cut -d: -f1)"
           targeted_line="$(grep -nF 'nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>' "${runbook}" | cut -d: -f1)"
+          fast_line="$(grep -nF 'nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>' "${runbook}" | cut -d: -f1)"
           full_line="$(grep -nF 'nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>' "${runbook}" | cut -d: -f1)"
 
           test "${reboot_line}" -lt "${scan_line}"
           test "${scan_line}" -lt "${updates_line}"
-          test "${targeted_line}" -lt "${full_line}"
+          test "${targeted_line}" -lt "${fast_line}"
+          test "${fast_line}" -lt "${full_line}"
 
           reboot_section="$(awk '/^## 11\. Reboot validation$/{capture=1} /^## 12\. Run an external IPv4 scan$/{capture=0} capture' "${runbook}")"
           scan_section="$(awk '/^## 12\. Run an external IPv4 scan$/{capture=1} /^## 13\. Normal future updates$/{capture=0} capture' "${runbook}")"
@@ -51,6 +53,9 @@ jobs:
 
           printf '%s\n' "${scan_section}" | grep -F 'required external check for every newly bootstrapped VPS'
           printf '%s\n' "${scan_section}" | grep -F 'not a per-VPS bootstrap requirement'
+          printf '%s\n' "${scan_section}" | grep -F 'Optional fast all-port confidence check'
+          printf '%s\n' "${scan_section}" | grep -F 'supplemental evidence only'
+          printf '%s\n' "${scan_section}" | grep -F 'Accuracy-first qualification scan'
           printf '%s\n' "${scan_section}" | grep -F '65,535-port scan'
           printf '%s\n' "${scan_section}" | grep -F 'an hour or longer'
           printf '%s\n' "${scan_section}" | grep -F -- '--stats-every 30s'

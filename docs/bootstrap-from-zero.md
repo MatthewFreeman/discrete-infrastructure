@@ -636,10 +636,11 @@ The default output is a concise checklist in the same order a human should revie
 | Firewall default policy | `drop` |
 | Firewall TCP allowlist | only `22822`, `9330`, `9331`, and `9332` |
 
-Every automated check must begin with `[PASS]`. When a provider DHCP client listens on UDP
-`68`, the public-UDP check still passes and an `[INFO]` explanation follows it. A failed check
-begins with `[FAIL]`, prints the relevant diagnostic immediately below it, and makes the command
-exit nonzero.
+All 11 automated pass/fail checks must begin with `[PASS]`, and `Checks passed` must report
+`11/11`. Additional `[INFO]` rows may appear; they provide context and are not included in the
+passed-check count. A provider DHCP client listening on UDP `68` is one such informational note.
+A failed check begins with `[FAIL]`, prints the relevant diagnostic immediately below it, and
+makes the command exit nonzero.
 
 The final summary must report all checks passed, followed by `IPv4-only verification passed.`
 and `Port audit result: PASS`. The script now checks the documented baseline itself; do not
@@ -722,8 +723,9 @@ cd /opt/discrete-infrastructure
 ./scripts/audit-ports.sh
 ```
 
-Every check must begin with `[PASS]`, and the summary must end with
-`Port audit result: PASS`. If a check fails, print the low-level diagnostics with:
+All 11 automated pass/fail checks must begin with `[PASS]`, `Checks passed` must report
+`11/11`, and the summary must end with `Port audit result: PASS`. Additional `[INFO]` rows may
+appear and do not count as checks. If a check fails, print the low-level diagnostics with:
 
 ```bash
 cd /opt/discrete-infrastructure

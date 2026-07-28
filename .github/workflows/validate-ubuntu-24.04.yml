@@ -170,11 +170,13 @@ jobs:
 
       - name: Validate Ubuntu support status
         run: |
-          grep -F 'Supported and clean-room validated via Path A; Path B experimental' README.md
-          grep -F 'Supported and clean-room validated via Path A; Path B experimental' docs/bootstrap-platforms.md
-          grep -F '**Support status:** Path A is supported and clean-room validated.' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F '# Path A clean-room validation record' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'Path B remains experimental' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' README.md
+          grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' docs/bootstrap-platforms.md
+          grep -F '**Support status:** supported and clean-room validated.' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '# Clean-room validation record' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'Path B-specific access-mode behavior' docs/bootstrap-ubuntu-24.04-from-zero.md
+          ! grep -F 'Path B experimental' README.md docs/bootstrap-platforms.md
+          ! grep -F 'Path B remains experimental' docs/bootstrap-ubuntu-24.04-from-zero.md
       - name: Validate platform file separation
         run: |
           grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh

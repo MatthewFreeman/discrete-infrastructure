@@ -147,8 +147,14 @@ jobs:
 
           grep -F "${targeted_scan}" <<<"${scan_doc}"
           grep -F "${full_scan}" <<<"${scan_doc}"
-          grep -F '65,535 TCP ports' <<<"${scan_doc}"
+          grep -F 'required external check for every newly bootstrapped VPS' <<<"${scan_doc}"
+          grep -F 'not a per-VPS bootstrap requirement' <<<"${scan_doc}"
+          grep -F '65,535-port scan' <<<"${scan_doc}"
           grep -F 'may take from several minutes to an hour or longer' <<<"${scan_doc}"
+          grep -F -- '--min-rate' <<<"${scan_doc}"
+          grep -F -- '--max-retries' <<<"${scan_doc}"
+          grep -F 'incomplete scan is not a passing qualification result' <<<"${scan_doc}"
+          grep -F 'required before this experimental Ubuntu runbook can be marked' <<<"${scan_doc}"
 
           targeted_line="$(grep -nF "${targeted_scan}" <<<"${scan_doc}" | cut -d: -f1)"
           full_line="$(grep -nF "${full_scan}" <<<"${scan_doc}" | cut -d: -f1)"

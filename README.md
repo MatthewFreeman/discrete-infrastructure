@@ -10,7 +10,7 @@ access token, deploy key, username, or password.
 | Operating system | Status | Runbook |
 |---|---|---|
 | Debian 12 (bookworm) | Supported and clean-room validated | [`docs/bootstrap-from-zero.md`](docs/bootstrap-from-zero.md) |
-| Ubuntu Server 24.04 LTS (noble) | Experimental until clean-room validation succeeds | [`docs/bootstrap-ubuntu-24.04-from-zero.md`](docs/bootstrap-ubuntu-24.04-from-zero.md) |
+| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated via Path A; Path B experimental | [`docs/bootstrap-ubuntu-24.04-from-zero.md`](docs/bootstrap-ubuntu-24.04-from-zero.md) |
 
 Start with the platform chooser:
 
@@ -58,7 +58,8 @@ GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, t
 configuration contract, and platform-entrypoint separation on every push and pull request.
 
 CI validation does not replace a complete clean-room test on a newly created VPS. Ubuntu 24.04
-remains experimental until its runbook, reboot test, and external access audit all succeed.
+Path A is supported after completing its runbook, reboot test, targeted external scan, and full
+qualification scan. Path B remains experimental until it completes the same validation.
 
 ## Repository layout
 

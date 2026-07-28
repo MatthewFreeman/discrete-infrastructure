@@ -693,12 +693,102 @@ cd /opt/discrete-infrastructure
 Use `--verbose` after a failed check or when preserving low-level diagnostics. The default
 output deliberately omits those dumps so the pass/fail path remains readable.
 
-This local audit does not prove provider-firewall behavior or Internet reachability. Those
-remain provider-specific and require a scan from a separate external host.
+This local audit does not prove provider-firewall behavior or Internet reachability. Step 12 tests
+those from a separate external host.
 
 ---
 
-## 11. Normal future updates
+## 11. Reboot validation
+
+Reboot only after every check in steps 9 and 10 passes. The current SSH connection will close:
+
+```bash
+reboot
+```
+
+Wait for the VPS to return. From your local computer, open a fresh `serveradmin` connection using
+the same MobaXterm, PuTTY, or OpenSSH method described earlier:
+
+```bash
+ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
+```
+
+Inside the VPS session, run this command by itself:
+
+```bash
+sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then run the
+post-reboot checks:
+
+```bash
+whoami
+cd /opt/discrete-infrastructure
+
+ADMIN_USER=serveradmin \
+  bash bootstrap/run.sh status
+
+./scripts/audit-ports.sh
+
+printf 'ssh.service active: '; systemctl is-active ssh.service
+printf 'ssh.socket active:  '; systemctl is-active ssh.socket || true
+ss -6 -H -lntup
+```
+
+Required results:
+
+- `whoami` prints `root`;
+- every status row and all 11 audit pass/fail rows begin with `[PASS]`;
+- any `[INFO]` audit rows are informational and do not count as checks;
+- the audit reports `Checks passed: 11/11`;
+- the summaries end with `Overall status: PASS` and `Port audit result: PASS`;
+- `ssh.service active` is `active`;
+- `ssh.socket active` is `inactive`;
+- `ss -6 -H -lntup` prints nothing.
+
+Do not continue if the post-reboot login or any verification fails.
+
+---
+
+## 12. Run an external IPv4 scan
+
+Run this step from a different Internet-connected computer, **not from the VPS itself**. Use a
+local terminal with Nmap installed, such as PowerShell, Windows Terminal, a macOS or Linux terminal,
+or MobaXterm's local terminal. A trusted external port-scanning service is also acceptable when it
+can scan the complete TCP range and the specific ports below.
+
+Verify the intended ports first:
+
+```bash
+nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>
+```
+
+Required result:
+
+| Port | Required external state before Discrete is installed |
+|---:|---|
+| `22` | closed or filtered |
+| `22822` | open |
+| `9330`–`9332` | closed or filtered because no service is listening |
+
+After the targeted scan matches the required result, scan every TCP port. The full scan probes all
+65,535 TCP ports and may take from several minutes to an hour or longer, especially when a
+provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
+`--stats-every 30s` prints progress without changing which ports are scanned.
+
+```bash
+nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
+```
+
+Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
+
+Provider-firewall behavior and Internet reachability can be proven only by this external test.
+Save the scan output as clean-room validation evidence.
+
+---
+
+## 13. Normal future updates
 
 Repeat this procedure whenever the repository contains an approved infrastructure update.
 

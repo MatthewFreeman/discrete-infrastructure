@@ -42,6 +42,9 @@ install_base_packages() {
         python3-systemd \
         sudo
 
+    log "Installing Ubuntu post-network IPv4 reassertion"
+    bash "${REPO_DIR}/bootstrap/install-ubuntu-ipv4-reassertion.sh"
+
     # Ubuntu 24.04 normally uses OpenSSH socket activation. The bootstrap manages two temporary
     # ports and then one final port, so regular service mode is deterministic and easier to verify.
     systemctl disable --now ssh.socket >/dev/null 2>&1 || true
@@ -185,13 +188,13 @@ prepare() {
     [[ ! -e "${FINALIZED_MARKER}" ]] \
         || die "Bootstrap is already finalized. Use '$0 status'."
 
+    verify_repository_preflight
+
     install_base_packages
     configure_host_baseline
     ensure_admin_user
     write_temporary_ssh_config
     apply_prepare_components
-
-    verify_public_repository_access
 
     printf '\n============================================================\n'
     printf 'PREPARE PHASE COMPLETE\n'

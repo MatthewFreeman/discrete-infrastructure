@@ -143,20 +143,39 @@ jobs:
               docs/bootstrap-ubuntu-24.04-from-zero.md
           )"
           targeted_scan='nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>'
+          fast_scan='nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>'
           full_scan='nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>'
 
           grep -F "${targeted_scan}" <<<"${scan_doc}"
+          grep -F "${fast_scan}" <<<"${scan_doc}"
           grep -F "${full_scan}" <<<"${scan_doc}"
-          grep -F '65,535 TCP ports' <<<"${scan_doc}"
+          grep -F 'required external check for every newly bootstrapped VPS' <<<"${scan_doc}"
+          grep -F 'not a per-VPS bootstrap requirement' <<<"${scan_doc}"
+          grep -F 'Optional fast all-port confidence check' <<<"${scan_doc}"
+          grep -F 'supplemental evidence only' <<<"${scan_doc}"
+          grep -F 'Accuracy-first qualification scan' <<<"${scan_doc}"
+          grep -F '65,535-port scan' <<<"${scan_doc}"
           grep -F 'may take from several minutes to an hour or longer' <<<"${scan_doc}"
+          grep -F -- '--min-rate' <<<"${scan_doc}"
+          grep -F -- '--max-retries' <<<"${scan_doc}"
+          grep -F 'incomplete scan is not a passing qualification result' <<<"${scan_doc}"
+          grep -F 'required before this experimental Ubuntu runbook can be marked' <<<"${scan_doc}"
 
           targeted_line="$(grep -nF "${targeted_scan}" <<<"${scan_doc}" | cut -d: -f1)"
+          fast_line="$(grep -nF "${fast_scan}" <<<"${scan_doc}" | cut -d: -f1)"
           full_line="$(grep -nF "${full_scan}" <<<"${scan_doc}" | cut -d: -f1)"
-          (( targeted_line < full_line )) || {
-            echo 'Targeted scan must appear before the full TCP scan.' >&2
+          (( targeted_line < fast_line && fast_line < full_line )) || {
+            echo 'Scan order must be targeted, optional fast sweep, then qualification.' >&2
             exit 1
           }
 
+      - name: Validate Ubuntu support status
+        run: |
+          grep -F 'Supported and clean-room validated via Path A; Path B experimental' README.md
+          grep -F 'Supported and clean-room validated via Path A; Path B experimental' docs/bootstrap-platforms.md
+          grep -F '**Support status:** Path A is supported and clean-room validated.' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '# Path A clean-room validation record' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'Path B remains experimental' docs/bootstrap-ubuntu-24.04-from-zero.md
       - name: Validate platform file separation
         run: |
           grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh

@@ -148,16 +148,25 @@ For Path A, run inside the VPS session:
 whoami
 ```
 
-For Path B, run inside the VPS session:
+For Path B, first verify the initial account inside the VPS session:
 
 ```bash
 whoami
+```
+
+The result must be the exact initial username. Then run this command by itself:
+
+```bash
 sudo -i
+```
+
+Enter the initial user's password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
-For Path A, `whoami` must print `root`. For Path B, the first `whoami` must print the exact initial
-username and the final `whoami` must print `root`.
+The result must be `root`. For Path A, the earlier `whoami` result must also be `root`.
 
 This first connection is called the **original SSH terminal** in later steps. On Path B, remember
 the exact initial username; step 5 passes it through `BOOTSTRAP_SOURCE_USER`.
@@ -434,18 +443,36 @@ whoami
 
 For Path A, the result must be `root`. For Path B, it must be the exact initial username.
 
-Inside the fresh administrative session:
+Inside the fresh administrative session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`.
+
+Validate `sudo` separately:
+
+```bash
 sudo -v
+```
+
+When prompted, enter the `serveradmin` password created during step 5. The terminal deliberately
+displays no characters while you type. Wait until `sudo -v` returns to the shell prompt.
+
+Then enter a root login shell by running this command by itself:
+
+```bash
 sudo -i
+```
+
+Wait for the root shell prompt, then verify it:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. When `sudo -v`
-asks for a password, enter the `serveradmin` password created during step 5. The terminal
-deliberately displays no characters while you type it.
+The result must be `root`.
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
@@ -611,15 +638,25 @@ introduced in step 2:
   ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
-Inside the fresh post-finalization administrative session:
+Inside the fresh post-finalization administrative session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`. Then run this command by itself:
+
+```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`.
+The result must be `root`.
 
 ### Confirm that direct root SSH is denied
 
@@ -779,10 +816,16 @@ the same MobaXterm, PuTTY, or OpenSSH method described earlier:
 ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
 ```
 
-Inside the VPS session:
+Inside the VPS session, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then run the
+post-reboot checks:
+
+```bash
 whoami
 cd /opt/discrete-infrastructure
 
@@ -872,10 +915,15 @@ Connect from your local computer using the same SSH client method introduced in 
 
 ### Enter and verify a root login shell
 
-Inside the new VPS session:
+Inside the new VPS session, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 

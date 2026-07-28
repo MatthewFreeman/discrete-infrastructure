@@ -12,6 +12,8 @@ before it is marked supported.
 > `bootstrap/run.sh` or `install.sh` on an Ubuntu VPS.
 
 > [!IMPORTANT]
+> **Before opening the first SSH connection, disable X11 forwarding in the SSH client and keep it
+> disabled for every session in this runbook.**
 > Keep the original SSH session open until a fresh temporary-access session and a fresh
 > `serveradmin` session have both been tested. Then close the temporary-access session and the
 > original session, and continue from the fresh administrative session exactly as described in
@@ -96,6 +98,10 @@ succeed.
 Open the first SSH connection **from your local computer**. Do not run an SSH connection command
 inside another VPS shell.
 
+Before creating the session, explicitly verify that X11 forwarding is disabled. Do not rely on a
+client default or a previously saved session: an X11-enabled original connection can create a
+loopback IPv6 listener that remains until the session closes.
+
 Use the provider-supplied authentication method and choose the matching path:
 
 | Path | Use when | Host | Username | TCP port |
@@ -109,8 +115,10 @@ provider. Enter the public VPS IPv4 address literally, not a hostname.
 ### MobaXterm or PuTTY
 
 Use the client's **New session** or **Session** window to create an SSH connection with the
-settings for the selected path. Leave X11 forwarding disabled if the client offers that option.
-Authenticate with the provider password or the private key assigned when the VPS was created.
+settings for the selected path. In MobaXterm, open **Advanced SSH settings** and clear
+**X11-forwarding**. In PuTTY, open **Connection > SSH > X11** and clear
+**Enable X11 forwarding**. Authenticate with the provider password or the private key assigned
+when the VPS was created.
 
 ### OpenSSH from a local terminal
 
@@ -120,13 +128,13 @@ in MobaXterm.
 For Path A, run:
 
 ```bash
-ssh -4 -p 22 root@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
 ```
 
 For Path B, replace `<INITIAL_USER>` and run:
 
 ```bash
-ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>
 ```
 
 On the first connection, SSH may ask you to confirm the server host key. Compare its fingerprint
@@ -140,16 +148,25 @@ For Path A, run inside the VPS session:
 whoami
 ```
 
-For Path B, run inside the VPS session:
+For Path B, first verify the initial account inside the VPS session:
 
 ```bash
 whoami
+```
+
+The result must be the exact initial username. Then run this command by itself:
+
+```bash
 sudo -i
+```
+
+Enter the initial user's password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
-For Path A, `whoami` must print `root`. For Path B, the first `whoami` must print the exact initial
-username and the final `whoami` must print `root`.
+The result must be `root`. For Path A, the earlier `whoami` result must also be `root`.
 
 This first connection is called the **original SSH terminal** in later steps. On Path B, remember
 the exact initial username; step 5 passes it through `BOOTSTRAP_SOURCE_USER`.
@@ -220,6 +237,8 @@ Do not configure a Git credential helper on the VPS.
 Before running any repository code, verify the checkout:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 git remote get-url origin
 git status --short --branch
 ```
@@ -387,8 +406,9 @@ Use these settings for the selected path:
 | Fresh temporary-access test | B | `<VPS_IPV4>` | `<INITIAL_USER>` | `22` |
 | Fresh administrative | A or B | `<VPS_IPV4>` | `serveradmin` | `22822` |
 
-Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate local
-windows or tabs, and leave X11 forwarding disabled.
+Enter the VPS IPv4 address literally, not a hostname. Before opening either connection, recheck
+that X11 forwarding is disabled in each new or saved client session. Keep both connections in
+separate local windows or tabs.
 
 - **MobaXterm or PuTTY:** create one new GUI session for the matching temporary-access row and one
   for the administrative row.
@@ -398,19 +418,19 @@ windows or tabs, and leave X11 forwarding disabled.
   Path A:
 
   ```bash
-  ssh -4 -p 22 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
   ```
 
   Path B:
 
   ```bash
-  ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>
   ```
 
   In the fresh administrative terminal, run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 Use the copied SSH key or the password created during step 5 for the `serveradmin` login.
@@ -423,18 +443,36 @@ whoami
 
 For Path A, the result must be `root`. For Path B, it must be the exact initial username.
 
-Inside the fresh administrative session:
+Inside the fresh administrative session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`.
+
+Validate `sudo` separately:
+
+```bash
 sudo -v
+```
+
+When prompted, enter the `serveradmin` password created during step 5. The terminal deliberately
+displays no characters while you type. Wait until `sudo -v` returns to the shell prompt.
+
+Then enter a root login shell by running this command by itself:
+
+```bash
 sudo -i
+```
+
+Wait for the root shell prompt, then verify it:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. When `sudo -v`
-asks for a password, enter the `serveradmin` password created during step 5. The terminal
-deliberately displays no characters while you type it.
+The result must be `root`.
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
@@ -597,18 +635,28 @@ introduced in step 2:
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
-Inside the fresh post-finalization administrative session:
+Inside the fresh post-finalization administrative session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`. Then run this command by itself:
+
+```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`.
+The result must be `root`.
 
 ### Confirm that direct root SSH is denied
 
@@ -622,7 +670,7 @@ From another new local window or tab, attempt a connection with these settings:
 - **OpenSSH:** run from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
   ```
 
 The test passes only if no root shell opens. An authentication error such as `Permission denied`
@@ -637,7 +685,7 @@ From your local computer:
 - **OpenSSH:** run from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -p 22 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -p 22 serveradmin@<VPS_IPV4>
   ```
 
   The connection must be refused or time out without opening a shell.
@@ -713,6 +761,8 @@ it. Do not continue until every check passes.
 Run the readable listening-port audit:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh
 ```
 
@@ -730,12 +780,16 @@ The clean-baseline results are:
 | Firewall default policy | `drop` |
 | Firewall TCP allowlist | only `22822`, `9330`, `9331`, and `9332` |
 
-Every automated check must begin with `[PASS]`. The summary must end with
-`IPv4-only verification passed.` and `Port audit result: PASS`.
+All 11 automated pass/fail checks must begin with `[PASS]`, and `Checks passed` must report
+`11/11`. Additional `[INFO]` rows may appear; they provide context and are not included in the
+passed-check count. A provider DHCP client listening on UDP `68` is one such informational note.
+The summary must end with `IPv4-only verification passed.` and `Port audit result: PASS`.
 
 For low-level troubleshooting only, use:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ADMIN_USER=serveradmin \
   bash bootstrap/run-ubuntu-24.04.sh status --verbose
 
@@ -759,13 +813,19 @@ Wait for the VPS to return. From your local computer, open a fresh `serveradmin`
 the same MobaXterm, PuTTY, or OpenSSH method described earlier:
 
 ```bash
-ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
 ```
 
-Inside the VPS session:
+Inside the VPS session, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then run the
+post-reboot checks:
+
+```bash
 whoami
 cd /opt/discrete-infrastructure
 
@@ -782,7 +842,9 @@ ss -6 -H -lntup
 Required results:
 
 - `whoami` prints `root`;
-- every status and audit row begins with `[PASS]`;
+- every status row and all 11 audit pass/fail rows begin with `[PASS]`;
+- any `[INFO]` audit rows are informational and do not count as checks;
+- the audit reports `Checks passed: 11/11`;
 - the summaries end with `Overall status: PASS` and `Port audit result: PASS`;
 - `ssh.service active` is `active`;
 - `ssh.socket active` is `inactive`;
@@ -799,15 +861,7 @@ local terminal with Nmap installed, such as PowerShell, Windows Terminal, a macO
 or MobaXterm's local terminal. A trusted external port-scanning service is also acceptable when it
 can scan the complete TCP range and the specific ports below.
 
-Scan every TCP port:
-
-```bash
-nmap -Pn -4 -p- <VPS_IPV4>
-```
-
-Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
-
-Verify the intended ports explicitly:
+Verify the intended ports first:
 
 ```bash
 nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>
@@ -820,6 +874,17 @@ Required result:
 | `22` | closed or filtered |
 | `22822` | open |
 | `9330`–`9332` | closed or filtered because no service is listening |
+
+After the targeted scan matches the required result, scan every TCP port. The full scan probes all
+65,535 TCP ports and may take from several minutes to an hour or longer, especially when a
+provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
+`--stats-every 30s` prints progress without changing which ports are scanned.
+
+```bash
+nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
+```
+
+Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
 
 Provider-firewall behavior and Internet reachability can be proven only by this external test.
 Save the scan output as clean-room validation evidence.
@@ -848,15 +913,20 @@ Connect from your local computer using the same SSH client method introduced in 
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 ### Enter and verify a root login shell
 
-Inside the new VPS session:
+Inside the new VPS session, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
@@ -881,15 +951,19 @@ Do not use Debian's `install.sh` as the Ubuntu update path.
 After the installer succeeds:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ADMIN_USER=serveradmin \
   bash bootstrap/run-ubuntu-24.04.sh status
 
 ./scripts/audit-ports.sh
 ```
 
-Every status and audit row must begin with `[PASS]`. The summaries must end with
-`Overall status: PASS` and `Port audit result: PASS`. If a check fails, collect low-level diagnostics
-with `status --verbose` and `audit-ports.sh --verbose` before changing anything else.
+Every status row and all 11 audit pass/fail rows must begin with `[PASS]`. Additional `[INFO]`
+audit rows may appear and do not count as checks. The audit must report `Checks passed: 11/11`,
+and the summaries must end with `Overall status: PASS` and `Port audit result: PASS`. If a check
+fails, collect low-level diagnostics with `status --verbose` and `audit-ports.sh --verbose`
+before changing anything else.
 
 Do not close the working administrative session until the update, status, and audit all succeed.
 

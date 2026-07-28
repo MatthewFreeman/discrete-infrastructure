@@ -26,6 +26,33 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
 
+      - name: Validate Debian reboot and external scan guidance
+        run: |
+          set -euo pipefail
+          runbook='docs/bootstrap-from-zero.md'
+
+          reboot_line="$(grep -nF '## 11. Reboot validation' "${runbook}" | cut -d: -f1)"
+          scan_line="$(grep -nF '## 12. Run an external IPv4 scan' "${runbook}" | cut -d: -f1)"
+          updates_line="$(grep -nF '## 13. Normal future updates' "${runbook}" | cut -d: -f1)"
+          targeted_line="$(grep -nF 'nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>' "${runbook}" | cut -d: -f1)"
+          full_line="$(grep -nF 'nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>' "${runbook}" | cut -d: -f1)"
+
+          test "${reboot_line}" -lt "${scan_line}"
+          test "${scan_line}" -lt "${updates_line}"
+          test "${targeted_line}" -lt "${full_line}"
+
+          reboot_section="$(awk '/^## 11\. Reboot validation$/{capture=1} /^## 12\. Run an external IPv4 scan$/{capture=0} capture' "${runbook}")"
+          scan_section="$(awk '/^## 12\. Run an external IPv4 scan$/{capture=1} /^## 13\. Normal future updates$/{capture=0} capture' "${runbook}")"
+
+          printf '%s\n' "${reboot_section}" | grep -Fx 'reboot'
+          printf '%s\n' "${reboot_section}" | grep -F 'bash bootstrap/run.sh status'
+          printf '%s\n' "${reboot_section}" | grep -F './scripts/audit-ports.sh'
+          printf '%s\n' "${reboot_section}" | grep -F 'ss -6 -H -lntup'
+
+          printf '%s\n' "${scan_section}" | grep -F '65,535 TCP ports'
+          printf '%s\n' "${scan_section}" | grep -F 'an hour or longer'
+          printf '%s\n' "${scan_section}" | grep -F -- '--stats-every 30s'
+          printf '%s\n' "${scan_section}" | grep -F 'only open TCP port must be `22822/tcp`'
       - name: Install validators
         run: |
           sudo apt-get update

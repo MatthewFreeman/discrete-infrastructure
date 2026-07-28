@@ -4,6 +4,8 @@ This runbook builds the standard Discrete server baseline from a newly created D
 The finished host is intentionally IPv4-only. Discrete services use TCP only.
 
 > [!IMPORTANT]
+> **Before opening the first SSH connection, disable X11 forwarding in the SSH client and keep it
+> disabled for every session in this runbook.**
 > Keep the original root SSH session open until fresh root and `serveradmin` IPv4 sessions have
 > been tested. Then close both root sessions and continue from the fresh administrative session,
 > exactly as described in step 6. Closing the original session also removes any transient X11
@@ -94,6 +96,10 @@ verification succeed.
 Open the first SSH connection **from your local computer**. Do not run an SSH connection command
 inside another VPS shell.
 
+Before creating the session, explicitly verify that X11 forwarding is disabled. Do not rely on a
+client default or a previously saved session: an X11-enabled original connection can create a
+loopback IPv6 listener that remains until the session closes.
+
 Use the provider-supplied authentication method and these connection settings:
 
 | Host | Username | TCP port |
@@ -107,8 +113,9 @@ steps.
 ### MobaXterm or PuTTY
 
 Use the client's **New session** or **Session** window to create an SSH connection with the
-settings in the table. Leave X11 forwarding disabled if the client offers that option. Authenticate
-with the password supplied by the provider, or select the private key used when the VPS was created.
+settings in the table. In MobaXterm, open **Advanced SSH settings** and clear **X11-forwarding**.
+In PuTTY, open **Connection > SSH > X11** and clear **Enable X11 forwarding**. Authenticate with
+the password supplied by the provider, or select the private key used when the VPS was created.
 
 ### OpenSSH from a local terminal
 
@@ -116,7 +123,7 @@ Open PowerShell, Command Prompt, Windows Terminal, a macOS or Linux terminal, or
 terminal in MobaXterm, and run:
 
 ```bash
-ssh -4 -p 22 root@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
 ```
 
 Authenticate with the password supplied by the provider. If the VPS was created with an SSH key,
@@ -169,6 +176,8 @@ Do not configure a Git credential helper on the VPS.
 Before running any repository code, verify the checkout:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 git remote get-url origin
 git status --short --branch
 ```
@@ -302,20 +311,21 @@ Use these connection settings:
 | Fresh root test | `<VPS_IPV4>` | `root` | `22` |
 | Fresh administrative | `<VPS_IPV4>` | `serveradmin` | `22822` |
 
-Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate
-local windows or tabs, and leave X11 forwarding disabled.
+Enter the VPS IPv4 address literally, not a hostname. Before opening either connection, recheck
+that X11 forwarding is disabled in each new or saved client session. Keep both connections in
+separate local windows or tabs.
 
 - **MobaXterm or PuTTY:** create one new GUI session for each row in the table.
 - **OpenSSH:** open two new local terminals. In the fresh root test terminal, run:
 
   ```bash
-  ssh -4 -p 22 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
   ```
 
   In the fresh administrative terminal, run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 Inside the fresh root test session, verify the account:
@@ -326,18 +336,36 @@ whoami
 
 The result must be `root`.
 
-Inside the fresh administrative session:
+Inside the fresh administrative session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`.
+
+Validate `sudo` separately:
+
+```bash
 sudo -v
+```
+
+When prompted, enter the `serveradmin` password created during step 4. The terminal deliberately
+displays no characters while you type. Wait until `sudo -v` returns to the shell prompt.
+
+Then enter a root login shell by running this command by itself:
+
+```bash
 sudo -i
+```
+
+Wait for the root shell prompt, then verify it:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. When `sudo -v`
-asks for a password, enter the `serveradmin` password created during step 4. The terminal
-deliberately displays no characters while you type it.
+The result must be `root`.
 
 Do not continue until both fresh IPv4 SSH sessions work.
 
@@ -387,10 +415,15 @@ whoami
 
 The result must be `root`.
 
-If `whoami` prints anything other than `root`, enter a root login shell and verify again:
+If `whoami` prints anything other than `root`, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
@@ -483,19 +516,31 @@ introduced in step 2:
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
-Inside the fresh post-finalization admin session:
+Inside the fresh post-finalization admin session, verify the account:
 
 ```bash
 whoami
+```
+
+The result must be `serveradmin`.
+
+Then run this command by itself:
+
+```bash
 sudo -i
+```
+
+Enter the `serveradmin` password from step 4 if prompted and wait for the root shell prompt. Then
+verify the new shell:
+
+```bash
 whoami
 ```
 
-The first `whoami` must print `serveradmin`; the final `whoami` must print `root`. Enter the
-`serveradmin` password from step 4 if `sudo` asks for it.
+The result must be `root`.
 
 ### Confirm that direct root SSH is denied
 
@@ -509,7 +554,7 @@ From another new local window or tab, attempt a connection with these settings:
 - **OpenSSH:** run this from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
   ```
 
 The test passes only if no root shell opens. An OpenSSH client should finish with an
@@ -524,7 +569,7 @@ From your local computer:
 - **OpenSSH:** run this from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -p 22 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -p 22 root@<VPS_IPV4>
   ```
 
   The connection must be refused or time out without opening a shell.
@@ -592,6 +637,8 @@ For low-level troubleshooting only, print the original raw socket, service, and 
 details:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ADMIN_USER=serveradmin \
   bash bootstrap/run.sh status --verbose
 ```
@@ -624,10 +671,11 @@ The default output is a concise checklist in the same order a human should revie
 | Firewall default policy | `drop` |
 | Firewall TCP allowlist | only `22822`, `9330`, `9331`, and `9332` |
 
-Every automated check must begin with `[PASS]`. When a provider DHCP client listens on UDP
-`68`, the public-UDP check still passes and an `[INFO]` explanation follows it. A failed check
-begins with `[FAIL]`, prints the relevant diagnostic immediately below it, and makes the command
-exit nonzero.
+All 11 automated pass/fail checks must begin with `[PASS]`, and `Checks passed` must report
+`11/11`. Additional `[INFO]` rows may appear; they provide context and are not included in the
+passed-check count. A provider DHCP client listening on UDP `68` is one such informational note.
+A failed check begins with `[FAIL]`, prints the relevant diagnostic immediately below it, and
+makes the command exit nonzero.
 
 The final summary must report all checks passed, followed by `IPv4-only verification passed.`
 and `Port audit result: PASS`. The script now checks the documented baseline itself; do not
@@ -637,18 +685,110 @@ For troubleshooting, append the complete raw socket lists, nftables table list, 
 `ip discrete_filter input` chain:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh --verbose
 ```
 
 Use `--verbose` after a failed check or when preserving low-level diagnostics. The default
 output deliberately omits those dumps so the pass/fail path remains readable.
 
-This local audit does not prove provider-firewall behavior or Internet reachability. Those
-remain provider-specific and require a scan from a separate external host.
+This local audit does not prove provider-firewall behavior or Internet reachability. Step 12 tests
+those from a separate external host.
 
 ---
 
-## 11. Normal future updates
+## 11. Reboot validation
+
+Reboot only after every check in steps 9 and 10 passes. The current SSH connection will close:
+
+```bash
+reboot
+```
+
+Wait for the VPS to return. From your local computer, open a fresh `serveradmin` connection using
+the same MobaXterm, PuTTY, or OpenSSH method described earlier:
+
+```bash
+ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
+```
+
+Inside the VPS session, run this command by itself:
+
+```bash
+sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then run the
+post-reboot checks:
+
+```bash
+whoami
+cd /opt/discrete-infrastructure
+
+ADMIN_USER=serveradmin \
+  bash bootstrap/run.sh status
+
+./scripts/audit-ports.sh
+
+printf 'ssh.service active: '; systemctl is-active ssh.service
+printf 'ssh.socket active:  '; systemctl is-active ssh.socket || true
+ss -6 -H -lntup
+```
+
+Required results:
+
+- `whoami` prints `root`;
+- every status row and all 11 audit pass/fail rows begin with `[PASS]`;
+- any `[INFO]` audit rows are informational and do not count as checks;
+- the audit reports `Checks passed: 11/11`;
+- the summaries end with `Overall status: PASS` and `Port audit result: PASS`;
+- `ssh.service active` is `active`;
+- `ssh.socket active` is `inactive`;
+- `ss -6 -H -lntup` prints nothing.
+
+Do not continue if the post-reboot login or any verification fails.
+
+---
+
+## 12. Run an external IPv4 scan
+
+Run this step from a different Internet-connected computer, **not from the VPS itself**. Use a
+local terminal with Nmap installed, such as PowerShell, Windows Terminal, a macOS or Linux terminal,
+or MobaXterm's local terminal. A trusted external port-scanning service is also acceptable when it
+can scan the complete TCP range and the specific ports below.
+
+Verify the intended ports first:
+
+```bash
+nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>
+```
+
+Required result:
+
+| Port | Required external state before Discrete is installed |
+|---:|---|
+| `22` | closed or filtered |
+| `22822` | open |
+| `9330`–`9332` | closed or filtered because no service is listening |
+
+After the targeted scan matches the required result, scan every TCP port. The full scan probes all
+65,535 TCP ports and may take from several minutes to an hour or longer, especially when a
+provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
+`--stats-every 30s` prints progress without changing which ports are scanned.
+
+```bash
+nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
+```
+
+Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
+
+Provider-firewall behavior and Internet reachability can be proven only by this external test.
+Save the scan output as clean-room validation evidence.
+
+---
+
+## 13. Normal future updates
 
 Repeat this procedure whenever the repository contains an approved infrastructure update.
 
@@ -671,15 +811,20 @@ Connect from your local computer using the same SSH client method introduced in 
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 ### Enter and verify a root login shell
 
-Inside the new VPS session:
+Inside the new VPS session, run this command by itself:
 
 ```bash
 sudo -i
+```
+
+Enter the `serveradmin` password if prompted and wait for the root shell prompt. Then verify:
+
+```bash
 whoami
 ```
 
@@ -703,13 +848,18 @@ token, or SSH key. Stop if the pull is not a fast-forward or if the installer re
 After the installer succeeds:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh
 ```
 
-Every check must begin with `[PASS]`, and the summary must end with
-`Port audit result: PASS`. If a check fails, print the low-level diagnostics with:
+All 11 automated pass/fail checks must begin with `[PASS]`, `Checks passed` must report
+`11/11`, and the summary must end with `Port audit result: PASS`. Additional `[INFO]` rows may
+appear and do not count as checks. If a check fails, print the low-level diagnostics with:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh --verbose
 ```
 

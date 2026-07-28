@@ -176,6 +176,8 @@ Do not configure a Git credential helper on the VPS.
 Before running any repository code, verify the checkout:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 git remote get-url origin
 git status --short --branch
 ```
@@ -600,6 +602,8 @@ For low-level troubleshooting only, print the original raw socket, service, and 
 details:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ADMIN_USER=serveradmin \
   bash bootstrap/run.sh status --verbose
 ```
@@ -645,6 +649,8 @@ For troubleshooting, append the complete raw socket lists, nftables table list, 
 `ip discrete_filter input` chain:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh --verbose
 ```
 
@@ -711,6 +717,8 @@ token, or SSH key. Stop if the pull is not a fast-forward or if the installer re
 After the installer succeeds:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh
 ```
 
@@ -718,6 +726,8 @@ Every check must begin with `[PASS]`, and the summary must end with
 `Port audit result: PASS`. If a check fails, print the low-level diagnostics with:
 
 ```bash
+cd /opt/discrete-infrastructure
+
 ./scripts/audit-ports.sh --verbose
 ```
 

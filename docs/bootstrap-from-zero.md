@@ -4,6 +4,8 @@ This runbook builds the standard Discrete server baseline from a newly created D
 The finished host is intentionally IPv4-only. Discrete services use TCP only.
 
 > [!IMPORTANT]
+> **Before opening the first SSH connection, disable X11 forwarding in the SSH client and keep it
+> disabled for every session in this runbook.**
 > Keep the original root SSH session open until fresh root and `serveradmin` IPv4 sessions have
 > been tested. Then close both root sessions and continue from the fresh administrative session,
 > exactly as described in step 6. Closing the original session also removes any transient X11
@@ -94,6 +96,10 @@ verification succeed.
 Open the first SSH connection **from your local computer**. Do not run an SSH connection command
 inside another VPS shell.
 
+Before creating the session, explicitly verify that X11 forwarding is disabled. Do not rely on a
+client default or a previously saved session: an X11-enabled original connection can create a
+loopback IPv6 listener that remains until the session closes.
+
 Use the provider-supplied authentication method and these connection settings:
 
 | Host | Username | TCP port |
@@ -107,8 +113,9 @@ steps.
 ### MobaXterm or PuTTY
 
 Use the client's **New session** or **Session** window to create an SSH connection with the
-settings in the table. Leave X11 forwarding disabled if the client offers that option. Authenticate
-with the password supplied by the provider, or select the private key used when the VPS was created.
+settings in the table. In MobaXterm, open **Advanced SSH settings** and clear **X11-forwarding**.
+In PuTTY, open **Connection > SSH > X11** and clear **Enable X11 forwarding**. Authenticate with
+the password supplied by the provider, or select the private key used when the VPS was created.
 
 ### OpenSSH from a local terminal
 
@@ -116,7 +123,7 @@ Open PowerShell, Command Prompt, Windows Terminal, a macOS or Linux terminal, or
 terminal in MobaXterm, and run:
 
 ```bash
-ssh -4 -p 22 root@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
 ```
 
 Authenticate with the password supplied by the provider. If the VPS was created with an SSH key,
@@ -302,20 +309,21 @@ Use these connection settings:
 | Fresh root test | `<VPS_IPV4>` | `root` | `22` |
 | Fresh administrative | `<VPS_IPV4>` | `serveradmin` | `22822` |
 
-Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate
-local windows or tabs, and leave X11 forwarding disabled.
+Enter the VPS IPv4 address literally, not a hostname. Before opening either connection, recheck
+that X11 forwarding is disabled in each new or saved client session. Keep both connections in
+separate local windows or tabs.
 
 - **MobaXterm or PuTTY:** create one new GUI session for each row in the table.
 - **OpenSSH:** open two new local terminals. In the fresh root test terminal, run:
 
   ```bash
-  ssh -4 -p 22 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
   ```
 
   In the fresh administrative terminal, run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 Inside the fresh root test session, verify the account:
@@ -483,7 +491,7 @@ introduced in step 2:
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 Inside the fresh post-finalization admin session:
@@ -509,7 +517,7 @@ From another new local window or tab, attempt a connection with these settings:
 - **OpenSSH:** run this from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
   ```
 
 The test passes only if no root shell opens. An OpenSSH client should finish with an
@@ -524,7 +532,7 @@ From your local computer:
 - **OpenSSH:** run this from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -p 22 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -p 22 root@<VPS_IPV4>
   ```
 
   The connection must be refused or time out without opening a shell.
@@ -671,7 +679,7 @@ Connect from your local computer using the same SSH client method introduced in 
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 ### Enter and verify a root login shell

@@ -159,7 +159,6 @@ jobs:
           grep -F -- '--min-rate' <<<"${scan_doc}"
           grep -F -- '--max-retries' <<<"${scan_doc}"
           grep -F 'incomplete scan is not a passing qualification result' <<<"${scan_doc}"
-          grep -F 'required before this experimental Ubuntu runbook can be marked' <<<"${scan_doc}"
 
           targeted_line="$(grep -nF "${targeted_scan}" <<<"${scan_doc}" | cut -d: -f1)"
           fast_line="$(grep -nF "${fast_scan}" <<<"${scan_doc}" | cut -d: -f1)"

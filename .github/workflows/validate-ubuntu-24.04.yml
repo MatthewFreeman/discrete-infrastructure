@@ -122,8 +122,15 @@ jobs:
             configs/systemd/discrete-ipv4-only-after-network.service
           grep -F 'WantedBy=multi-user.target' \
             configs/systemd/discrete-ipv4-only-after-network.service
+          if grep -F 'install-ubuntu-ipv4-reassertion.sh' \
+            bootstrap/run-ubuntu-24.04.sh; then
+            echo 'Ubuntu runner mutates reboot persistence before repository preflight.' >&2
+            exit 1
+          fi
+          grep -F 'verify_repository_preflight' \
+            bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'install-ubuntu-ipv4-reassertion.sh' \
-            bootstrap/run-ubuntu-24.04.sh
+            bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'UBUNTU_IPV4_SERVICE_START_NOW=1' \
             install-ubuntu-24.04.sh
           grep -F 'systemctl enable "${UNIT_NAME}"' \

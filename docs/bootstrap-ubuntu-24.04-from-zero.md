@@ -861,15 +861,7 @@ local terminal with Nmap installed, such as PowerShell, Windows Terminal, a macO
 or MobaXterm's local terminal. A trusted external port-scanning service is also acceptable when it
 can scan the complete TCP range and the specific ports below.
 
-Scan every TCP port:
-
-```bash
-nmap -Pn -4 -p- <VPS_IPV4>
-```
-
-Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
-
-Verify the intended ports explicitly:
+Verify the intended ports first:
 
 ```bash
 nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>
@@ -882,6 +874,17 @@ Required result:
 | `22` | closed or filtered |
 | `22822` | open |
 | `9330`–`9332` | closed or filtered because no service is listening |
+
+After the targeted scan matches the required result, scan every TCP port. The full scan probes all
+65,535 TCP ports and may take from several minutes to an hour or longer, especially when a
+provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
+`--stats-every 30s` prints progress without changing which ports are scanned.
+
+```bash
+nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
+```
+
+Before Discrete services are installed, the only open TCP port must be `22822/tcp`.
 
 Provider-firewall behavior and Internet reachability can be proven only by this external test.
 Save the scan output as clean-room validation evidence.

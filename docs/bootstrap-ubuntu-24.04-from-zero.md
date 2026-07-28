@@ -12,6 +12,8 @@ before it is marked supported.
 > `bootstrap/run.sh` or `install.sh` on an Ubuntu VPS.
 
 > [!IMPORTANT]
+> **Before opening the first SSH connection, disable X11 forwarding in the SSH client and keep it
+> disabled for every session in this runbook.**
 > Keep the original SSH session open until a fresh temporary-access session and a fresh
 > `serveradmin` session have both been tested. Then close the temporary-access session and the
 > original session, and continue from the fresh administrative session exactly as described in
@@ -96,6 +98,10 @@ succeed.
 Open the first SSH connection **from your local computer**. Do not run an SSH connection command
 inside another VPS shell.
 
+Before creating the session, explicitly verify that X11 forwarding is disabled. Do not rely on a
+client default or a previously saved session: an X11-enabled original connection can create a
+loopback IPv6 listener that remains until the session closes.
+
 Use the provider-supplied authentication method and choose the matching path:
 
 | Path | Use when | Host | Username | TCP port |
@@ -109,8 +115,10 @@ provider. Enter the public VPS IPv4 address literally, not a hostname.
 ### MobaXterm or PuTTY
 
 Use the client's **New session** or **Session** window to create an SSH connection with the
-settings for the selected path. Leave X11 forwarding disabled if the client offers that option.
-Authenticate with the provider password or the private key assigned when the VPS was created.
+settings for the selected path. In MobaXterm, open **Advanced SSH settings** and clear
+**X11-forwarding**. In PuTTY, open **Connection > SSH > X11** and clear
+**Enable X11 forwarding**. Authenticate with the provider password or the private key assigned
+when the VPS was created.
 
 ### OpenSSH from a local terminal
 
@@ -120,13 +128,13 @@ in MobaXterm.
 For Path A, run:
 
 ```bash
-ssh -4 -p 22 root@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
 ```
 
 For Path B, replace `<INITIAL_USER>` and run:
 
 ```bash
-ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>
 ```
 
 On the first connection, SSH may ask you to confirm the server host key. Compare its fingerprint
@@ -387,8 +395,9 @@ Use these settings for the selected path:
 | Fresh temporary-access test | B | `<VPS_IPV4>` | `<INITIAL_USER>` | `22` |
 | Fresh administrative | A or B | `<VPS_IPV4>` | `serveradmin` | `22822` |
 
-Enter the VPS IPv4 address literally, not a hostname. Keep both new connections in separate local
-windows or tabs, and leave X11 forwarding disabled.
+Enter the VPS IPv4 address literally, not a hostname. Before opening either connection, recheck
+that X11 forwarding is disabled in each new or saved client session. Keep both connections in
+separate local windows or tabs.
 
 - **MobaXterm or PuTTY:** create one new GUI session for the matching temporary-access row and one
   for the administrative row.
@@ -398,19 +407,19 @@ windows or tabs, and leave X11 forwarding disabled.
   Path A:
 
   ```bash
-  ssh -4 -p 22 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22 root@<VPS_IPV4>
   ```
 
   Path B:
 
   ```bash
-  ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>
   ```
 
   In the fresh administrative terminal, run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 Use the copied SSH key or the password created during step 5 for the `serveradmin` login.
@@ -597,7 +606,7 @@ introduced in step 2:
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 Inside the fresh post-finalization administrative session:
@@ -622,7 +631,7 @@ From another new local window or tab, attempt a connection with these settings:
 - **OpenSSH:** run from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -o NumberOfPasswordPrompts=1 -p 22822 root@<VPS_IPV4>
   ```
 
 The test passes only if no root shell opens. An authentication error such as `Permission denied`
@@ -637,7 +646,7 @@ From your local computer:
 - **OpenSSH:** run from a new local terminal:
 
   ```bash
-  ssh -4 -o ConnectTimeout=5 -p 22 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -o ConnectTimeout=5 -p 22 serveradmin@<VPS_IPV4>
   ```
 
   The connection must be refused or time out without opening a shell.
@@ -759,7 +768,7 @@ Wait for the VPS to return. From your local computer, open a fresh `serveradmin`
 the same MobaXterm, PuTTY, or OpenSSH method described earlier:
 
 ```bash
-ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
 ```
 
 Inside the VPS session:
@@ -848,7 +857,7 @@ Connect from your local computer using the same SSH client method introduced in 
 - **OpenSSH:** open a new local terminal and run:
 
   ```bash
-  ssh -4 -p 22822 serveradmin@<VPS_IPV4>
+  ssh -4 -o ForwardX11=no -p 22822 serveradmin@<VPS_IPV4>
   ```
 
 ### Enter and verify a root login shell

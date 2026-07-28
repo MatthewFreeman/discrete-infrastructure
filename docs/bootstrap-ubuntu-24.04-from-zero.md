@@ -743,8 +743,10 @@ The clean-baseline results are:
 | Firewall default policy | `drop` |
 | Firewall TCP allowlist | only `22822`, `9330`, `9331`, and `9332` |
 
-Every automated check must begin with `[PASS]`. The summary must end with
-`IPv4-only verification passed.` and `Port audit result: PASS`.
+All 11 automated pass/fail checks must begin with `[PASS]`, and `Checks passed` must report
+`11/11`. Additional `[INFO]` rows may appear; they provide context and are not included in the
+passed-check count. A provider DHCP client listening on UDP `68` is one such informational note.
+The summary must end with `IPv4-only verification passed.` and `Port audit result: PASS`.
 
 For low-level troubleshooting only, use:
 
@@ -797,7 +799,9 @@ ss -6 -H -lntup
 Required results:
 
 - `whoami` prints `root`;
-- every status and audit row begins with `[PASS]`;
+- every status row and all 11 audit pass/fail rows begin with `[PASS]`;
+- any `[INFO]` audit rows are informational and do not count as checks;
+- the audit reports `Checks passed: 11/11`;
 - the summaries end with `Overall status: PASS` and `Port audit result: PASS`;
 - `ssh.service active` is `active`;
 - `ssh.socket active` is `inactive`;
@@ -904,9 +908,11 @@ ADMIN_USER=serveradmin \
 ./scripts/audit-ports.sh
 ```
 
-Every status and audit row must begin with `[PASS]`. The summaries must end with
-`Overall status: PASS` and `Port audit result: PASS`. If a check fails, collect low-level diagnostics
-with `status --verbose` and `audit-ports.sh --verbose` before changing anything else.
+Every status row and all 11 audit pass/fail rows must begin with `[PASS]`. Additional `[INFO]`
+audit rows may appear and do not count as checks. The audit must report `Checks passed: 11/11`,
+and the summaries must end with `Overall status: PASS` and `Port audit result: PASS`. If a check
+fails, collect low-level diagnostics with `status --verbose` and `audit-ports.sh --verbose`
+before changing anything else.
 
 Do not close the working administrative session until the update, status, and audit all succeed.
 

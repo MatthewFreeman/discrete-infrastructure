@@ -85,7 +85,7 @@ jobs:
             bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'root account remains locked' \
             docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'ssh -4 -p 22 <INITIAL_USER>@<VPS_IPV4>' \
+          grep -F 'ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>' \
             docs/bootstrap-ubuntu-24.04-from-zero.md
 
       - name: Validate Ubuntu finalize IPv6 preflight

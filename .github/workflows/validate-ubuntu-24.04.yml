@@ -136,6 +136,27 @@ jobs:
           grep -F 'systemctl enable "${UNIT_NAME}"' \
             bootstrap/install-ubuntu-ipv4-reassertion.sh
 
+      - name: Validate Ubuntu external scan guidance
+        run: |
+          scan_doc="$(
+            awk '/^## 12\. Run an external IPv4 scan$/,/^## 13\./' \
+              docs/bootstrap-ubuntu-24.04-from-zero.md
+          )"
+          targeted_scan='nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>'
+          full_scan='nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>'
+
+          grep -F "${targeted_scan}" <<<"${scan_doc}"
+          grep -F "${full_scan}" <<<"${scan_doc}"
+          grep -F '65,535 TCP ports' <<<"${scan_doc}"
+          grep -F 'may take from several minutes to an hour or longer' <<<"${scan_doc}"
+
+          targeted_line="$(grep -nF "${targeted_scan}" <<<"${scan_doc}" | cut -d: -f1)"
+          full_line="$(grep -nF "${full_scan}" <<<"${scan_doc}" | cut -d: -f1)"
+          (( targeted_line < full_line )) || {
+            echo 'Targeted scan must appear before the full TCP scan.' >&2
+            exit 1
+          }
+
       - name: Validate platform file separation
         run: |
           grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh

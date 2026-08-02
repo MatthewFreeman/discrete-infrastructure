@@ -62,6 +62,9 @@ supported after completing the runbook, reboot test, targeted external scan, and
 scan through Path A. Both access paths converge on the same final infrastructure contract; CI
 enforces the Path B-specific cloud-user, root-lock, key-transfer, and temporary-access behavior.
 
+The measured Linux release-selection decision and its reproducible raw evidence are documented in
+the [Discrete v0.9.5 benchmark suite](docs/benchmarks/discrete-v0.9.5/README.md).
+
 ## Repository layout
 
 ```text

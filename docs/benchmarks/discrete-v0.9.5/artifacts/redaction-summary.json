@@ -1,0 +1,23 @@
+{
+  "integrity_note": "Original hashes describe the private source evidence. Public hashes describe the sanitized payload. Identifier redaction changes bytes but must not change numeric benchmark measurements.",
+  "original_selected_bytes": 31088724,
+  "public_selected_bytes": 30896053,
+  "redaction_occurrences": {
+    "email": 1414,
+    "hostname": 77916,
+    "ip": 10970,
+    "mac": 4,
+    "provisioning_ssh_parameter": 108,
+    "uuid": 336
+  },
+  "sanitizer_version": 2,
+  "schema": "discrete-benchmark-publication/v1",
+  "selected_file_count": 6067,
+  "source_release": "v.0.9.5",
+  "unique_identifiers_redacted": {
+    "email": 5,
+    "ip": 76,
+    "mac": 3,
+    "uuid": 22
+  }
+}

@@ -4,5 +4,7 @@ Architecture notes, installation procedures, operational runbooks, validation ch
 
 - [Bootstrap a clean Debian 12 IPv4-only VPS](bootstrap-from-zero.md)
 - [Bootstrap a clean Ubuntu Server 24.04 LTS IPv4-only VPS](bootstrap-ubuntu-24.04-from-zero.md)
+- [Discrete release validation and benchmark evidence](benchmarks/README.md)
+- [Architecture decisions](decisions/README.md)
 
 A configuration change is not finished until another person can understand how to deploy, verify, and reverse it from the documentation.

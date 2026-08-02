@@ -1,0 +1,13 @@
+pair,os,thp_policy,thp_recorded_in_raw,label,epoch_ns,Rss_kb,Anonymous_kb,AnonHugePages_kb,Pss_File_kb
+08,ubuntu,madvise,False,idle-start,1785546521624703635,30084,21184,0,8896
+08,ubuntu,madvise,False,idle-mid,1785546581646461283,28096,19132,0,8960
+08,ubuntu,madvise,False,idle-end,1785546641676186739,28228,19256,0,8968
+08,debian,always,False,idle-start,1785546521614529848,31188,22304,14336,8880
+08,debian,always,False,idle-mid,1785546581637492239,56920,48036,40960,8880
+08,debian,always,False,idle-end,1785546641668854436,65068,56176,49152,8888
+09,ubuntu,madvise,True,idle-start,1785547015929061192,31936,23000,0,8932
+09,ubuntu,madvise,True,idle-mid,1785547075949574632,27940,19004,0,8932
+09,ubuntu,madvise,True,idle-end,1785547135980373384,28112,19172,0,8936
+09,debian,madvise,True,idle-start,1785547015927515780,31636,22696,0,8936
+09,debian,madvise,True,idle-mid,1785547075948670360,28060,19120,0,8936
+09,debian,madvise,True,idle-end,1785547135982398506,28140,19196,0,8940

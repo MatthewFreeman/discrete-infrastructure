@@ -1,0 +1,138 @@
+{
+  "method": {
+    "groups": "4 Ubuntu-native runs vs 4 Universal runs",
+    "permutation": "exact two-sided difference-in-means test across all 70 label assignments",
+    "confidence_interval": "independent nonparametric bootstrap, 50000 resamples, deterministic seed",
+    "warning": "small n and live-peer VPS variance; treat p-values as descriptive, not proof"
+  },
+  "cold_sync": {
+    "height_4500_s": {
+      "ubuntu_mean": 60.85276500575,
+      "universal_mean": 60.59634611275,
+      "ubuntu_minus_universal": 0.25641889300000287,
+      "ubuntu_vs_universal_pct": 0.4231590012422348,
+      "exact_two_sided_permutation_p": 0.9714285714285714,
+      "bootstrap_95pct_ci_difference_low": -10.124730186499995,
+      "bootstrap_95pct_ci_difference_high": 10.399166318750005
+    },
+    "blocks_per_s_to_4500": {
+      "ubuntu_mean": 80.9678279955724,
+      "universal_mean": 81.74526795791964,
+      "ubuntu_minus_universal": -0.7774399623472306,
+      "ubuntu_vs_universal_pct": -0.9510519468202583,
+      "exact_two_sided_permutation_p": 0.8857142857142857,
+      "bootstrap_95pct_ci_difference_low": -14.753471969138346,
+      "bootstrap_95pct_ci_difference_high": 13.445895366183237
+    },
+    "cpu_total_s_to_4500": {
+      "ubuntu_mean": 43.934999999999995,
+      "universal_mean": 44.84,
+      "ubuntu_minus_universal": -0.9050000000000082,
+      "ubuntu_vs_universal_pct": -2.0182872435325794,
+      "exact_two_sided_permutation_p": 0.42857142857142855,
+      "bootstrap_95pct_ci_difference_low": -2.7350000000000065,
+      "bootstrap_95pct_ci_difference_high": 0.7650000000000006
+    },
+    "avg_rss_kb_to_4500": {
+      "ubuntu_mean": 83846.10305858238,
+      "universal_mean": 66295.3276977924,
+      "ubuntu_minus_universal": 17550.77536078998,
+      "ubuntu_vs_universal_pct": 26.473623361204712,
+      "exact_two_sided_permutation_p": 0.02857142857142857,
+      "bootstrap_95pct_ci_difference_low": 12326.44828688349,
+      "bootstrap_95pct_ci_difference_high": 22081.86783216783
+    },
+    "peak_rss_kb_to_4500": {
+      "ubuntu_mean": 125411.0,
+      "universal_mean": 106280.0,
+      "ubuntu_minus_universal": 19131.0,
+      "ubuntu_vs_universal_pct": 18.000564546481,
+      "exact_two_sided_permutation_p": 0.02857142857142857,
+      "bootstrap_95pct_ci_difference_low": 13870.0,
+      "bootstrap_95pct_ci_difference_high": 24995.0
+    },
+    "rpc_latency_mean_ms_to_4500": {
+      "ubuntu_mean": 20.9612561837017,
+      "universal_mean": 22.20018110596341,
+      "ubuntu_minus_universal": -1.2389249222617096,
+      "ubuntu_vs_universal_pct": -5.580697366153064,
+      "exact_two_sided_permutation_p": 0.6,
+      "bootstrap_95pct_ci_difference_low": -4.982901672210765,
+      "bootstrap_95pct_ci_difference_high": 2.932492202315089
+    },
+    "stop_seconds": {
+      "ubuntu_mean": 6.03714896775,
+      "universal_mean": 7.014569192000001,
+      "ubuntu_minus_universal": -0.9774202242500003,
+      "ubuntu_vs_universal_pct": -13.93414474212802,
+      "exact_two_sided_permutation_p": 0.8285714285714286,
+      "bootstrap_95pct_ci_difference_low": -7.277385055250001,
+      "bootstrap_95pct_ci_difference_high": 6.07298784825
+    }
+  },
+  "warm_idle": {
+    "rpc_ready_s": {
+      "ubuntu_mean": 4.3788660505,
+      "universal_mean": 4.88950686,
+      "ubuntu_minus_universal": -0.5106408094999999,
+      "ubuntu_vs_universal_pct": -10.44360554389323,
+      "exact_two_sided_permutation_p": 0.34285714285714286,
+      "bootstrap_95pct_ci_difference_low": -1.0357166764999999,
+      "bootstrap_95pct_ci_difference_high": 0.2553070960000001
+    },
+    "core_init_log_s": {
+      "ubuntu_mean": 0.0028935000000000002,
+      "universal_mean": 0.0031155,
+      "ubuntu_minus_universal": -0.00022199999999999998,
+      "ubuntu_vs_universal_pct": -7.1256620125180525,
+      "exact_two_sided_permutation_p": 0.7428571428571429,
+      "bootstrap_95pct_ci_difference_low": -0.0010140000000000001,
+      "bootstrap_95pct_ci_difference_high": 0.0008727500000000003
+    },
+    "idle_avg_cpu_pct": {
+      "ubuntu_mean": 0.07629673464004742,
+      "universal_mean": 0.08051655702061304,
+      "ubuntu_minus_universal": -0.004219822380565619,
+      "ubuntu_vs_universal_pct": -5.240937437855553,
+      "exact_two_sided_permutation_p": 0.9428571428571428,
+      "bootstrap_95pct_ci_difference_low": -0.04658017908562498,
+      "bootstrap_95pct_ci_difference_high": 0.04235829732164545
+    },
+    "idle_avg_rss_kb": {
+      "ubuntu_mean": 32998.59322033898,
+      "universal_mean": 26839.322033898305,
+      "ubuntu_minus_universal": 6159.271186440677,
+      "ubuntu_vs_universal_pct": 22.94868394462968,
+      "exact_two_sided_permutation_p": 0.02857142857142857,
+      "bootstrap_95pct_ci_difference_low": 5964.559322033896,
+      "bootstrap_95pct_ci_difference_high": 6353.389830508473
+    },
+    "idle_peak_rss_kb": {
+      "ubuntu_mean": 33248.0,
+      "universal_mean": 27062.0,
+      "ubuntu_minus_universal": 6186.0,
+      "ubuntu_vs_universal_pct": 22.858620944497822,
+      "exact_two_sided_permutation_p": 0.02857142857142857,
+      "bootstrap_95pct_ci_difference_low": 5915.0,
+      "bootstrap_95pct_ci_difference_high": 6437.0
+    },
+    "idle_rpc_latency_mean_ms": {
+      "ubuntu_mean": 0.5035454545454545,
+      "universal_mean": 0.5747178030303031,
+      "ubuntu_minus_universal": -0.07117234848484855,
+      "ubuntu_vs_universal_pct": -12.383877462918235,
+      "exact_two_sided_permutation_p": 0.02857142857142857,
+      "bootstrap_95pct_ci_difference_low": -0.09904545454545449,
+      "bootstrap_95pct_ci_difference_high": -0.04399999999999993
+    },
+    "stop_seconds": {
+      "ubuntu_mean": 2.086511927,
+      "universal_mean": 3.3551701547499997,
+      "ubuntu_minus_universal": -1.2686582277499996,
+      "ubuntu_vs_universal_pct": -37.812038413429725,
+      "exact_two_sided_permutation_p": 0.7142857142857143,
+      "bootstrap_95pct_ci_difference_low": -6.683334895249999,
+      "bootstrap_95pct_ci_difference_high": 3.12745987975
+    }
+  }
+}

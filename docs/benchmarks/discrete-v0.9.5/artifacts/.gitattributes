@@ -1,0 +1,3 @@
+*.tar.gz binary
+*.txt -text
+*.json -text

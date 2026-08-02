@@ -1,0 +1,509 @@
+{
+  "design": {
+    "debian_always_runs": 6,
+    "debian_madvise_runs": 6,
+    "debian_order": [
+      "always",
+      "madvise",
+      "madvise",
+      "always",
+      "madvise",
+      "always",
+      "always",
+      "madvise",
+      "always",
+      "madvise",
+      "madvise",
+      "always"
+    ],
+    "target_height": 4500,
+    "ubuntu_policy": "madvise for all 12 simultaneous control runs"
+  },
+  "limitations": [
+    "THP assignment was fixed before execution but not randomly generated.",
+    "Ubuntu controls shared wall-clock network conditions but cannot remove host-specific noisy-neighbor effects.",
+    "The bootstrap confidence intervals use a deterministic 200000-draw within-condition bootstrap."
+  ],
+  "metrics": {
+    "cpu_total_per_observed_block_ms": {
+      "adjusted_effect_madvise_minus_always": 0.24000710274212506,
+      "adjusted_effect_percent_of_debian_always_mean": 2.312784683988333,
+      "always_pair_deltas": [
+        -0.22851947485821,
+        -0.37580421338600445,
+        -0.20121453580579285,
+        -0.3848084553303863,
+        -0.5603638493689438,
+        -0.3911100641554146
+      ],
+      "bootstrap_95_ci": [
+        0.12627239020513037,
+        0.3601410347653532
+      ],
+      "debian_always_mean": 10.377407996676952,
+      "debian_madvise_mean": 10.596759789175902,
+      "debian_minus_ubuntu_delta_always_mean": -0.35697009881745867,
+      "debian_minus_ubuntu_delta_madvise_mean": -0.11696299607533363,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.006493506493506494,
+      "madvise_pair_deltas": [
+        0.04457071069555951,
+        -0.09580285473649042,
+        -0.09831124005288139,
+        -0.1809226591650539,
+        -0.1423271817218037,
+        -0.2289847514713319
+      ],
+      "ubuntu_control_mean_during_always_pairs": 10.734378095494412,
+      "ubuntu_control_mean_during_madvise_pairs": 10.713722785251235
+    },
+    "host_disk_read_bytes_to_target": {
+      "adjusted_effect_madvise_minus_always": 2653525.333333332,
+      "adjusted_effect_percent_of_debian_always_mean": 78.3827384553337,
+      "always_pair_deltas": [
+        -17526784.0,
+        -18157568.0,
+        -18116608.0,
+        -18190336.0,
+        -17973248.0,
+        -17846272.0
+      ],
+      "bootstrap_95_ci": [
+        -195925.33333333582,
+        8015189.333333332
+      ],
+      "debian_always_mean": 3385344.0,
+      "debian_madvise_mean": 3344384.0,
+      "debian_minus_ubuntu_delta_always_mean": -17968469.333333332,
+      "debian_minus_ubuntu_delta_madvise_mean": -15314944.0,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.49134199134199136,
+      "madvise_pair_deltas": [
+        -17645568.0,
+        -17768448.0,
+        -17932288.0,
+        -2072576.0,
+        -18223104.0,
+        -18247680.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 21353813.333333332,
+      "ubuntu_control_mean_during_madvise_pairs": 18659328.0
+    },
+    "host_disk_write_bytes_to_target": {
+      "adjusted_effect_madvise_minus_always": -932522.6666666666,
+      "adjusted_effect_percent_of_debian_always_mean": -1.3858031266802608,
+      "always_pair_deltas": [
+        2596864.0,
+        913408.0,
+        843776.0,
+        303104.0,
+        1302528.0,
+        909312.0
+      ],
+      "bootstrap_95_ci": [
+        -2230272.0,
+        251904.0
+      ],
+      "debian_always_mean": 67291136.0,
+      "debian_madvise_mean": 67104085.333333336,
+      "debian_minus_ubuntu_delta_always_mean": 1144832.0,
+      "debian_minus_ubuntu_delta_madvise_mean": 212309.33333333334,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.22727272727272727,
+      "madvise_pair_deltas": [
+        2007040.0,
+        1122304.0,
+        1056768.0,
+        28672.0,
+        -753664.0,
+        -2187264.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 66146304.0,
+      "ubuntu_control_mean_during_madvise_pairs": 66891776.0
+    },
+    "major_faults_final": {
+      "adjusted_effect_madvise_minus_always": 2.499999999999999,
+      "adjusted_effect_percent_of_debian_always_mean": 36.58536585365852,
+      "always_pair_deltas": [
+        -9.0,
+        -8.0,
+        -8.0,
+        -10.0,
+        -11.0,
+        -9.0
+      ],
+      "bootstrap_95_ci": [
+        1.166666666666667,
+        3.833333333333333
+      ],
+      "debian_always_mean": 6.833333333333333,
+      "debian_madvise_mean": 7.833333333333333,
+      "debian_minus_ubuntu_delta_always_mean": -9.166666666666666,
+      "debian_minus_ubuntu_delta_madvise_mean": -6.666666666666667,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.012987012987012988,
+      "madvise_pair_deltas": [
+        -5.0,
+        -8.0,
+        -8.0,
+        -7.0,
+        -5.0,
+        -7.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 16.0,
+      "ubuntu_control_mean_during_madvise_pairs": 14.5
+    },
+    "minor_faults_final": {
+      "adjusted_effect_madvise_minus_always": 4490.833333333334,
+      "adjusted_effect_percent_of_debian_always_mean": 2.8841069597477365,
+      "always_pair_deltas": [
+        -8425.0,
+        -10437.0,
+        -5902.0,
+        -13655.0,
+        -2852.0,
+        -8058.0
+      ],
+      "bootstrap_95_ci": [
+        -230.83333333333306,
+        8838.333333333334
+      ],
+      "debian_always_mean": 155709.66666666666,
+      "debian_madvise_mean": 161029.33333333334,
+      "debian_minus_ubuntu_delta_always_mean": -8221.5,
+      "debian_minus_ubuntu_delta_madvise_mean": -3730.6666666666665,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.10822510822510822,
+      "madvise_pair_deltas": [
+        -2037.0,
+        1842.0,
+        -669.0,
+        -2682.0,
+        -6493.0,
+        -12345.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 163931.16666666666,
+      "ubuntu_control_mean_during_madvise_pairs": 164760.0
+    },
+    "nonvoluntary_context_switches_final": {
+      "adjusted_effect_madvise_minus_always": -593.6666666666666,
+      "adjusted_effect_percent_of_debian_always_mean": -17.15964929183929,
+      "always_pair_deltas": [
+        -666.0,
+        2089.0,
+        2037.0,
+        1913.0,
+        2127.0,
+        2123.0
+      ],
+      "bootstrap_95_ci": [
+        -1917.1666666666665,
+        800.3333333333334
+      ],
+      "debian_always_mean": 3459.6666666666665,
+      "debian_madvise_mean": 3545.6666666666665,
+      "debian_minus_ubuntu_delta_always_mean": 1603.8333333333333,
+      "debian_minus_ubuntu_delta_madvise_mean": 1010.1666666666666,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.47835497835497837,
+      "madvise_pair_deltas": [
+        -671.0,
+        1088.0,
+        2145.0,
+        2259.0,
+        2164.0,
+        -924.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 1855.8333333333333,
+      "ubuntu_control_mean_during_madvise_pairs": 2535.5
+    },
+    "normalized_wall_to_4500_s": {
+      "adjusted_effect_madvise_minus_always": -0.2546464254563219,
+      "adjusted_effect_percent_of_debian_always_mean": -0.439539726069746,
+      "always_pair_deltas": [
+        -2.0716609162721795,
+        -3.0771337017563667,
+        1.1003556326710466,
+        -13.710531212380566,
+        2.2088982973188465,
+        -1.960922383210729
+      ],
+      "bootstrap_95_ci": [
+        -7.603874987378803,
+        6.908611807162493
+      ],
+      "debian_always_mean": 57.934791863594754,
+      "debian_madvise_mean": 59.461132448432586,
+      "debian_minus_ubuntu_delta_always_mean": -2.918499047271658,
+      "debian_minus_ubuntu_delta_madvise_mean": -3.1731454727279798,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.9718614718614719,
+      "madvise_pair_deltas": [
+        1.3257735385797815,
+        5.590273586198272,
+        0.0038925325226415453,
+        0.38143568393600447,
+        -10.45890563777764,
+        -15.881342539826939
+      ],
+      "ubuntu_control_mean_during_always_pairs": 60.85329091086641,
+      "ubuntu_control_mean_during_madvise_pairs": 62.63427792116057
+    },
+    "rpc_latency_mean_ms": {
+      "adjusted_effect_madvise_minus_always": 2.0086492628005246,
+      "adjusted_effect_percent_of_debian_always_mean": 8.247048368942295,
+      "always_pair_deltas": [
+        -2.5172009090909064,
+        0.831033333333334,
+        -3.229193840579711,
+        5.406302533532042,
+        -5.591677470988394,
+        -2.078224496322356
+      ],
+      "bootstrap_95_ci": [
+        -1.7483364924827771,
+        5.559082210744608
+      ],
+      "debian_always_mean": 24.35597771397743,
+      "debian_madvise_mean": 24.85565421034242,
+      "debian_minus_ubuntu_delta_always_mean": -1.196493475019332,
+      "debian_minus_ubuntu_delta_madvise_mean": 0.8121557877811926,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.3398268398268398,
+      "madvise_pair_deltas": [
+        0.5424584905660375,
+        1.082622641509431,
+        -1.7594240196078452,
+        -3.431612244897959,
+        2.6474163742690067,
+        5.791473484848485
+      ],
+      "ubuntu_control_mean_during_always_pairs": 25.552471188996762,
+      "ubuntu_control_mean_during_madvise_pairs": 24.043498422561225
+    },
+    "rpc_latency_p95_ms": {
+      "adjusted_effect_madvise_minus_always": 2.5699083333333363,
+      "adjusted_effect_percent_of_debian_always_mean": 6.344358729914481,
+      "always_pair_deltas": [
+        -11.653249999999971,
+        8.738799999999983,
+        3.7360499999999988,
+        10.191550000000007,
+        -21.224700000000013,
+        -2.417299999999983
+      ],
+      "bootstrap_95_ci": [
+        -7.534533333333306,
+        13.704158333333332
+      ],
+      "debian_always_mean": 40.506983333333324,
+      "debian_madvise_mean": 41.047799999999995,
+      "debian_minus_ubuntu_delta_always_mean": -2.1048083333333296,
+      "debian_minus_ubuntu_delta_madvise_mean": 0.46510000000000673,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.6818181818181818,
+      "madvise_pair_deltas": [
+        3.1195499999999896,
+        14.480000000000004,
+        -8.505750000000006,
+        -4.312799999999967,
+        -1.9227999999999668,
+        -0.06760000000001298
+      ],
+      "ubuntu_control_mean_during_always_pairs": 42.611791666666655,
+      "ubuntu_control_mean_during_madvise_pairs": 40.58269999999999
+    },
+    "rss_average_to_target_kb": {
+      "adjusted_effect_madvise_minus_always": -4789.806474084749,
+      "adjusted_effect_percent_of_debian_always_mean": -7.494470394210845,
+      "always_pair_deltas": [
+        11230.69841269841,
+        740.1558441558445,
+        3149.0580836107983,
+        3750.556586270868,
+        5368.455218855219,
+        800.8086883876385
+      ],
+      "bootstrap_95_ci": [
+        -7977.441371604458,
+        -2189.967347845012
+      ],
+      "debian_always_mean": 63911.2068250302,
+      "debian_madvise_mean": 59039.80746637647,
+      "debian_minus_ubuntu_delta_always_mean": 4173.28880566313,
+      "debian_minus_ubuntu_delta_madvise_mean": -616.5176684216191,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.006493506493506494,
+      "madvise_pair_deltas": [
+        -1274.3897926634818,
+        894.4440411373289,
+        -246.30909090908972,
+        -1047.8039215686294,
+        -80.70177748518472,
+        -1944.345469040658
+      ],
+      "ubuntu_control_mean_during_always_pairs": 59737.918019367076,
+      "ubuntu_control_mean_during_madvise_pairs": 59656.325134798084
+    },
+    "rss_peak_kb": {
+      "adjusted_effect_madvise_minus_always": -17675.333333333332,
+      "adjusted_effect_percent_of_debian_always_mean": -16.311376066640825,
+      "always_pair_deltas": [
+        26936.0,
+        13368.0,
+        17480.0,
+        11760.0,
+        30860.0,
+        13376.0
+      ],
+      "bootstrap_95_ci": [
+        -23995.350000000002,
+        -12008.0
+      ],
+      "debian_always_mean": 108362.0,
+      "debian_madvise_mean": 88968.0,
+      "debian_minus_ubuntu_delta_always_mean": 18963.333333333332,
+      "debian_minus_ubuntu_delta_madvise_mean": 1288.0,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.0021645021645021645,
+      "madvise_pair_deltas": [
+        624.0,
+        3388.0,
+        3928.0,
+        888.0,
+        388.0,
+        -1488.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 89398.66666666667,
+      "ubuntu_control_mean_during_madvise_pairs": 87680.0
+    },
+    "target_smaps_anon_huge_pages_kb": {
+      "adjusted_effect_madvise_minus_always": -35498.666666666664,
+      "adjusted_effect_percent_of_debian_always_mean": -100.0,
+      "always_pair_deltas": [
+        43008.0,
+        40960.0,
+        34816.0,
+        34816.0,
+        49152.0,
+        10240.0
+      ],
+      "bootstrap_95_ci": [
+        -43690.666666666664,
+        -24917.333333333332
+      ],
+      "debian_always_mean": 35498.666666666664,
+      "debian_madvise_mean": 0.0,
+      "debian_minus_ubuntu_delta_always_mean": 35498.666666666664,
+      "debian_minus_ubuntu_delta_madvise_mean": 0.0,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.0021645021645021645,
+      "madvise_pair_deltas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 0.0,
+      "ubuntu_control_mean_during_madvise_pairs": 0.0
+    },
+    "target_smaps_anonymous_kb": {
+      "adjusted_effect_madvise_minus_always": -12332.0,
+      "adjusted_effect_percent_of_debian_always_mean": -20.22037122056798,
+      "always_pair_deltas": [
+        27064.0,
+        14556.0,
+        17480.0,
+        13420.0,
+        30852.0,
+        -21920.0
+      ],
+      "bootstrap_95_ci": [
+        -23740.666666666664,
+        2859.333333333333
+      ],
+      "debian_always_mean": 60988.0,
+      "debian_madvise_mean": 47458.0,
+      "debian_minus_ubuntu_delta_always_mean": 13575.333333333334,
+      "debian_minus_ubuntu_delta_madvise_mean": 1243.3333333333333,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.11904761904761904,
+      "madvise_pair_deltas": [
+        -132.0,
+        1480.0,
+        3380.0,
+        868.0,
+        2200.0,
+        -336.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 47412.666666666664,
+      "ubuntu_control_mean_during_madvise_pairs": 46214.666666666664
+    },
+    "target_smaps_rss_kb": {
+      "adjusted_effect_madvise_minus_always": -6386.0,
+      "adjusted_effect_percent_of_debian_always_mean": -6.6325082222606895,
+      "always_pair_deltas": [
+        27192.0,
+        14108.0,
+        17288.0,
+        13356.0,
+        30724.0,
+        -57084.0
+      ],
+      "bootstrap_95_ci": [
+        -23720.683333333334,
+        20572.68333333333
+      ],
+      "debian_always_mean": 96283.33333333333,
+      "debian_madvise_mean": 88614.0,
+      "debian_minus_ubuntu_delta_always_mean": 7597.333333333333,
+      "debian_minus_ubuntu_delta_madvise_mean": 1211.3333333333333,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.8051948051948052,
+      "madvise_pair_deltas": [
+        -4.0,
+        1672.0,
+        3764.0,
+        868.0,
+        1944.0,
+        -976.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 88686.0,
+      "ubuntu_control_mean_during_madvise_pairs": 87402.66666666667
+    },
+    "voluntary_context_switches_final": {
+      "adjusted_effect_madvise_minus_always": 345.16666666666674,
+      "adjusted_effect_percent_of_debian_always_mean": 9.501743439163151,
+      "always_pair_deltas": [
+        -1110.0,
+        -116.0,
+        848.0,
+        -4208.0,
+        -975.0,
+        -1238.0
+      ],
+      "bootstrap_95_ci": [
+        -1766.3333333333335,
+        2305.1666666666665
+      ],
+      "debian_always_mean": 3632.6666666666665,
+      "debian_madvise_mean": 3317.1666666666665,
+      "debian_minus_ubuntu_delta_always_mean": -1133.1666666666667,
+      "debian_minus_ubuntu_delta_madvise_mean": -788.0,
+      "direction": "positive means madvise increased the Debian metric relative to the simultaneous Ubuntu control",
+      "exact_label_permutation_two_sided_p": 0.7359307359307359,
+      "madvise_pair_deltas": [
+        -358.0,
+        739.0,
+        957.0,
+        520.0,
+        -1750.0,
+        -4836.0
+      ],
+      "ubuntu_control_mean_during_always_pairs": 4765.833333333333,
+      "ubuntu_control_mean_during_madvise_pairs": 4105.166666666667
+    }
+  }
+}

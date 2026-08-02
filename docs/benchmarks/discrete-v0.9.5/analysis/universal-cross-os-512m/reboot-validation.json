@@ -1,0 +1,63 @@
+{
+  "debian12": {
+    "boot_ids": [
+      "47a7463a-247e-420d-b175-a127a35b0d4c",
+      "660517aa-f12b-4c59-91b6-f413a95d984d",
+      "73488820-0664-4c26-960c-ec9864fe6915"
+    ],
+    "cycles": [
+      {
+        "boot_id": "660517aa-f12b-4c59-91b6-f413a95d984d",
+        "cycle": 1,
+        "height": 4887,
+        "mem_available_kb": 317404,
+        "mem_total_kb": 467304,
+        "outgoing": 8,
+        "swap_used_kb": 0
+      },
+      {
+        "boot_id": "73488820-0664-4c26-960c-ec9864fe6915",
+        "cycle": 2,
+        "height": 4887,
+        "mem_available_kb": 336732,
+        "mem_total_kb": 467304,
+        "outgoing": 8,
+        "swap_used_kb": 0
+      }
+    ],
+    "fatal": 0,
+    "final_stop_rc": 0,
+    "run_id": "crossos-512m-reboot-01-debian12"
+  },
+  "limitation": "monitor runtime TSV was not copied from /run before monitor stop; cycle summaries and logs remain valid",
+  "ubuntu24.04": {
+    "boot_ids": [
+      "e6cbaea0-c1b3-4e76-9e6d-a3131891475d",
+      "df0173fc-0af2-4be5-b14b-c31bb22e3c68",
+      "318d5375-c24e-4cb9-a423-b461b6745dac"
+    ],
+    "cycles": [
+      {
+        "boot_id": "df0173fc-0af2-4be5-b14b-c31bb22e3c68",
+        "cycle": 1,
+        "height": 4764,
+        "mem_available_kb": 237664,
+        "mem_total_kb": 468024,
+        "outgoing": 2,
+        "swap_used_kb": 780
+      },
+      {
+        "boot_id": "318d5375-c24e-4cb9-a423-b461b6745dac",
+        "cycle": 2,
+        "height": 4887,
+        "mem_available_kb": 258508,
+        "mem_total_kb": 468024,
+        "outgoing": 8,
+        "swap_used_kb": 1036
+      }
+    ],
+    "fatal": 0,
+    "final_stop_rc": 0,
+    "run_id": "crossos-512m-reboot-01-ubuntu24.04"
+  }
+}

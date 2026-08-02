@@ -1,0 +1,259 @@
+{
+  "default_condition": "Ubuntu=madvise, Debian=always; cold ordinals 01-06",
+  "limitations": [
+    "Pairs are simultaneous across two separate VPS hosts, so unobserved host scheduling remains a confounder.",
+    "Cross-series gap changes are descriptive because ordinals 01-06 and 07-12 ran at different wall-clock times.",
+    "Six pairs provide only coarse uncertainty bounds; small differences should be treated as negligible unless consistent and operationally material."
+  ],
+  "metrics": {
+    "cpu_total_per_observed_block_ms": {
+      "default_debian_mean": 10.125920419648669,
+      "default_gap_bootstrap_95_ci": [
+        0.26676029565182,
+        0.40352942209780096
+      ],
+      "default_gap_ubuntu_minus_debian": 0.3340940412945444,
+      "default_ubuntu_mean": 10.460014460943214,
+      "gap_change_normalized_minus_default": -0.18379362953013964,
+      "normalized_debian_mean": 10.448546395874368,
+      "normalized_exact_sign_flip_two_sided_p": 0.03125,
+      "normalized_gap_bootstrap_95_ci": [
+        0.08428075176726384,
+        0.2182886020843021
+      ],
+      "normalized_gap_percent_of_debian_mean": 1.4384815463302265,
+      "normalized_gap_ubuntu_minus_debian": 0.15030041176440476,
+      "normalized_ubuntu_mean": 10.598846807638772
+    },
+    "host_disk_read_bytes_to_target": {
+      "default_debian_mean": 1026048.0,
+      "default_gap_bootstrap_95_ci": [
+        350890.6666666667,
+        853333.3333333334
+      ],
+      "default_gap_ubuntu_minus_debian": 618496.0,
+      "default_ubuntu_mean": 1644544.0,
+      "gap_change_normalized_minus_default": 17448277.333333332,
+      "normalized_debian_mean": 3018752.0,
+      "normalized_exact_sign_flip_two_sided_p": 0.03125,
+      "normalized_gap_bootstrap_95_ci": [
+        17786880.0,
+        18448384.0
+      ],
+      "normalized_gap_percent_of_debian_mean": 598.4848484848485,
+      "normalized_gap_ubuntu_minus_debian": 18066773.333333332,
+      "normalized_ubuntu_mean": 21085525.333333332
+    },
+    "host_disk_write_bytes_to_target": {
+      "default_debian_mean": 62703616.0,
+      "default_gap_bootstrap_95_ci": [
+        -6826.666666666667,
+        137898.66666666666
+      ],
+      "default_gap_ubuntu_minus_debian": 53930.666666666664,
+      "default_ubuntu_mean": 62757546.666666664,
+      "gap_change_normalized_minus_default": -691541.3333333333,
+      "normalized_debian_mean": 68331520.0,
+      "normalized_exact_sign_flip_two_sided_p": 0.28125,
+      "normalized_gap_bootstrap_95_ci": [
+        -1662976.0,
+        488106.6666666667
+      ],
+      "normalized_gap_percent_of_debian_mean": -0.9331135421349717,
+      "normalized_gap_ubuntu_minus_debian": -637610.6666666666,
+      "normalized_ubuntu_mean": 67693909.33333333
+    },
+    "major_faults_final": {
+      "default_debian_mean": 7.0,
+      "default_gap_bootstrap_95_ci": [
+        8.666666666666666,
+        11.166666666666666
+      ],
+      "default_gap_ubuntu_minus_debian": 10.0,
+      "default_ubuntu_mean": 17.0,
+      "gap_change_normalized_minus_default": -1.333333333333334,
+      "normalized_debian_mean": 7.666666666666667,
+      "normalized_exact_sign_flip_two_sided_p": 0.03125,
+      "normalized_gap_bootstrap_95_ci": [
+        7.333333333333333,
+        10.0
+      ],
+      "normalized_gap_percent_of_debian_mean": 113.04347826086956,
+      "normalized_gap_ubuntu_minus_debian": 8.666666666666666,
+      "normalized_ubuntu_mean": 16.333333333333332
+    },
+    "minor_faults_final": {
+      "default_debian_mean": 153801.0,
+      "default_gap_bootstrap_95_ci": [
+        6535.5,
+        11817.333333333334
+      ],
+      "default_gap_ubuntu_minus_debian": 9078.666666666666,
+      "default_ubuntu_mean": 162879.66666666666,
+      "gap_change_normalized_minus_default": -8008.999999999999,
+      "normalized_debian_mean": 162180.33333333334,
+      "normalized_exact_sign_flip_two_sided_p": 0.46875,
+      "normalized_gap_bootstrap_95_ci": [
+        -1452.6666666666667,
+        3674.0
+      ],
+      "normalized_gap_percent_of_debian_mean": 0.6595538711023325,
+      "normalized_gap_ubuntu_minus_debian": 1069.6666666666667,
+      "normalized_ubuntu_mean": 163250.0
+    },
+    "nonvoluntary_context_switches_final": {
+      "default_debian_mean": 772.0,
+      "default_gap_bootstrap_95_ci": [
+        -159.5,
+        993.3333333333334
+      ],
+      "default_gap_ubuntu_minus_debian": 273.5,
+      "default_ubuntu_mean": 1045.5,
+      "gap_change_normalized_minus_default": 724.0,
+      "normalized_debian_mean": 1946.1666666666667,
+      "normalized_exact_sign_flip_two_sided_p": 0.125,
+      "normalized_gap_bootstrap_95_ci": [
+        113.5,
+        1857.6666666666667
+      ],
+      "normalized_gap_percent_of_debian_mean": 51.25460306585595,
+      "normalized_gap_ubuntu_minus_debian": 997.5,
+      "normalized_ubuntu_mean": 2943.6666666666665
+    },
+    "normalized_wall_to_4500_s": {
+      "default_debian_mean": 58.65956542617034,
+      "default_gap_bootstrap_95_ci": [
+        -1.8506673248706598,
+        6.45153849732836
+      ],
+      "default_gap_ubuntu_minus_debian": 2.0650716999493555,
+      "default_ubuntu_mean": 60.724637126119696,
+      "gap_change_normalized_minus_default": -4.1229893196609435,
+      "normalized_debian_mean": 64.43013914847968,
+      "normalized_exact_sign_flip_two_sided_p": 0.625,
+      "normalized_gap_bootstrap_95_ci": [
+        -8.443913837755675,
+        4.2848795710226115
+      ],
+      "normalized_gap_percent_of_debian_mean": -3.19402945098272,
+      "normalized_gap_ubuntu_minus_debian": -2.0579176197115885,
+      "normalized_ubuntu_mean": 62.372221528768094
+    },
+    "rpc_latency_mean_ms": {
+      "default_debian_mean": 22.499614633025953,
+      "default_gap_bootstrap_95_ci": [
+        -1.4129195543485167,
+        2.6512736856431003
+      ],
+      "default_gap_ubuntu_minus_debian": 0.6853241081517035,
+      "default_ubuntu_mean": 23.184938741177657,
+      "gap_change_normalized_minus_default": -0.9697461182542065,
+      "normalized_debian_mean": 23.310140091099992,
+      "normalized_exact_sign_flip_two_sided_p": 0.875,
+      "normalized_gap_bootstrap_95_ci": [
+        -3.0274313464959843,
+        2.7256486568379983
+      ],
+      "normalized_gap_percent_of_debian_mean": -1.2201643104285664,
+      "normalized_gap_ubuntu_minus_debian": -0.284422010102503,
+      "normalized_ubuntu_mean": 23.02571808099749
+    },
+    "rpc_latency_p95_ms": {
+      "default_debian_mean": 38.162199999999984,
+      "default_gap_bootstrap_95_ci": [
+        -3.931158333333311,
+        2.1837249999999933
+      ],
+      "default_gap_ubuntu_minus_debian": -0.9165749999999934,
+      "default_ubuntu_mean": 37.245625,
+      "gap_change_normalized_minus_default": -0.37242500000000567,
+      "normalized_debian_mean": 39.53123333333332,
+      "normalized_exact_sign_flip_two_sided_p": 0.53125,
+      "normalized_gap_bootstrap_95_ci": [
+        -4.381491666666656,
+        2.0614666666666523
+      ],
+      "normalized_gap_percent_of_debian_mean": -3.260712837191182,
+      "normalized_gap_ubuntu_minus_debian": -1.288999999999999,
+      "normalized_ubuntu_mean": 38.24223333333332
+    },
+    "rss_average_to_target_kb": {
+      "default_debian_mean": 64998.73651390381,
+      "default_gap_bootstrap_95_ci": [
+        -9503.86474774152,
+        -2020.4011286076857
+      ],
+      "default_gap_ubuntu_minus_debian": -5463.967668253242,
+      "default_ubuntu_mean": 59534.768845650564,
+      "gap_change_normalized_minus_default": 5898.717474454916,
+      "normalized_debian_mean": 59246.89647926603,
+      "normalized_exact_sign_flip_two_sided_p": 0.3125,
+      "normalized_gap_bootstrap_95_ci": [
+        -163.0253807169514,
+        1095.8674820391534
+      ],
+      "normalized_gap_percent_of_debian_mean": 0.7337933833442534,
+      "normalized_gap_ubuntu_minus_debian": 434.7498062016736,
+      "normalized_ubuntu_mean": 59681.64628546771
+    },
+    "rss_peak_kb": {
+      "default_debian_mean": 106795.33333333333,
+      "default_gap_bootstrap_95_ci": [
+        -22246.0,
+        -12051.333333333334
+      ],
+      "default_gap_ubuntu_minus_debian": -17404.666666666668,
+      "default_ubuntu_mean": 89390.66666666667,
+      "gap_change_normalized_minus_default": 17262.0,
+      "normalized_debian_mean": 89076.66666666667,
+      "normalized_exact_sign_flip_two_sided_p": 0.9375,
+      "normalized_gap_bootstrap_95_ci": [
+        -2424.6666666666665,
+        2347.3333333333335
+      ],
+      "normalized_gap_percent_of_debian_mean": -0.16016165849642627,
+      "normalized_gap_ubuntu_minus_debian": -142.66666666666666,
+      "normalized_ubuntu_mean": 88934.0
+    },
+    "stop_seconds": {
+      "default_debian_mean": 1.0521176666666667,
+      "default_gap_bootstrap_95_ci": [
+        -0.4961779999999999,
+        0.014317666666666673
+      ],
+      "default_gap_ubuntu_minus_debian": -0.15780566666666665,
+      "default_ubuntu_mean": 0.894312,
+      "gap_change_normalized_minus_default": 0.3313179999999999,
+      "normalized_debian_mean": 0.8936991666666667,
+      "normalized_exact_sign_flip_two_sided_p": 0.0625,
+      "normalized_gap_bootstrap_95_ci": [
+        0.006209833333333248,
+        0.5004588333333333
+      ],
+      "normalized_gap_percent_of_debian_mean": 19.41507162645147,
+      "normalized_gap_ubuntu_minus_debian": 0.17351233333333327,
+      "normalized_ubuntu_mean": 1.0672115
+    },
+    "voluntary_context_switches_final": {
+      "default_debian_mean": 3822.3333333333335,
+      "default_gap_bootstrap_95_ci": [
+        677.6666666666666,
+        1907.0
+      ],
+      "default_gap_ubuntu_minus_debian": 1258.6666666666667,
+      "default_ubuntu_mean": 5081.0,
+      "gap_change_normalized_minus_default": -574.6666666666667,
+      "normalized_debian_mean": 4037.0,
+      "normalized_exact_sign_flip_two_sided_p": 0.375,
+      "normalized_gap_bootstrap_95_ci": [
+        -565.6666666666666,
+        2015.5
+      ],
+      "normalized_gap_percent_of_debian_mean": 16.943274708942283,
+      "normalized_gap_ubuntu_minus_debian": 684.0,
+      "normalized_ubuntu_mean": 4721.0
+    }
+  },
+  "normalized_condition": "Ubuntu=madvise, Debian=madvise; cold ordinals 07-12",
+  "valid_runs_each_condition": 12
+}

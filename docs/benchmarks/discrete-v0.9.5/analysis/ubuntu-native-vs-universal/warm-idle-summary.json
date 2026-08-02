@@ -1,0 +1,818 @@
+{
+  "run_count": 8,
+  "runs_per_variant": 4,
+  "idle_seconds_per_run": 60,
+  "total_idle_seconds_per_variant": 240,
+  "total_new_blocks_by_variant": {
+    "ubuntu24.04": 6,
+    "linux-universal": 5
+  },
+  "variants": {
+    "ubuntu24.04": {
+      "rpc_ready_s": {
+        "n": 4,
+        "mean": 4.3788660505,
+        "median": 4.1238752115,
+        "stdev": 0.5187499976711327,
+        "min": 4.110834286,
+        "max": 5.156879493,
+        "sum": 17.515464202
+      },
+      "sync_detected_s": {
+        "n": 4,
+        "mean": 6.1374615235,
+        "median": 6.136093376,
+        "stdev": 0.02306499109325299,
+        "min": 6.112915512,
+        "max": 6.16474383,
+        "sum": 24.549846094
+      },
+      "p2p_init_log_s": {
+        "n": 4,
+        "mean": 4.008632,
+        "median": 4.0087720000000004,
+        "stdev": 0.0014315131854088128,
+        "min": 4.00675,
+        "max": 4.010234,
+        "sum": 16.034528
+      },
+      "igd_wait_log_s": {
+        "n": 4,
+        "mean": 4.0038730000000005,
+        "median": 4.003766000000001,
+        "stdev": 0.0006284112241729279,
+        "min": 4.003342,
+        "max": 4.004618,
+        "sum": 16.015492000000002
+      },
+      "core_init_log_s": {
+        "n": 4,
+        "mean": 0.0028935000000000002,
+        "median": 0.002424,
+        "stdev": 0.0010626964132181246,
+        "min": 0.002253,
+        "max": 0.004473,
+        "sum": 0.011574000000000001
+      },
+      "rpc_server_init_log_s": {
+        "n": 4,
+        "mean": 0.00010725,
+        "median": 0.0001025,
+        "stdev": 2.238116767880234e-05,
+        "min": 8.6e-05,
+        "max": 0.000138,
+        "sum": 0.000429
+      },
+      "idle_cpu_user_s": {
+        "n": 4,
+        "mean": 0.03,
+        "median": 0.025,
+        "stdev": 0.021602468994692866,
+        "min": 0.01,
+        "max": 0.06,
+        "sum": 0.12
+      },
+      "idle_cpu_system_s": {
+        "n": 4,
+        "mean": 0.015,
+        "median": 0.015,
+        "stdev": 0.005773502691896258,
+        "min": 0.01,
+        "max": 0.02,
+        "sum": 0.06
+      },
+      "idle_cpu_total_s": {
+        "n": 4,
+        "mean": 0.045,
+        "median": 0.04,
+        "stdev": 0.025166114784235832,
+        "min": 0.02,
+        "max": 0.08,
+        "sum": 0.18
+      },
+      "idle_avg_cpu_pct": {
+        "n": 4,
+        "mean": 0.07629673464004742,
+        "median": 0.06783494047256268,
+        "stdev": 0.04264277091309719,
+        "min": 0.03392148624192497,
+        "max": 0.13559557137313935,
+        "sum": 0.3051869385601897
+      },
+      "idle_peak_1s_cpu_pct": {
+        "n": 4,
+        "mean": 1.2252167811266048,
+        "median": 0.9885710547467267,
+        "stdev": 0.47590067685792864,
+        "min": 0.9846625805532763,
+        "max": 1.9390624344596898,
+        "sum": 4.900867124506419
+      },
+      "idle_avg_rss_kb": {
+        "n": 4,
+        "mean": 32998.59322033898,
+        "median": 32956.84745762712,
+        "stdev": 175.65918421571254,
+        "min": 32846.91525423729,
+        "max": 33233.76271186441,
+        "sum": 131994.37288135593
+      },
+      "idle_peak_rss_kb": {
+        "n": 4,
+        "mean": 33248.0,
+        "median": 33254.0,
+        "stdev": 241.17490195568305,
+        "min": 32968.0,
+        "max": 33516.0,
+        "sum": 132992.0
+      },
+      "idle_minor_faults_delta": {
+        "n": 4,
+        "mean": 147.5,
+        "median": 154.5,
+        "stdev": 78.39430251406455,
+        "min": 56.0,
+        "max": 225.0,
+        "sum": 590.0
+      },
+      "idle_major_faults_delta": {
+        "n": 4,
+        "mean": 2.5,
+        "median": 2.0,
+        "stdev": 2.516611478423583,
+        "min": 0.0,
+        "max": 6.0,
+        "sum": 10.0
+      },
+      "idle_voluntary_context_switches_delta": {
+        "n": 4,
+        "mean": 236.5,
+        "median": 232.5,
+        "stdev": 75.30604225425739,
+        "min": 154.0,
+        "max": 327.0,
+        "sum": 946.0
+      },
+      "idle_nonvoluntary_context_switches_delta": {
+        "n": 4,
+        "mean": 1.75,
+        "median": 1.0,
+        "stdev": 2.217355782608345,
+        "min": 0.0,
+        "max": 5.0,
+        "sum": 7.0
+      },
+      "idle_process_read_bytes_delta": {
+        "n": 4,
+        "mean": 10240.0,
+        "median": 8192.0,
+        "stdev": 10308.040615622996,
+        "min": 0.0,
+        "max": 24576.0,
+        "sum": 40960.0
+      },
+      "idle_process_write_bytes_delta": {
+        "n": 4,
+        "mean": 155648.0,
+        "median": 131072.0,
+        "stdev": 145201.12983949768,
+        "min": 8192.0,
+        "max": 352256.0,
+        "sum": 622592.0
+      },
+      "idle_host_net_rx_bytes_delta": {
+        "n": 4,
+        "mean": 259544.75,
+        "median": 280639.5,
+        "stdev": 221125.46673080573,
+        "min": 24888.0,
+        "max": 452012.0,
+        "sum": 1038179.0
+      },
+      "idle_host_net_tx_bytes_delta": {
+        "n": 4,
+        "mean": 229833.75,
+        "median": 224394.0,
+        "stdev": 193290.86299559876,
+        "min": 27418.0,
+        "max": 443129.0,
+        "sum": 919335.0
+      },
+      "idle_block_reads_completed_delta": {
+        "n": 4,
+        "mean": 466.25,
+        "median": 468.0,
+        "stdev": 410.00924786318336,
+        "min": 7.0,
+        "max": 922.0,
+        "sum": 1865.0
+      },
+      "idle_block_writes_completed_delta": {
+        "n": 4,
+        "mean": 343.0,
+        "median": 345.5,
+        "stdev": 63.63961030678928,
+        "min": 263.0,
+        "max": 418.0,
+        "sum": 1372.0
+      },
+      "idle_block_read_bytes_delta": {
+        "n": 4,
+        "mean": 10379264.0,
+        "median": 10387456.0,
+        "stdev": 9545919.938569497,
+        "min": 139264.0,
+        "max": 20602880.0,
+        "sum": 41517056.0
+      },
+      "idle_block_write_bytes_delta": {
+        "n": 4,
+        "mean": 2095104.0,
+        "median": 2050048.0,
+        "stdev": 417102.07085876074,
+        "min": 1638400.0,
+        "max": 2641920.0,
+        "sum": 8380416.0
+      },
+      "idle_rpc_latency_mean_ms": {
+        "n": 4,
+        "mean": 0.5035454545454545,
+        "median": 0.5055,
+        "stdev": 0.0243470092517363,
+        "min": 0.4767272727272727,
+        "max": 0.5264545454545455,
+        "sum": 2.014181818181818
+      },
+      "idle_rpc_latency_p95_ms": {
+        "n": 4,
+        "mean": 0.6095,
+        "median": 0.61075,
+        "stdev": 0.047256392865586576,
+        "min": 0.562,
+        "max": 0.6545,
+        "sum": 2.438
+      },
+      "idle_outgoing_peers_mean": {
+        "n": 4,
+        "mean": 8.613636363636363,
+        "median": 8.681818181818182,
+        "stdev": 0.4598179062270761,
+        "min": 8.090909090909092,
+        "max": 9.0,
+        "sum": 34.45454545454545
+      },
+      "idle_incoming_peers_mean": {
+        "n": 4,
+        "mean": 9.454545454545455,
+        "median": 10.09090909090909,
+        "stdev": 1.7376086287068424,
+        "min": 6.909090909090909,
+        "max": 10.727272727272727,
+        "sum": 37.81818181818182
+      },
+      "stop_seconds": {
+        "n": 4,
+        "mean": 2.086511927,
+        "median": 1.0218790315000001,
+        "stdev": 2.8344587481079597,
+        "min": 0.023150597,
+        "max": 6.279139048,
+        "sum": 8.346047708
+      }
+    },
+    "linux-universal": {
+      "rpc_ready_s": {
+        "n": 4,
+        "mean": 4.88950686,
+        "median": 5.1341215264999995,
+        "stdev": 0.5164042709514381,
+        "min": 4.115484948,
+        "max": 5.174299439,
+        "sum": 19.55802744
+      },
+      "sync_detected_s": {
+        "n": 4,
+        "mean": 5.8791087595,
+        "median": 6.1395866885,
+        "stdev": 0.5230311467186849,
+        "min": 5.094566493,
+        "max": 6.142695168,
+        "sum": 23.516435038
+      },
+      "p2p_init_log_s": {
+        "n": 4,
+        "mean": 4.00879925,
+        "median": 4.008744500000001,
+        "stdev": 0.0036017322105711303,
+        "min": 4.005573,
+        "max": 4.012135,
+        "sum": 16.035197
+      },
+      "igd_wait_log_s": {
+        "n": 4,
+        "mean": 4.00425525,
+        "median": 4.004160000000001,
+        "stdev": 0.00051558793301107,
+        "min": 4.003734,
+        "max": 4.004967,
+        "sum": 16.017021
+      },
+      "core_init_log_s": {
+        "n": 4,
+        "mean": 0.0031155,
+        "median": 0.0031245,
+        "stdev": 0.0004104538138857201,
+        "min": 0.002624,
+        "max": 0.003589,
+        "sum": 0.012462
+      },
+      "rpc_server_init_log_s": {
+        "n": 4,
+        "mean": 0.00017025,
+        "median": 0.000172,
+        "stdev": 1.1926860441876563e-05,
+        "min": 0.000155,
+        "max": 0.000182,
+        "sum": 0.000681
+      },
+      "idle_cpu_user_s": {
+        "n": 4,
+        "mean": 0.0275,
+        "median": 0.025,
+        "stdev": 0.017078251276599333,
+        "min": 0.01,
+        "max": 0.05,
+        "sum": 0.11
+      },
+      "idle_cpu_system_s": {
+        "n": 4,
+        "mean": 0.02,
+        "median": 0.02,
+        "stdev": 0.0,
+        "min": 0.02,
+        "max": 0.02,
+        "sum": 0.08
+      },
+      "idle_cpu_total_s": {
+        "n": 4,
+        "mean": 0.0475,
+        "median": 0.045,
+        "stdev": 0.017078251276599333,
+        "min": 0.03,
+        "max": 0.07,
+        "sum": 0.19
+      },
+      "idle_avg_cpu_pct": {
+        "n": 4,
+        "mean": 0.08051655702061304,
+        "median": 0.07627535196169911,
+        "stdev": 0.028928863402863995,
+        "min": 0.05087284938027351,
+        "max": 0.11864267477878043,
+        "sum": 0.32206622808245217
+      },
+      "idle_peak_1s_cpu_pct": {
+        "n": 4,
+        "mean": 1.2344246491336497,
+        "median": 0.9879276395049559,
+        "stdev": 0.49357104357682885,
+        "min": 0.9870623760249655,
+        "max": 1.9747809414997213,
+        "sum": 4.937698596534599
+      },
+      "idle_avg_rss_kb": {
+        "n": 4,
+        "mean": 26839.322033898305,
+        "median": 26805.593220338982,
+        "stdev": 151.6966486660427,
+        "min": 26695.322033898305,
+        "max": 27050.77966101695,
+        "sum": 107357.28813559322
+      },
+      "idle_peak_rss_kb": {
+        "n": 4,
+        "mean": 27062.0,
+        "median": 26992.0,
+        "stdev": 193.2873508535931,
+        "min": 26920.0,
+        "max": 27344.0,
+        "sum": 108248.0
+      },
+      "idle_minor_faults_delta": {
+        "n": 4,
+        "mean": 357.25,
+        "median": 368.5,
+        "stdev": 153.24136734794124,
+        "min": 159.0,
+        "max": 533.0,
+        "sum": 1429.0
+      },
+      "idle_major_faults_delta": {
+        "n": 4,
+        "mean": 2.5,
+        "median": 2.0,
+        "stdev": 3.0,
+        "min": 0.0,
+        "max": 6.0,
+        "sum": 10.0
+      },
+      "idle_voluntary_context_switches_delta": {
+        "n": 4,
+        "mean": 251.5,
+        "median": 232.0,
+        "stdev": 67.89452604346441,
+        "min": 194.0,
+        "max": 348.0,
+        "sum": 1006.0
+      },
+      "idle_nonvoluntary_context_switches_delta": {
+        "n": 4,
+        "mean": 0.5,
+        "median": 0.5,
+        "stdev": 0.5773502691896257,
+        "min": 0.0,
+        "max": 1.0,
+        "sum": 2.0
+      },
+      "idle_process_read_bytes_delta": {
+        "n": 4,
+        "mean": 10240.0,
+        "median": 8192.0,
+        "stdev": 12288.0,
+        "min": 0.0,
+        "max": 24576.0,
+        "sum": 40960.0
+      },
+      "idle_process_write_bytes_delta": {
+        "n": 4,
+        "mean": 134144.0,
+        "median": 110592.0,
+        "stdev": 117070.86473869861,
+        "min": 36864.0,
+        "max": 278528.0,
+        "sum": 536576.0
+      },
+      "idle_host_net_rx_bytes_delta": {
+        "n": 4,
+        "mean": 159366.5,
+        "median": 120472.5,
+        "stdev": 162703.78704156418,
+        "min": 26969.0,
+        "max": 369552.0,
+        "sum": 637466.0
+      },
+      "idle_host_net_tx_bytes_delta": {
+        "n": 4,
+        "mean": 152536.5,
+        "median": 120162.5,
+        "stdev": 147534.87197834507,
+        "min": 30915.0,
+        "max": 338906.0,
+        "sum": 610146.0
+      },
+      "idle_block_reads_completed_delta": {
+        "n": 4,
+        "mean": 192.5,
+        "median": 197.5,
+        "stdev": 58.733863032041974,
+        "min": 116.0,
+        "max": 259.0,
+        "sum": 770.0
+      },
+      "idle_block_writes_completed_delta": {
+        "n": 4,
+        "mean": 339.75,
+        "median": 364.0,
+        "stdev": 71.91372145379026,
+        "min": 239.0,
+        "max": 392.0,
+        "sum": 1359.0
+      },
+      "idle_block_read_bytes_delta": {
+        "n": 4,
+        "mean": 2968576.0,
+        "median": 2926592.0,
+        "stdev": 1299555.1146860477,
+        "min": 1421312.0,
+        "max": 4599808.0,
+        "sum": 11874304.0
+      },
+      "idle_block_write_bytes_delta": {
+        "n": 4,
+        "mean": 2051072.0,
+        "median": 2181120.0,
+        "stdev": 455404.165204199,
+        "min": 1404928.0,
+        "max": 2437120.0,
+        "sum": 8204288.0
+      },
+      "idle_rpc_latency_mean_ms": {
+        "n": 4,
+        "mean": 0.5747178030303031,
+        "median": 0.5771628787878789,
+        "stdev": 0.021475975656947765,
+        "min": 0.5498181818181819,
+        "max": 0.5947272727272727,
+        "sum": 2.2988712121212123
+      },
+      "idle_rpc_latency_p95_ms": {
+        "n": 4,
+        "mean": 0.7706124999999999,
+        "median": 0.769,
+        "stdev": 0.04653261177210373,
+        "min": 0.7155,
+        "max": 0.8289499999999999,
+        "sum": 3.0824499999999997
+      },
+      "idle_outgoing_peers_mean": {
+        "n": 4,
+        "mean": 8.22159090909091,
+        "median": 8.125,
+        "stdev": 0.30058196537107174,
+        "min": 8.0,
+        "max": 8.636363636363637,
+        "sum": 32.88636363636364
+      },
+      "idle_incoming_peers_mean": {
+        "n": 4,
+        "mean": 10.719696969696969,
+        "median": 10.43939393939394,
+        "stdev": 2.020157827799469,
+        "min": 8.727272727272727,
+        "max": 13.272727272727273,
+        "sum": 42.878787878787875
+      },
+      "stop_seconds": {
+        "n": 4,
+        "mean": 3.3551701547499997,
+        "median": 1.0250282665000001,
+        "stdev": 5.350169899348644,
+        "min": 0.021629487,
+        "max": 11.348994599,
+        "sum": 13.420680618999999
+      }
+    }
+  },
+  "stable_tip_subset": {
+    "ubuntu24.04": {
+      "n": 1,
+      "run_ids": [
+        "warm-03-ubuntu"
+      ],
+      "idle_avg_cpu_pct": {
+        "n": 1,
+        "mean": 0.03392148624192497,
+        "median": 0.03392148624192497,
+        "stdev": 0.0,
+        "min": 0.03392148624192497,
+        "max": 0.03392148624192497,
+        "sum": 0.03392148624192497
+      },
+      "idle_avg_rss_kb": {
+        "n": 1,
+        "mean": 32846.91525423729,
+        "median": 32846.91525423729,
+        "stdev": 0.0,
+        "min": 32846.91525423729,
+        "max": 32846.91525423729,
+        "sum": 32846.91525423729
+      },
+      "idle_rpc_latency_mean_ms": {
+        "n": 1,
+        "mean": 0.5217272727272727,
+        "median": 0.5217272727272727,
+        "stdev": 0.0,
+        "min": 0.5217272727272727,
+        "max": 0.5217272727272727,
+        "sum": 0.5217272727272727
+      }
+    },
+    "linux-universal": {
+      "n": 2,
+      "run_ids": [
+        "warm-01-universal",
+        "warm-04-universal"
+      ],
+      "idle_avg_cpu_pct": {
+        "n": 2,
+        "mean": 0.05935640706746309,
+        "median": 0.05935640706746309,
+        "stdev": 0.011997562338398025,
+        "min": 0.05087284938027351,
+        "max": 0.06783996475465266,
+        "sum": 0.11871281413492618
+      },
+      "idle_avg_rss_kb": {
+        "n": 2,
+        "mean": 26737.661016949154,
+        "median": 26737.661016949154,
+        "stdev": 59.87636404759338,
+        "min": 26695.322033898305,
+        "max": 26780.0,
+        "sum": 53475.32203389831
+      },
+      "idle_rpc_latency_mean_ms": {
+        "n": 2,
+        "mean": 0.5771628787878789,
+        "median": 0.5771628787878789,
+        "stdev": 0.018743686570997974,
+        "min": 0.5639090909090909,
+        "max": 0.5904166666666667,
+        "sum": 1.1543257575757577
+      }
+    }
+  },
+  "comparisons": {
+    "rpc_ready_s": {
+      "ubuntu_mean": 4.3788660505,
+      "universal_mean": 4.88950686,
+      "ubuntu_minus_universal": -0.5106408094999999,
+      "ubuntu_vs_universal_pct": -10.44360554389323
+    },
+    "sync_detected_s": {
+      "ubuntu_mean": 6.1374615235,
+      "universal_mean": 5.8791087595,
+      "ubuntu_minus_universal": 0.2583527639999996,
+      "ubuntu_vs_universal_pct": 4.394420558771417
+    },
+    "p2p_init_log_s": {
+      "ubuntu_mean": 4.008632,
+      "universal_mean": 4.00879925,
+      "ubuntu_minus_universal": -0.0001672499999996191,
+      "ubuntu_vs_universal_pct": -0.00417207222336291
+    },
+    "igd_wait_log_s": {
+      "ubuntu_mean": 4.0038730000000005,
+      "universal_mean": 4.00425525,
+      "ubuntu_minus_universal": -0.0003822499999994733,
+      "ubuntu_vs_universal_pct": -0.009546094745072065
+    },
+    "core_init_log_s": {
+      "ubuntu_mean": 0.0028935000000000002,
+      "universal_mean": 0.0031155,
+      "ubuntu_minus_universal": -0.00022199999999999998,
+      "ubuntu_vs_universal_pct": -7.1256620125180525
+    },
+    "rpc_server_init_log_s": {
+      "ubuntu_mean": 0.00010725,
+      "universal_mean": 0.00017025,
+      "ubuntu_minus_universal": -6.299999999999999e-05,
+      "ubuntu_vs_universal_pct": -37.00440528634361
+    },
+    "idle_cpu_user_s": {
+      "ubuntu_mean": 0.03,
+      "universal_mean": 0.0275,
+      "ubuntu_minus_universal": 0.0024999999999999988,
+      "ubuntu_vs_universal_pct": 9.090909090909083
+    },
+    "idle_cpu_system_s": {
+      "ubuntu_mean": 0.015,
+      "universal_mean": 0.02,
+      "ubuntu_minus_universal": -0.005000000000000001,
+      "ubuntu_vs_universal_pct": -25.0
+    },
+    "idle_cpu_total_s": {
+      "ubuntu_mean": 0.045,
+      "universal_mean": 0.0475,
+      "ubuntu_minus_universal": -0.0025000000000000022,
+      "ubuntu_vs_universal_pct": -5.263157894736848
+    },
+    "idle_avg_cpu_pct": {
+      "ubuntu_mean": 0.07629673464004742,
+      "universal_mean": 0.08051655702061304,
+      "ubuntu_minus_universal": -0.004219822380565619,
+      "ubuntu_vs_universal_pct": -5.240937437855553
+    },
+    "idle_peak_1s_cpu_pct": {
+      "ubuntu_mean": 1.2252167811266048,
+      "universal_mean": 1.2344246491336497,
+      "ubuntu_minus_universal": -0.009207868007044873,
+      "ubuntu_vs_universal_pct": -0.7459238612504415
+    },
+    "idle_avg_rss_kb": {
+      "ubuntu_mean": 32998.59322033898,
+      "universal_mean": 26839.322033898305,
+      "ubuntu_minus_universal": 6159.271186440677,
+      "ubuntu_vs_universal_pct": 22.94868394462968
+    },
+    "idle_peak_rss_kb": {
+      "ubuntu_mean": 33248.0,
+      "universal_mean": 27062.0,
+      "ubuntu_minus_universal": 6186.0,
+      "ubuntu_vs_universal_pct": 22.858620944497822
+    },
+    "idle_minor_faults_delta": {
+      "ubuntu_mean": 147.5,
+      "universal_mean": 357.25,
+      "ubuntu_minus_universal": -209.75,
+      "ubuntu_vs_universal_pct": -58.71238628411477
+    },
+    "idle_major_faults_delta": {
+      "ubuntu_mean": 2.5,
+      "universal_mean": 2.5,
+      "ubuntu_minus_universal": 0.0,
+      "ubuntu_vs_universal_pct": 0.0
+    },
+    "idle_voluntary_context_switches_delta": {
+      "ubuntu_mean": 236.5,
+      "universal_mean": 251.5,
+      "ubuntu_minus_universal": -15.0,
+      "ubuntu_vs_universal_pct": -5.964214711729621
+    },
+    "idle_nonvoluntary_context_switches_delta": {
+      "ubuntu_mean": 1.75,
+      "universal_mean": 0.5,
+      "ubuntu_minus_universal": 1.25,
+      "ubuntu_vs_universal_pct": 250.0
+    },
+    "idle_process_read_bytes_delta": {
+      "ubuntu_mean": 10240.0,
+      "universal_mean": 10240.0,
+      "ubuntu_minus_universal": 0.0,
+      "ubuntu_vs_universal_pct": 0.0
+    },
+    "idle_process_write_bytes_delta": {
+      "ubuntu_mean": 155648.0,
+      "universal_mean": 134144.0,
+      "ubuntu_minus_universal": 21504.0,
+      "ubuntu_vs_universal_pct": 16.030534351145032
+    },
+    "idle_host_net_rx_bytes_delta": {
+      "ubuntu_mean": 259544.75,
+      "universal_mean": 159366.5,
+      "ubuntu_minus_universal": 100178.25,
+      "ubuntu_vs_universal_pct": 62.86029372546928
+    },
+    "idle_host_net_tx_bytes_delta": {
+      "ubuntu_mean": 229833.75,
+      "universal_mean": 152536.5,
+      "ubuntu_minus_universal": 77297.25,
+      "ubuntu_vs_universal_pct": 50.67459263848324
+    },
+    "idle_block_reads_completed_delta": {
+      "ubuntu_mean": 466.25,
+      "universal_mean": 192.5,
+      "ubuntu_minus_universal": 273.75,
+      "ubuntu_vs_universal_pct": 142.20779220779224
+    },
+    "idle_block_writes_completed_delta": {
+      "ubuntu_mean": 343.0,
+      "universal_mean": 339.75,
+      "ubuntu_minus_universal": 3.25,
+      "ubuntu_vs_universal_pct": 0.9565857247976428
+    },
+    "idle_block_read_bytes_delta": {
+      "ubuntu_mean": 10379264.0,
+      "universal_mean": 2968576.0,
+      "ubuntu_minus_universal": 7410688.0,
+      "ubuntu_vs_universal_pct": 249.6378061400483
+    },
+    "idle_block_write_bytes_delta": {
+      "ubuntu_mean": 2095104.0,
+      "universal_mean": 2051072.0,
+      "ubuntu_minus_universal": 44032.0,
+      "ubuntu_vs_universal_pct": 2.1467798302546193
+    },
+    "idle_rpc_latency_mean_ms": {
+      "ubuntu_mean": 0.5035454545454545,
+      "universal_mean": 0.5747178030303031,
+      "ubuntu_minus_universal": -0.07117234848484855,
+      "ubuntu_vs_universal_pct": -12.383877462918235
+    },
+    "idle_rpc_latency_p95_ms": {
+      "ubuntu_mean": 0.6095,
+      "universal_mean": 0.7706124999999999,
+      "ubuntu_minus_universal": -0.16111249999999988,
+      "ubuntu_vs_universal_pct": -20.907070674301277
+    },
+    "idle_outgoing_peers_mean": {
+      "ubuntu_mean": 8.613636363636363,
+      "universal_mean": 8.22159090909091,
+      "ubuntu_minus_universal": 0.39204545454545325,
+      "ubuntu_vs_universal_pct": 4.768486523842408
+    },
+    "idle_incoming_peers_mean": {
+      "ubuntu_mean": 9.454545454545455,
+      "universal_mean": 10.719696969696969,
+      "ubuntu_minus_universal": -1.2651515151515138,
+      "ubuntu_vs_universal_pct": -11.802120141342742
+    },
+    "stop_seconds": {
+      "ubuntu_mean": 2.086511927,
+      "universal_mean": 3.3551701547499997,
+      "ubuntu_minus_universal": -1.2686582277499996,
+      "ubuntu_vs_universal_pct": -37.812038413429725
+    }
+  },
+  "all_stop_exit_zero": true,
+  "all_node_stopped_marker": true,
+  "any_crash_or_oom_marker": false,
+  "binary_sha256_by_variant": {
+    "ubuntu24.04": [
+      "7037d5aed0446419fa7f36b0ced03e51ea4c8cafc02217d66568f8bf4063d6fd"
+    ],
+    "linux-universal": [
+      "6296755aad63d66f80150383a2a30a15876f766fa05d68733653f0c1063ae30e"
+    ]
+  }
+}

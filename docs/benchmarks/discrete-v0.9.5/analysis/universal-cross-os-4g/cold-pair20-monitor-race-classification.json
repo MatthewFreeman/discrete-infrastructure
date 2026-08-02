@@ -1,0 +1,13 @@
+{
+  "run": "crossos-cold-20-ubuntu24.04",
+  "raw_fatal_pattern_matches": 1,
+  "classification": "benchmark-monitor false positive; daemon run valid",
+  "matched_line": "monitor.sh: awk fatal while reading a stale /proc/PID/io after daemon exit",
+  "required_evidence": {
+    "systemd_result": "success",
+    "exec_main_code": 0,
+    "exec_main_status": 0,
+    "systemctl_stop_rc": 0
+  },
+  "raw_files_were_not_modified": true
+}

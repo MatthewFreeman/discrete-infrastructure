@@ -1,0 +1,189 @@
+{
+  "binary_sha256": "6296755aad63d66f80150383a2a30a15876f766fa05d68733653f0c1063ae30e",
+  "comparisons": {
+    "debian_pair08_always_to_pair09_madvise": {
+      "idle-end": {
+        "AnonHugePages_diff_kb": -49152,
+        "AnonHugePages_new_kb": 0,
+        "AnonHugePages_old_kb": 49152,
+        "AnonHugePages_pct": -100.0,
+        "Anonymous_diff_kb": -36980,
+        "Anonymous_new_kb": 19196,
+        "Anonymous_old_kb": 56176,
+        "Anonymous_pct": -65.828824,
+        "Pss_File_diff_kb": 52,
+        "Pss_File_new_kb": 8940,
+        "Pss_File_old_kb": 8888,
+        "Pss_File_pct": 0.585059,
+        "Rss_diff_kb": -36928,
+        "Rss_new_kb": 28140,
+        "Rss_old_kb": 65068,
+        "Rss_pct": -56.752935
+      },
+      "idle-mid": {
+        "AnonHugePages_diff_kb": -40960,
+        "AnonHugePages_new_kb": 0,
+        "AnonHugePages_old_kb": 40960,
+        "AnonHugePages_pct": -100.0,
+        "Anonymous_diff_kb": -28916,
+        "Anonymous_new_kb": 19120,
+        "Anonymous_old_kb": 48036,
+        "Anonymous_pct": -60.196519,
+        "Pss_File_diff_kb": 56,
+        "Pss_File_new_kb": 8936,
+        "Pss_File_old_kb": 8880,
+        "Pss_File_pct": 0.630631,
+        "Rss_diff_kb": -28860,
+        "Rss_new_kb": 28060,
+        "Rss_old_kb": 56920,
+        "Rss_pct": -50.702741
+      },
+      "idle-start": {
+        "AnonHugePages_diff_kb": -14336,
+        "AnonHugePages_new_kb": 0,
+        "AnonHugePages_old_kb": 14336,
+        "AnonHugePages_pct": -100.0,
+        "Anonymous_diff_kb": 392,
+        "Anonymous_new_kb": 22696,
+        "Anonymous_old_kb": 22304,
+        "Anonymous_pct": 1.757532,
+        "Pss_File_diff_kb": 56,
+        "Pss_File_new_kb": 8936,
+        "Pss_File_old_kb": 8880,
+        "Pss_File_pct": 0.630631,
+        "Rss_diff_kb": 448,
+        "Rss_new_kb": 31636,
+        "Rss_old_kb": 31188,
+        "Rss_pct": 1.43645
+      }
+    },
+    "difference_in_differences": {
+      "idle-end": {
+        "AnonHugePages_kb": -49152,
+        "Anonymous_kb": -36896,
+        "Pss_File_kb": 84,
+        "Rss_kb": -36812
+      },
+      "idle-mid": {
+        "AnonHugePages_kb": -40960,
+        "Anonymous_kb": -28788,
+        "Pss_File_kb": 84,
+        "Rss_kb": -28704
+      },
+      "idle-start": {
+        "AnonHugePages_kb": -14336,
+        "Anonymous_kb": -1424,
+        "Pss_File_kb": 20,
+        "Rss_kb": -1404
+      }
+    },
+    "pair09_debian_minus_ubuntu_both_madvise": {
+      "idle-end": {
+        "AnonHugePages_diff_kb": 0,
+        "Anonymous_diff_kb": 24,
+        "Pss_File_diff_kb": 4,
+        "Rss_diff_kb": 28
+      },
+      "idle-mid": {
+        "AnonHugePages_diff_kb": 0,
+        "Anonymous_diff_kb": 116,
+        "Pss_File_diff_kb": 4,
+        "Rss_diff_kb": 120
+      },
+      "idle-start": {
+        "AnonHugePages_diff_kb": 0,
+        "Anonymous_diff_kb": -304,
+        "Pss_File_diff_kb": 4,
+        "Rss_diff_kb": -300
+      }
+    },
+    "ubuntu_pair08_madvise_to_pair09_madvise_control": {
+      "idle-end": {
+        "AnonHugePages_diff_kb": 0,
+        "AnonHugePages_new_kb": 0,
+        "AnonHugePages_old_kb": 0,
+        "AnonHugePages_pct": null,
+        "Anonymous_diff_kb": -84,
+        "Anonymous_new_kb": 19172,
+        "Anonymous_old_kb": 19256,
+        "Anonymous_pct": -0.436228,
+        "Pss_File_diff_kb": -32,
+        "Pss_File_new_kb": 8936,
+        "Pss_File_old_kb": 8968,
+        "Pss_File_pct": -0.356824,
+        "Rss_diff_kb": -116,
+        "Rss_new_kb": 28112,
+        "Rss_old_kb": 28228,
+        "Rss_pct": -0.410939
+      },
+      "idle-mid": {
+        "AnonHugePages_diff_kb": 0,
+        "AnonHugePages_new_kb": 0,
+        "AnonHugePages_old_kb": 0,
+        "AnonHugePages_pct": null,
+        "Anonymous_diff_kb": -128,
+        "Anonymous_new_kb": 19004,
+        "Anonymous_old_kb": 19132,
+        "Anonymous_pct": -0.669036,
+        "Pss_File_diff_kb": -28,
+        "Pss_File_new_kb": 8932,
+        "Pss_File_old_kb": 8960,
+        "Pss_File_pct": -0.3125,
+        "Rss_diff_kb": -156,
+        "Rss_new_kb": 27940,
+        "Rss_old_kb": 28096,
+        "Rss_pct": -0.555239
+      },
+      "idle-start": {
+        "AnonHugePages_diff_kb": 0,
+        "AnonHugePages_new_kb": 0,
+        "AnonHugePages_old_kb": 0,
+        "AnonHugePages_pct": null,
+        "Anonymous_diff_kb": 1816,
+        "Anonymous_new_kb": 23000,
+        "Anonymous_old_kb": 21184,
+        "Anonymous_pct": 8.572508,
+        "Pss_File_diff_kb": 36,
+        "Pss_File_new_kb": 8932,
+        "Pss_File_old_kb": 8896,
+        "Pss_File_pct": 0.404676,
+        "Rss_diff_kb": 1852,
+        "Rss_new_kb": 31936,
+        "Rss_old_kb": 30084,
+        "Rss_pct": 6.156096
+      }
+    }
+  },
+  "interpretation": "If Debian AnonHugePages collapses to zero and Debian RSS/Anonymous converge with the Ubuntu madvise control while Ubuntu remains stable, the earlier cross-OS RSS gap is a THP-policy effect rather than evidence that the Universal binary intrinsically uses more memory on Debian.",
+  "limitations": [
+    "pair08 predates in-harness THP capture; its Ubuntu=madvise and Debian=always policies were live-read back outside the pair08 raw directory",
+    "pair08 and pair09 occurred at different wall-clock times and live network heights; Ubuntu is the time/control host for difference-in-differences",
+    "one before/after diagnostic pair establishes mechanism strongly but is not a substitute for a repeated randomized OS benchmark"
+  ],
+  "pair_validity": {
+    "08": {
+      "debian_outgoing": 8,
+      "fatal_pattern_matches_each": 0,
+      "idle_end_hash": "5beded99fea3ba5c764929cbdd1732afc7928bd1c7824d43cf3518541db6e147",
+      "idle_end_height": "4757",
+      "idle_start_hash": "ca1ff2b0a7f2f313d663364c5a3bc2f44a5844aa0dbb6aa16867e758b615672a",
+      "idle_start_height": "4756",
+      "incoming_each": 0,
+      "stop_rc_each": 0,
+      "ubuntu_outgoing": 8,
+      "valid": true
+    },
+    "09": {
+      "debian_outgoing": 8,
+      "fatal_pattern_matches_each": 0,
+      "idle_end_hash": "1cde56298da1747ac1d9a47138484dff42ed3b597fc0ff829e48d01211f7927f",
+      "idle_end_height": "4761",
+      "idle_start_hash": "5f678bf937dba15f3de3ba7bc0d646db8cecd10ba82739b66adf7bb482c99a75",
+      "idle_start_height": "4760",
+      "incoming_each": 0,
+      "stop_rc_each": 0,
+      "ubuntu_outgoing": 8,
+      "valid": true
+    }
+  }
+}

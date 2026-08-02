@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/discretecoin/discrete",
+  "release_url": "https://github.com/discretecoin/discrete/releases/tag/v.0.9.5",
+  "release_name": "Discrete CLI Suite v.0.9.5",
+  "tag": "v.0.9.5",
+  "tag_commit": "818aeb694280242c0f0472c0bca6f670e741c9a1",
+  "published_at_utc": "2026-07-31T02:34:10Z",
+  "assets": [
+    {
+      "name": "discrete-cli-ubuntu24.04-v.0.9.5.tar.gz",
+      "size_bytes": 8331267,
+      "sha256": "fbed899f7ecf5e02ae7da75c1408f5f64de0c3564a7e5a09d238cb95ce0e6875"
+    },
+    {
+      "name": "discrete-cli-linux-universal-v.0.9.5.tar.gz",
+      "size_bytes": 18861609,
+      "sha256": "32be929365fffd480ee8bfffe9c060cb7121a000b87e4a190df77bea11558cb8"
+    }
+  ],
+  "executed_binaries": [
+    {
+      "variant": "ubuntu24.04",
+      "version": "Discrete v0.9.5.669-818aeb69",
+      "discreted_sha256": "7037d5aed0446419fa7f36b0ced03e51ea4c8cafc02217d66568f8bf4063d6fd"
+    },
+    {
+      "variant": "linux-universal",
+      "version": "Discrete v0.9.5.669-818aeb69",
+      "discreted_sha256": "6296755aad63d66f80150383a2a30a15876f766fa05d68733653f0c1063ae30e"
+    }
+  ]
+}

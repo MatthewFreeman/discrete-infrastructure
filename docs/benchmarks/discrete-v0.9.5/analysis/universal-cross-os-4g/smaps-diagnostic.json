@@ -1,0 +1,23 @@
+{
+  "idle-end": {
+    "anon_huge_pages_debian_kb": 49152,
+    "anon_huge_pages_ubuntu_kb": 0,
+    "anonymous_diff_debian_minus_ubuntu_kb": 36920,
+    "pss_file_diff_debian_minus_ubuntu_kb": -80,
+    "rss_diff_debian_minus_ubuntu_kb": 36840
+  },
+  "idle-mid": {
+    "anon_huge_pages_debian_kb": 40960,
+    "anon_huge_pages_ubuntu_kb": 0,
+    "anonymous_diff_debian_minus_ubuntu_kb": 28904,
+    "pss_file_diff_debian_minus_ubuntu_kb": -80,
+    "rss_diff_debian_minus_ubuntu_kb": 28824
+  },
+  "idle-start": {
+    "anon_huge_pages_debian_kb": 14336,
+    "anon_huge_pages_ubuntu_kb": 0,
+    "anonymous_diff_debian_minus_ubuntu_kb": 1120,
+    "pss_file_diff_debian_minus_ubuntu_kb": -16,
+    "rss_diff_debian_minus_ubuntu_kb": 1104
+  }
+}

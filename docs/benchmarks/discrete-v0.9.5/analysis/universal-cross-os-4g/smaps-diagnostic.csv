@@ -1,0 +1,7 @@
+os,label,epoch_ns,Rss_kb,Pss_kb,Pss_Anon_kb,Pss_File_kb,Pss_Shmem_kb,Shared_Clean_kb,Shared_Dirty_kb,Private_Clean_kb,Private_Dirty_kb,Referenced_kb,Anonymous_kb,KSM_kb,LazyFree_kb,AnonHugePages_kb,ShmemPmdMapped_kb,FilePmdMapped_kb,Shared_Hugetlb_kb,Private_Hugetlb_kb,Swap_kb,SwapPss_kb,Locked_kb
+ubuntu,idle-start,1785546521624703635,30084,30080,21184,8896,0,4,0,8892,21188,30084,21184,0,0,0,0,0,0,0,0,0,0
+ubuntu,idle-mid,1785546581646461283,28096,28092,19132,8960,0,4,0,8956,19136,28096,19132,0,0,0,0,0,0,0,0,0,0
+ubuntu,idle-end,1785546641676186739,28228,28224,19256,8968,0,4,0,8964,19260,28228,19256,0,0,0,0,0,0,0,0,0,0
+debian,idle-start,1785546521614529848,31188,31184,22304,8880,0,4,0,8876,22308,31188,22304,,0,14336,0,0,0,0,0,0,0
+debian,idle-mid,1785546581637492239,56920,56916,48036,8880,0,4,0,8876,48040,56920,48036,,0,40960,0,0,0,0,0,0,0
+debian,idle-end,1785546641668854436,65068,65064,56176,8888,0,4,0,8884,56180,65068,56176,,0,49152,0,0,0,0,0,0,0

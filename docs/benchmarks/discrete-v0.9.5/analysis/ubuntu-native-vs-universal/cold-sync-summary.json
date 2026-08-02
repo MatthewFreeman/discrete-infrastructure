@@ -1,0 +1,706 @@
+{
+  "fixed_comparison_height": 4500,
+  "run_count": 8,
+  "runs_per_variant": 4,
+  "variants": {
+    "ubuntu24.04": {
+      "rpc_ready_s": {
+        "n": 4,
+        "mean": 4.63318192925,
+        "median": 4.6297421275,
+        "stdev": 0.5933250659518409,
+        "min": 4.11780438,
+        "max": 5.155439082
+      },
+      "height_1000_s": {
+        "n": 4,
+        "mean": 18.351829636,
+        "median": 18.316934031000002,
+        "stdev": 2.4157591100886955,
+        "min": 15.895150531,
+        "max": 20.878299951
+      },
+      "height_2000_s": {
+        "n": 4,
+        "mean": 31.8002468535,
+        "median": 31.99242866,
+        "stdev": 4.605344838859013,
+        "min": 26.559982658,
+        "max": 36.656147436
+      },
+      "height_3000_s": {
+        "n": 4,
+        "mean": 44.20648906975,
+        "median": 44.158050441,
+        "stdev": 6.496156397312841,
+        "min": 38.210860121,
+        "max": 50.298995276
+      },
+      "height_4000_s": {
+        "n": 4,
+        "mean": 55.553473966249996,
+        "median": 54.72688624,
+        "stdev": 7.5522056987582955,
+        "min": 48.827618545,
+        "max": 63.93250484
+      },
+      "height_4500_s": {
+        "n": 4,
+        "mean": 60.85276500575,
+        "median": 59.1835310325,
+        "stdev": 8.488856467508278,
+        "min": 53.732405656,
+        "max": 71.311592302
+      },
+      "blocks_per_s_to_4500": {
+        "n": 4,
+        "mean": 80.9678279955724,
+        "median": 82.59041046947618,
+        "stdev": 11.357017584621094,
+        "min": 68.0057678843377,
+        "max": 90.68472315899952
+      },
+      "sync_detected_s": {
+        "n": 4,
+        "mean": 62.705131728,
+        "median": 61.3056162005,
+        "stdev": 8.045143468305467,
+        "min": 55.842486996,
+        "max": 72.366807515
+      },
+      "cpu_user_s_to_4500": {
+        "n": 4,
+        "mean": 43.455,
+        "median": 43.22,
+        "stdev": 1.5631058825300352,
+        "min": 42.05,
+        "max": 45.33
+      },
+      "cpu_system_s_to_4500": {
+        "n": 4,
+        "mean": 0.48,
+        "median": 0.46499999999999997,
+        "stdev": 0.10424330514074592,
+        "min": 0.37,
+        "max": 0.62
+      },
+      "cpu_total_s_to_4500": {
+        "n": 4,
+        "mean": 43.934999999999995,
+        "median": 43.769999999999996,
+        "stdev": 1.607658753177015,
+        "min": 42.419999999999995,
+        "max": 45.78
+      },
+      "avg_cpu_pct_to_4500": {
+        "n": 4,
+        "mean": 73.2172137694838,
+        "median": 72.77837372727194,
+        "stdev": 10.22105953801774,
+        "min": 62.78081663132964,
+        "max": 84.53129099206173
+      },
+      "peak_1s_cpu_pct_to_4500": {
+        "n": 4,
+        "mean": 100.58697563025497,
+        "median": 100.63200059714895,
+        "stdev": 0.15943536734014724,
+        "min": 100.36752058262766,
+        "max": 100.71638074409431
+      },
+      "avg_rss_kb_to_4500": {
+        "n": 4,
+        "mean": 83846.10305858238,
+        "median": 85337.72952853597,
+        "stdev": 5351.181318436206,
+        "min": 76586.69230769231,
+        "max": 88122.26086956522
+      },
+      "peak_rss_kb_to_4500": {
+        "n": 4,
+        "mean": 125411.0,
+        "median": 124470.0,
+        "stdev": 5722.191072191374,
+        "min": 119540.0,
+        "max": 133164.0
+      },
+      "minor_faults_to_4500": {
+        "n": 4,
+        "mean": 22975.5,
+        "median": 22728.0,
+        "stdev": 1685.2680301166736,
+        "min": 21227.0,
+        "max": 25219.0
+      },
+      "major_faults_to_4500": {
+        "n": 4,
+        "mean": 28.0,
+        "median": 28.5,
+        "stdev": 2.160246899469287,
+        "min": 25.0,
+        "max": 30.0
+      },
+      "voluntary_context_switches_to_4500": {
+        "n": 4,
+        "mean": 6393.75,
+        "median": 5661.0,
+        "stdev": 2496.497329593338,
+        "min": 4260.0,
+        "max": 9993.0
+      },
+      "nonvoluntary_context_switches_to_4500": {
+        "n": 4,
+        "mean": 1181.0,
+        "median": 1282.5,
+        "stdev": 404.39666995002153,
+        "min": 614.0,
+        "max": 1545.0
+      },
+      "process_read_bytes_to_4500": {
+        "n": 4,
+        "mean": 7624704.0,
+        "median": 7497728.0,
+        "stdev": 291641.7197773094,
+        "min": 7446528.0,
+        "max": 8056832.0
+      },
+      "process_write_bytes_to_4500": {
+        "n": 4,
+        "mean": 61741056.0,
+        "median": 61741056.0,
+        "stdev": 5287.91326202186,
+        "min": 61734912.0,
+        "max": 61747200.0
+      },
+      "host_net_rx_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 75136370.75,
+        "median": 71814226.0,
+        "stdev": 11207888.577762373,
+        "min": 65663510.0,
+        "max": 91253521.0
+      },
+      "host_net_tx_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 1196659.25,
+        "median": 1145968.5,
+        "stdev": 284127.3523162633,
+        "min": 907430.0,
+        "max": 1587270.0
+      },
+      "block_reads_completed_delta_to_4500": {
+        "n": 4,
+        "mean": 617.25,
+        "median": 622.0,
+        "stdev": 372.6753502267982,
+        "min": 273.0,
+        "max": 952.0
+      },
+      "block_writes_completed_delta_to_4500": {
+        "n": 4,
+        "mean": 494.25,
+        "median": 492.5,
+        "stdev": 41.5,
+        "min": 451.0,
+        "max": 541.0
+      },
+      "block_read_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 18469888.0,
+        "median": 14127104.0,
+        "stdev": 15913979.442592058,
+        "min": 5931008.0,
+        "max": 39694336.0
+      },
+      "block_write_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 64399360.0,
+        "median": 64376832.0,
+        "stdev": 310837.55716450996,
+        "min": 64122880.0,
+        "max": 64720896.0
+      },
+      "block_iops_avg_to_4500": {
+        "n": 4,
+        "mean": 18.674052246117206,
+        "median": 18.155759129412747,
+        "stdev": 7.411928899210309,
+        "min": 11.064119794978577,
+        "max": 27.320570930664754
+      },
+      "rpc_latency_mean_ms_to_4500": {
+        "n": 4,
+        "mean": 20.9612561837017,
+        "median": 20.518610272988507,
+        "stdev": 3.5899241551255434,
+        "min": 17.098953125,
+        "max": 25.708851063829787
+      },
+      "rpc_latency_p95_ms_to_4500": {
+        "n": 4,
+        "mean": 34.17515,
+        "median": 34.477725,
+        "stdev": 2.8030862482271224,
+        "min": 30.680749999999996,
+        "max": 37.0644
+      },
+      "stop_seconds": {
+        "n": 4,
+        "mean": 6.03714896775,
+        "median": 4.5236056625,
+        "stdev": 6.293403480447996,
+        "min": 1.023993759,
+        "max": 14.077390787
+      }
+    },
+    "linux-universal": {
+      "rpc_ready_s": {
+        "n": 4,
+        "mean": 4.87494317775,
+        "median": 5.130053097999999,
+        "stdev": 0.5130025703848856,
+        "min": 4.105451992,
+        "max": 5.134214523
+      },
+      "height_1000_s": {
+        "n": 4,
+        "mean": 17.8072947575,
+        "median": 17.824449032,
+        "stdev": 1.904216446532671,
+        "min": 15.689291123,
+        "max": 19.890989843
+      },
+      "height_2000_s": {
+        "n": 4,
+        "mean": 29.924421544250002,
+        "median": 29.970635417,
+        "stdev": 4.379172848687668,
+        "min": 25.189453005,
+        "max": 34.566962338
+      },
+      "height_3000_s": {
+        "n": 4,
+        "mean": 42.878512784,
+        "median": 43.092091717,
+        "stdev": 6.3610207556982985,
+        "min": 36.787067119,
+        "max": 48.542800583
+      },
+      "height_4000_s": {
+        "n": 4,
+        "mean": 54.76865768275,
+        "median": 55.1862713845,
+        "stdev": 8.52395886024422,
+        "min": 46.306312479,
+        "max": 62.395775483
+      },
+      "height_4500_s": {
+        "n": 4,
+        "mean": 60.59634611275,
+        "median": 60.76184892249999,
+        "stdev": 8.4981404053899,
+        "min": 52.68377394,
+        "max": 68.177912666
+      },
+      "blocks_per_s_to_4500": {
+        "n": 4,
+        "mean": 81.74526795791964,
+        "median": 81.20196166710423,
+        "stdev": 11.734389141550334,
+        "min": 71.36153183982705,
+        "max": 93.21561665764304
+      },
+      "sync_detected_s": {
+        "n": 4,
+        "mean": 61.89577089875,
+        "median": 62.439810916499994,
+        "stdev": 8.24478187174053,
+        "min": 53.582562984,
+        "max": 69.120898778
+      },
+      "cpu_user_s_to_4500": {
+        "n": 4,
+        "mean": 43.417500000000004,
+        "median": 42.91,
+        "stdev": 1.150865616250077,
+        "min": 42.72,
+        "max": 45.13
+      },
+      "cpu_system_s_to_4500": {
+        "n": 4,
+        "mean": 1.4224999999999999,
+        "median": 1.4,
+        "stdev": 0.13817259737975066,
+        "min": 1.28,
+        "max": 1.61
+      },
+      "cpu_total_s_to_4500": {
+        "n": 4,
+        "mean": 44.84,
+        "median": 44.31,
+        "stdev": 1.2788275880665072,
+        "min": 44.0,
+        "max": 46.74
+      },
+      "avg_cpu_pct_to_4500": {
+        "n": 4,
+        "mean": 74.98539373444797,
+        "median": 75.39624802231609,
+        "stdev": 9.524905087124628,
+        "min": 64.81571270227131,
+        "max": 84.33336619088834
+      },
+      "peak_1s_cpu_pct_to_4500": {
+        "n": 4,
+        "mean": 100.70618507475818,
+        "median": 100.77094174057792,
+        "stdev": 0.25862699401567263,
+        "min": 100.35630351936014,
+        "max": 100.92655329851672
+      },
+      "avg_rss_kb_to_4500": {
+        "n": 4,
+        "mean": 66295.3276977924,
+        "median": 65598.83216783217,
+        "stdev": 2329.5455974835186,
+        "min": 64472.43076923077,
+        "max": 69511.2156862745
+      },
+      "peak_rss_kb_to_4500": {
+        "n": 4,
+        "mean": 106280.0,
+        "median": 107238.0,
+        "stdev": 3487.454085719266,
+        "min": 101612.0,
+        "max": 109032.0
+      },
+      "minor_faults_to_4500": {
+        "n": 4,
+        "mean": 187111.75,
+        "median": 188293.5,
+        "stdev": 15324.344757607094,
+        "min": 170759.0,
+        "max": 201101.0
+      },
+      "major_faults_to_4500": {
+        "n": 4,
+        "mean": 15.25,
+        "median": 14.5,
+        "stdev": 1.8929694486000912,
+        "min": 14.0,
+        "max": 18.0
+      },
+      "voluntary_context_switches_to_4500": {
+        "n": 4,
+        "mean": 5767.0,
+        "median": 5458.0,
+        "stdev": 1453.8619833624741,
+        "min": 4357.0,
+        "max": 7795.0
+      },
+      "nonvoluntary_context_switches_to_4500": {
+        "n": 4,
+        "mean": 1388.5,
+        "median": 1471.0,
+        "stdev": 422.43539940050795,
+        "min": 802.0,
+        "max": 1810.0
+      },
+      "process_read_bytes_to_4500": {
+        "n": 4,
+        "mean": 12590080.0,
+        "median": 12693504.0,
+        "stdev": 380999.56317035324,
+        "min": 12050432.0,
+        "max": 12922880.0
+      },
+      "process_write_bytes_to_4500": {
+        "n": 4,
+        "mean": 61744128.0,
+        "median": 61743104.0,
+        "stdev": 5154.020307811498,
+        "min": 61739008.0,
+        "max": 61751296.0
+      },
+      "host_net_rx_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 78143897.25,
+        "median": 80538677.5,
+        "stdev": 16422422.447872125,
+        "min": 59472640.0,
+        "max": 92025594.0
+      },
+      "host_net_tx_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 1158496.5,
+        "median": 1153041.5,
+        "stdev": 266332.0706142365,
+        "min": 842027.0,
+        "max": 1485876.0
+      },
+      "block_reads_completed_delta_to_4500": {
+        "n": 4,
+        "mean": 573.0,
+        "median": 623.5,
+        "stdev": 460.73492017283286,
+        "min": 79.0,
+        "max": 966.0
+      },
+      "block_writes_completed_delta_to_4500": {
+        "n": 4,
+        "mean": 431.25,
+        "median": 439.5,
+        "stdev": 40.76252363793652,
+        "min": 379.0,
+        "max": 467.0
+      },
+      "block_read_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 12976128.0,
+        "median": 13926400.0,
+        "stdev": 10635671.317959137,
+        "min": 1957888.0,
+        "max": 22093824.0
+      },
+      "block_write_bytes_delta_to_4500": {
+        "n": 4,
+        "mean": 63977472.0,
+        "median": 64071680.0,
+        "stdev": 301373.94548744033,
+        "min": 63541248.0,
+        "max": 64225280.0
+      },
+      "block_iops_avg_to_4500": {
+        "n": 4,
+        "mean": 16.972892870927602,
+        "median": 16.963626550616212,
+        "stdev": 8.940895878115208,
+        "min": 6.764292780060027,
+        "max": 27.200025602417956
+      },
+      "rpc_latency_mean_ms_to_4500": {
+        "n": 4,
+        "mean": 22.20018110596341,
+        "median": 23.255616666666665,
+        "stdev": 3.0154755890513014,
+        "min": 17.802360655737704,
+        "max": 24.487130434782607
+      },
+      "rpc_latency_p95_ms_to_4500": {
+        "n": 4,
+        "mean": 32.240362499999996,
+        "median": 30.1363,
+        "stdev": 5.2641630011134355,
+        "min": 28.71975,
+        "max": 39.96909999999999
+      },
+      "stop_seconds": {
+        "n": 4,
+        "mean": 7.014569192000001,
+        "median": 8.3019616655,
+        "stdev": 4.959762632247969,
+        "min": 0.02765225,
+        "max": 11.426701187
+      }
+    }
+  },
+  "comparisons": {
+    "rpc_ready_s": {
+      "ubuntu_mean": 4.63318192925,
+      "universal_mean": 4.87494317775,
+      "ubuntu_minus_universal": -0.24176124849999958,
+      "ubuntu_vs_universal_pct": -4.95926290184131
+    },
+    "height_1000_s": {
+      "ubuntu_mean": 18.351829636,
+      "universal_mean": 17.8072947575,
+      "ubuntu_minus_universal": 0.5445348785000022,
+      "ubuntu_vs_universal_pct": 3.057931515794432
+    },
+    "height_2000_s": {
+      "ubuntu_mean": 31.8002468535,
+      "universal_mean": 29.924421544250002,
+      "ubuntu_minus_universal": 1.875825309249997,
+      "ubuntu_vs_universal_pct": 6.2685432581417455
+    },
+    "height_3000_s": {
+      "ubuntu_mean": 44.20648906975,
+      "universal_mean": 42.878512784,
+      "ubuntu_minus_universal": 1.3279762857499975,
+      "ubuntu_vs_universal_pct": 3.0970670378416942
+    },
+    "height_4000_s": {
+      "ubuntu_mean": 55.553473966249996,
+      "universal_mean": 54.76865768275,
+      "ubuntu_minus_universal": 0.7848162834999926,
+      "ubuntu_vs_universal_pct": 1.4329660734905714
+    },
+    "height_4500_s": {
+      "ubuntu_mean": 60.85276500575,
+      "universal_mean": 60.59634611275,
+      "ubuntu_minus_universal": 0.25641889300000287,
+      "ubuntu_vs_universal_pct": 0.4231590012422348
+    },
+    "blocks_per_s_to_4500": {
+      "ubuntu_mean": 80.9678279955724,
+      "universal_mean": 81.74526795791964,
+      "ubuntu_minus_universal": -0.7774399623472306,
+      "ubuntu_vs_universal_pct": -0.9510519468202583
+    },
+    "sync_detected_s": {
+      "ubuntu_mean": 62.705131728,
+      "universal_mean": 61.89577089875,
+      "ubuntu_minus_universal": 0.8093608292499965,
+      "ubuntu_vs_universal_pct": 1.30761894956275
+    },
+    "cpu_user_s_to_4500": {
+      "ubuntu_mean": 43.455,
+      "universal_mean": 43.417500000000004,
+      "ubuntu_minus_universal": 0.037499999999994316,
+      "ubuntu_vs_universal_pct": 0.08637070305750338
+    },
+    "cpu_system_s_to_4500": {
+      "ubuntu_mean": 0.48,
+      "universal_mean": 1.4224999999999999,
+      "ubuntu_minus_universal": -0.9424999999999999,
+      "ubuntu_vs_universal_pct": -66.25659050966608
+    },
+    "cpu_total_s_to_4500": {
+      "ubuntu_mean": 43.934999999999995,
+      "universal_mean": 44.84,
+      "ubuntu_minus_universal": -0.9050000000000082,
+      "ubuntu_vs_universal_pct": -2.0182872435325794
+    },
+    "avg_cpu_pct_to_4500": {
+      "ubuntu_mean": 73.2172137694838,
+      "universal_mean": 74.98539373444797,
+      "ubuntu_minus_universal": -1.7681799649641619,
+      "ubuntu_vs_universal_pct": -2.358032513939934
+    },
+    "peak_1s_cpu_pct_to_4500": {
+      "ubuntu_mean": 100.58697563025497,
+      "universal_mean": 100.70618507475818,
+      "ubuntu_minus_universal": -0.11920944450321258,
+      "ubuntu_vs_universal_pct": -0.11837350845403938
+    },
+    "avg_rss_kb_to_4500": {
+      "ubuntu_mean": 83846.10305858238,
+      "universal_mean": 66295.3276977924,
+      "ubuntu_minus_universal": 17550.77536078998,
+      "ubuntu_vs_universal_pct": 26.473623361204712
+    },
+    "peak_rss_kb_to_4500": {
+      "ubuntu_mean": 125411.0,
+      "universal_mean": 106280.0,
+      "ubuntu_minus_universal": 19131.0,
+      "ubuntu_vs_universal_pct": 18.000564546481
+    },
+    "minor_faults_to_4500": {
+      "ubuntu_mean": 22975.5,
+      "universal_mean": 187111.75,
+      "ubuntu_minus_universal": -164136.25,
+      "ubuntu_vs_universal_pct": -87.72097423064025
+    },
+    "major_faults_to_4500": {
+      "ubuntu_mean": 28.0,
+      "universal_mean": 15.25,
+      "ubuntu_minus_universal": 12.75,
+      "ubuntu_vs_universal_pct": 83.60655737704919
+    },
+    "voluntary_context_switches_to_4500": {
+      "ubuntu_mean": 6393.75,
+      "universal_mean": 5767.0,
+      "ubuntu_minus_universal": 626.75,
+      "ubuntu_vs_universal_pct": 10.867868909311596
+    },
+    "nonvoluntary_context_switches_to_4500": {
+      "ubuntu_mean": 1181.0,
+      "universal_mean": 1388.5,
+      "ubuntu_minus_universal": -207.5,
+      "ubuntu_vs_universal_pct": -14.944184371624058
+    },
+    "process_read_bytes_to_4500": {
+      "ubuntu_mean": 7624704.0,
+      "universal_mean": 12590080.0,
+      "ubuntu_minus_universal": -4965376.0,
+      "ubuntu_vs_universal_pct": -39.43879625864173
+    },
+    "process_write_bytes_to_4500": {
+      "ubuntu_mean": 61741056.0,
+      "universal_mean": 61744128.0,
+      "ubuntu_minus_universal": -3072.0,
+      "ubuntu_vs_universal_pct": -0.00497537190905506
+    },
+    "host_net_rx_bytes_delta_to_4500": {
+      "ubuntu_mean": 75136370.75,
+      "universal_mean": 78143897.25,
+      "ubuntu_minus_universal": -3007526.5,
+      "ubuntu_vs_universal_pct": -3.8487029772500847
+    },
+    "host_net_tx_bytes_delta_to_4500": {
+      "ubuntu_mean": 1196659.25,
+      "universal_mean": 1158496.5,
+      "ubuntu_minus_universal": 38162.75,
+      "ubuntu_vs_universal_pct": 3.294161872737633
+    },
+    "block_reads_completed_delta_to_4500": {
+      "ubuntu_mean": 617.25,
+      "universal_mean": 573.0,
+      "ubuntu_minus_universal": 44.25,
+      "ubuntu_vs_universal_pct": 7.722513089005245
+    },
+    "block_writes_completed_delta_to_4500": {
+      "ubuntu_mean": 494.25,
+      "universal_mean": 431.25,
+      "ubuntu_minus_universal": 63.0,
+      "ubuntu_vs_universal_pct": 14.608695652173909
+    },
+    "block_read_bytes_delta_to_4500": {
+      "ubuntu_mean": 18469888.0,
+      "universal_mean": 12976128.0,
+      "ubuntu_minus_universal": 5493760.0,
+      "ubuntu_vs_universal_pct": 42.33743686868687
+    },
+    "block_write_bytes_delta_to_4500": {
+      "ubuntu_mean": 64399360.0,
+      "universal_mean": 63977472.0,
+      "ubuntu_minus_universal": 421888.0,
+      "ubuntu_vs_universal_pct": 0.6594321201062847
+    },
+    "block_iops_avg_to_4500": {
+      "ubuntu_mean": 18.674052246117206,
+      "universal_mean": 16.972892870927602,
+      "ubuntu_minus_universal": 1.7011593751896044,
+      "ubuntu_vs_universal_pct": 10.022801582065433
+    },
+    "rpc_latency_mean_ms_to_4500": {
+      "ubuntu_mean": 20.9612561837017,
+      "universal_mean": 22.20018110596341,
+      "ubuntu_minus_universal": -1.2389249222617096,
+      "ubuntu_vs_universal_pct": -5.580697366153064
+    },
+    "rpc_latency_p95_ms_to_4500": {
+      "ubuntu_mean": 34.17515,
+      "universal_mean": 32.240362499999996,
+      "ubuntu_minus_universal": 1.9347875000000059,
+      "ubuntu_vs_universal_pct": 6.001134447542289
+    },
+    "stop_seconds": {
+      "ubuntu_mean": 6.03714896775,
+      "universal_mean": 7.014569192000001,
+      "ubuntu_minus_universal": -0.9774202242500003,
+      "ubuntu_vs_universal_pct": -13.93414474212802
+    }
+  },
+  "all_stop_exit_zero": true,
+  "all_node_stopped_marker": true,
+  "any_crash_or_oom_marker": false,
+  "binary_sha256_by_variant": {
+    "ubuntu24.04": [
+      "7037d5aed0446419fa7f36b0ced03e51ea4c8cafc02217d66568f8bf4063d6fd"
+    ],
+    "linux-universal": [
+      "6296755aad63d66f80150383a2a30a15876f766fa05d68733653f0c1063ae30e"
+    ]
+  }
+}

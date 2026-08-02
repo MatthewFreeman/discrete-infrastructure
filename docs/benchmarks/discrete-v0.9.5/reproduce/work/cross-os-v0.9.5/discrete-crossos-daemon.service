@@ -1,0 +1,24 @@
+[Unit]
+Description=Discrete v.0.9.5 cross-OS benchmark daemon
+After=network-online.target time-sync.target
+Wants=network-online.target time-sync.target
+
+[Service]
+Type=simple
+User=serveradmin
+Group=serveradmin
+EnvironmentFile=/opt/discrete-benchmark/state/v.0.9.5/cross-os/current.env
+ExecStart=/opt/discrete-benchmark/harness/v.0.9.5/cross-os/launch-daemon.sh
+Restart=no
+KillSignal=SIGTERM
+KillMode=control-group
+TimeoutStopSec=300s
+SendSIGKILL=no
+CPUAccounting=yes
+MemoryAccounting=yes
+IOAccounting=yes
+TasksAccounting=yes
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

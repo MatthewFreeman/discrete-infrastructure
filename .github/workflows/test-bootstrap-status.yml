@@ -18,8 +18,8 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          bash -n bootstrap/debian-ipv4.sh
-          source bootstrap/debian-ipv4.sh
+          bash -n modules/host/bootstrap/debian-ipv4.sh
+          source modules/host/bootstrap/debian-ipv4.sh
 
           nft() {
             return 1
@@ -44,11 +44,11 @@ jobs:
           fi
 
           awk '/^install_bootstrap_fail2ban\(\)/,/^\)/' \
-            bootstrap/debian-ipv4.sh \
+            modules/host/bootstrap/debian-ipv4.sh \
             | grep -F 'return 0'
 
           awk '/^verify_no_ufw\(\)/,/^}/' \
-            bootstrap/debian-ipv4.sh \
+            modules/host/bootstrap/debian-ipv4.sh \
             | grep -F 'return 0'
 
       - name: Validate finalize root contract
@@ -58,7 +58,7 @@ jobs:
           finalize_section="$(
             awk \
               '/^## 7\. Run the `finalize` phase$/,/^## 8\./' \
-              docs/bootstrap-from-zero.md
+              docs/host/bootstrap-from-zero.md
           )"
 
           sudo_line="$(
@@ -82,7 +82,7 @@ jobs:
             || { echo 'Runbook invokes finalize before entering a root shell.' >&2; exit 1; }
 
           main_section="$(
-            awk '/^main\(\) \{$/,/^}/' bootstrap/debian-ipv4.sh
+            awk '/^main\(\) \{$/,/^}/' modules/host/bootstrap/debian-ipv4.sh
           )"
           require_root_line="$(
             grep -n -F 'require_root' <<<"${main_section}" \
@@ -108,17 +108,17 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          bash -n bootstrap/debian-ipv4.sh
+          bash -n modules/host/bootstrap/debian-ipv4.sh
 
           status_section="$(
-            awk '/^status\(\) \{$/,/^}/' bootstrap/debian-ipv4.sh
+            awk '/^status\(\) \{$/,/^}/' modules/host/bootstrap/debian-ipv4.sh
           )"
           verbose_section="$(
-            awk '/^status_verbose\(\) \{$/,/^}/' bootstrap/debian-ipv4.sh
+            awk '/^status_verbose\(\) \{$/,/^}/' modules/host/bootstrap/debian-ipv4.sh
           )"
           status_doc="$(
             awk '/^## 9\. Run final verification$/,/^## 10\./' \
-              docs/bootstrap-from-zero.md
+              docs/host/bootstrap-from-zero.md
           )"
 
           grep -F "status_check 'IPv4-only network state' ipv4" <<<"${status_section}"
@@ -140,7 +140,7 @@ jobs:
             grep -F "${raw_heading}" <<<"${verbose_section}"
           done
 
-          grep -F 'status --verbose' bootstrap/debian-ipv4.sh
+          grep -F 'status --verbose' modules/host/bootstrap/debian-ipv4.sh
           grep -F 'Every row must begin with `[PASS]`' <<<"${status_doc}"
           grep -F 'Overall status: PASS' <<<"${status_doc}"
           grep -F 'status --verbose' <<<"${status_doc}"
@@ -149,7 +149,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          audit_script='scripts/audit-ports.sh'
+          audit_script='modules/host/scripts/audit-ports.sh'
           bash -n "${audit_script}"
 
           for check_label in \
@@ -195,11 +195,11 @@ jobs:
 
           debian_audit_doc="$(
             awk '/^## 10\. Audit all listening ports$/,/^## 11\./' \
-              docs/bootstrap-from-zero.md
+              docs/host/bootstrap-from-zero.md
           )"
           ubuntu_audit_doc="$(
             awk '/^## 10\. Run final verification and the local port audit$/,/^## 11\./' \
-              docs/bootstrap-ubuntu-24.04-from-zero.md
+              docs/host/bootstrap-ubuntu-24.04-from-zero.md
           )"
 
           for audit_doc in "${debian_audit_doc}" "${ubuntu_audit_doc}"; do
@@ -214,8 +214,8 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          bash -n bootstrap/run.sh
-          source bootstrap/run.sh
+          bash -n modules/host/bootstrap/run.sh
+          source modules/host/bootstrap/run.sh
 
           success_fixture="$(mktemp)"
           error_fixture="$(mktemp)"

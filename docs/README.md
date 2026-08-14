@@ -1,10 +1,13 @@
 # Documentation
 
-Architecture notes, installation procedures, operational runbooks, validation checklists, incident recovery, and migration records.
-
-- [Bootstrap a clean Debian 12 IPv4-only VPS](bootstrap-from-zero.md)
-- [Bootstrap a clean Ubuntu Server 24.04 LTS IPv4-only VPS](bootstrap-ubuntu-24.04-from-zero.md)
-- [Discrete release validation and benchmark evidence](benchmarks/README.md)
+- [Getting started](getting-started.md)
+- [Component status](component-status.md)
+- [Roadmap](roadmap.md)
+- [Host bootstrap and operations](host/README.md)
+- [Discrete node qualification and deployment plan](node/README.md)
 - [Architecture decisions](decisions/README.md)
+- [Published benchmark evidence](benchmarks/README.md)
 
-A configuration change is not finished until another person can understand how to deploy, verify, and reverse it from the documentation.
+A configuration change is not finished until another operator can deploy, verify, and reverse it
+from the documentation. Status claims belong in `component-status.md`; other documents link there
+instead of maintaining competing status tables.

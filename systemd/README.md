@@ -1,5 +1,3 @@
-# systemd
+# Moved: systemd host component
 
-Service units, drop-ins, timers, and related deployment notes for Discrete node components.
-
-Units must define explicit users, paths, restart behavior, dependencies, and logging expectations.
+See [`docs/host/components/systemd.md`](../docs/host/components/systemd.md).

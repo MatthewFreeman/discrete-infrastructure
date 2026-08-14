@@ -29,7 +29,7 @@ jobs:
       - name: Validate Debian reboot and external scan guidance
         run: |
           set -euo pipefail
-          runbook='docs/bootstrap-from-zero.md'
+          runbook='docs/host/bootstrap-from-zero.md'
 
           reboot_line="$(grep -nF '## 11. Reboot validation' "${runbook}" | cut -d: -f1)"
           scan_line="$(grep -nF '## 12. Run an external IPv4 scan' "${runbook}" | cut -d: -f1)"
@@ -85,18 +85,18 @@ jobs:
         run: |
           set -o pipefail
           shellcheck \
-            bootstrap/run.sh \
-            bootstrap/debian-ipv4.sh \
-            bootstrap/create-admin.sh \
-            install.sh \
-            scripts/apply-config.sh \
-            scripts/apply-nftables.sh \
-            scripts/audit-ports.sh \
-            scripts/configure-ipv4-only.sh \
-            scripts/configure-time-sync.sh \
-            scripts/check-ipv6-listeners.sh \
-            scripts/restart-fail2ban.sh \
-            scripts/verify.sh \
+            modules/host/bootstrap/run.sh \
+            modules/host/bootstrap/debian-ipv4.sh \
+            modules/host/bootstrap/create-admin.sh \
+            modules/host/install.sh \
+            modules/host/scripts/apply-config.sh \
+            modules/host/scripts/apply-nftables.sh \
+            modules/host/scripts/audit-ports.sh \
+            modules/host/scripts/configure-ipv4-only.sh \
+            modules/host/scripts/configure-time-sync.sh \
+            modules/host/scripts/check-ipv6-listeners.sh \
+            modules/host/scripts/restart-fail2ban.sh \
+            modules/host/scripts/verify.sh \
             2>&1 | tee shellcheck.txt
 
       - name: Test IPv6 listener migration classification
@@ -124,33 +124,33 @@ jobs:
 
             test "$(
               DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/empty" \
-                bash scripts/check-ipv6-listeners.sh prepare
+                bash modules/host/scripts/check-ipv6-listeners.sh prepare
             )" = 'none'
 
             test "$(
               DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/x11-loopback" \
-                bash scripts/check-ipv6-listeners.sh prepare
+                bash modules/host/scripts/check-ipv6-listeners.sh prepare
             )" = 'transient-x11'
 
             if DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/x11-loopback" \
-              bash scripts/check-ipv6-listeners.sh strict; then
+              bash modules/host/scripts/check-ipv6-listeners.sh strict; then
               echo 'Strict mode accepted an IPv6 X11 listener.' >&2
               exit 1
             fi
 
             for fixture in x11-wildcard udp-loopback non-sshd; do
               if DISCRETE_IPV6_LISTENERS_FILE="${fixture_root}/${fixture}" \
-                bash scripts/check-ipv6-listeners.sh prepare; then
+                bash modules/host/scripts/check-ipv6-listeners.sh prepare; then
                 echo "Prepare mode accepted forbidden fixture: ${fixture}" >&2
                 exit 1
               fi
             done
 
-            grep -A3 -F 'nftables-bootstrap)' scripts/verify.sh \
+            grep -A3 -F 'nftables-bootstrap)' modules/host/scripts/verify.sh \
               | grep -F 'verify_ipv4_prepare'
-            grep -A3 -F 'fail2ban-bootstrap)' scripts/verify.sh \
+            grep -A3 -F 'fail2ban-bootstrap)' modules/host/scripts/verify.sh \
               | grep -F 'verify_ipv4_prepare'
-            grep -A6 -F 'verify_all_final()' scripts/verify.sh \
+            grep -A6 -F 'verify_all_final()' modules/host/scripts/verify.sh \
               | grep -F 'verify_ipv4_only'
           } 2>&1 | tee ipv6-listener-migration.txt
 
@@ -161,7 +161,7 @@ jobs:
           set -o pipefail
           {
             test_root="${RUNNER_TEMP}/component-apply"
-            source_root="${GITHUB_WORKSPACE}/.ci-component-apply"
+            source_root="${GITHUB_WORKSPACE}/modules/host/.ci-component-apply"
             success_root="${test_root}/success"
             rollback_root="${test_root}/rollback"
 
@@ -203,7 +203,7 @@ jobs:
             sudo env \
               DISCRETE_MANIFEST="${success_manifest}" \
               DISCRETE_BACKUP_ROOT="${success_root}/backups" \
-              bash scripts/apply-config.sh all \
+              bash modules/host/scripts/apply-config.sh all \
               | tee "${success_output}"
 
             test "$(grep -c '^validate$' "${success_log}")" -eq 1
@@ -243,7 +243,7 @@ jobs:
             if sudo env \
               DISCRETE_MANIFEST="${rollback_manifest}" \
               DISCRETE_BACKUP_ROOT="${rollback_root}/backups" \
-              bash scripts/apply-config.sh all \
+              bash modules/host/scripts/apply-config.sh all \
               > "${rollback_output}" 2>&1; then
               echo 'Rollback test unexpectedly succeeded.' >&2
               exit 1
@@ -262,8 +262,8 @@ jobs:
           set -o pipefail
           {
             sudo mkdir -p /run/sshd
-            sudo sshd -t -f configs/ssh/00-discrete.conf
-            sudo sshd -T -f configs/ssh/00-discrete.conf | grep -x 'addressfamily inet'
+            sudo sshd -t -f modules/host/configs/ssh/00-discrete.conf
+            sudo sshd -T -f modules/host/configs/ssh/00-discrete.conf | grep -x 'addressfamily inet'
           } 2>&1 | tee openssh.txt
 
       - name: Validate nftables configuration
@@ -272,9 +272,9 @@ jobs:
         run: |
           set -o pipefail
           {
-            sudo nft --check --file configs/nftables/nftables.conf
-            grep -Eq '^table ip discrete_filter' configs/nftables/nftables.conf
-            ! grep -Eq 'ipv6|ip6|table inet' configs/nftables/nftables.conf
+            sudo nft --check --file modules/host/configs/nftables/nftables.conf
+            grep -Eq '^table ip discrete_filter' modules/host/configs/nftables/nftables.conf
+            ! grep -Eq 'ipv6|ip6|table inet' modules/host/configs/nftables/nftables.conf
           } 2>&1 | tee nftables.txt
 
       - name: Validate Fail2Ban configuration
@@ -283,11 +283,11 @@ jobs:
         run: |
           set -o pipefail
           {
-            sudo install -m 0644 configs/fail2ban/fail2ban.local /etc/fail2ban/fail2ban.local
-            sudo install -m 0644 configs/fail2ban/jail.local /etc/fail2ban/jail.local
+            sudo install -m 0644 modules/host/configs/fail2ban/fail2ban.local /etc/fail2ban/fail2ban.local
+            sudo install -m 0644 modules/host/configs/fail2ban/jail.local /etc/fail2ban/jail.local
             sudo fail2ban-client -t
-            grep -Eq '^allowipv6 = no$' configs/fail2ban/fail2ban.local
-            grep -F 'table_family=ip' configs/fail2ban/jail.local
+            grep -Eq '^allowipv6 = no$' modules/host/configs/fail2ban/fail2ban.local
+            grep -F 'table_family=ip' modules/host/configs/fail2ban/jail.local
           } 2>&1 | tee fail2ban.txt
 
       - name: Validate IPv4-only policy contract
@@ -296,10 +296,10 @@ jobs:
         run: |
           set -o pipefail
           {
-            grep -Eq '^net.ipv6.conf.all.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
-            grep -Eq '^net.ipv6.conf.default.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
-            grep -Eq '^net.ipv6.conf.lo.disable_ipv6 = 1$' configs/sysctl/99-discrete-ipv4-only.conf
-            grep -F $'nft list table ip discrete_filter' configs/manifest.tsv
+            grep -Eq '^net.ipv6.conf.all.disable_ipv6 = 1$' modules/host/configs/sysctl/99-discrete-ipv4-only.conf
+            grep -Eq '^net.ipv6.conf.default.disable_ipv6 = 1$' modules/host/configs/sysctl/99-discrete-ipv4-only.conf
+            grep -Eq '^net.ipv6.conf.lo.disable_ipv6 = 1$' modules/host/configs/sysctl/99-discrete-ipv4-only.conf
+            grep -F $'nft list table ip discrete_filter' modules/host/configs/manifest.tsv
           } 2>&1 | tee ipv4-contract.txt
 
       - name: Upload validation diagnostics

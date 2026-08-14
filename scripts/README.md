@@ -1,5 +1,6 @@
-# Scripts
+# Compatibility script entrypoints
 
-Operational scripts for deployment, validation, backup, diagnostics, and maintenance.
+These paths remain stable for existing runbooks, installed systemd units, and operator automation.
+Canonical host scripts live under [`modules/host/scripts/`](../modules/host/scripts/).
 
-Scripts should use strict error handling, produce useful logs, avoid hidden state, and be safe to run repeatedly where practical.
+New logic must not be added here. Each shell file delegates to its matching canonical file.

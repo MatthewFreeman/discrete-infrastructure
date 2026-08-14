@@ -1,0 +1,22 @@
+name: Validate modular repository layout
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-layout:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate canonical paths and compatibility entrypoints
+        run: bash .github/scripts/validate-layout.sh
+
+      - name: Validate repository-local Markdown links
+        run: python3 .github/scripts/validate-markdown-links.py

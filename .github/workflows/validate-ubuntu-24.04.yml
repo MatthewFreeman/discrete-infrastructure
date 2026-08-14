@@ -22,10 +22,10 @@ jobs:
 
       - name: Validate Ubuntu Bash syntax
         run: |
-          bash -n bootstrap/run-ubuntu-24.04.sh
-          bash -n bootstrap/ubuntu-24.04-ipv4.sh
-          bash -n bootstrap/install-ubuntu-ipv4-reassertion.sh
-          bash -n install-ubuntu-24.04.sh
+          bash -n modules/host/bootstrap/run-ubuntu-24.04.sh
+          bash -n modules/host/bootstrap/ubuntu-24.04-ipv4.sh
+          bash -n modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh
+          bash -n modules/host/install-ubuntu-24.04.sh
 
       - name: Run ShellCheck on Ubuntu entrypoints
         id: shellcheck
@@ -33,10 +33,10 @@ jobs:
         run: |
           set -o pipefail
           shellcheck -x \
-            bootstrap/run-ubuntu-24.04.sh \
-            bootstrap/ubuntu-24.04-ipv4.sh \
-            bootstrap/install-ubuntu-ipv4-reassertion.sh \
-            install-ubuntu-24.04.sh \
+            modules/host/bootstrap/run-ubuntu-24.04.sh \
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh \
+            modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh \
+            modules/host/install-ubuntu-24.04.sh \
             2>&1 | tee shellcheck-ubuntu.txt
 
       - name: Upload Ubuntu ShellCheck diagnostics
@@ -53,7 +53,7 @@ jobs:
 
       - name: Validate Ubuntu platform contract
         run: |
-          bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; check_platform'
+          bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; check_platform'
 
           fixture="${RUNNER_TEMP}/debian-os-release"
           cat > "${fixture}" <<'EOF'
@@ -62,7 +62,7 @@ jobs:
           EOF
 
           if UBUNTU_OS_RELEASE_FILE="${fixture}" \
-            bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; check_platform'; then
+            bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; check_platform'; then
             echo 'Ubuntu entrypoint accepted Debian 12.' >&2
             exit 1
           fi
@@ -71,34 +71,34 @@ jobs:
         run: |
           test "$(
             BOOTSTRAP_SOURCE_USER=ubuntu \
-              bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
+              bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
           )" = 'no'
 
           test "$(
             env -u BOOTSTRAP_SOURCE_USER \
-              bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
+              bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
           )" = 'yes'
 
           grep -F 'PermitRootLogin ${permit_root_login}' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'authorized_keys directly to ${ADMIN_USER}' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'root account remains locked' \
-            docs/bootstrap-ubuntu-24.04-from-zero.md
+            docs/host/bootstrap-ubuntu-24.04-from-zero.md
           grep -F 'ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>' \
-            docs/bootstrap-ubuntu-24.04-from-zero.md
+            docs/host/bootstrap-ubuntu-24.04-from-zero.md
 
       - name: Validate Ubuntu finalize IPv6 preflight
         run: |
           bash -c '
-            source bootstrap/ubuntu-24.04-ipv4.sh
+            source modules/host/bootstrap/ubuntu-24.04-ipv4.sh
             verify_no_ipv6_listener() { return 0; }
             ADMIN_SSH_CONFIRMED=1 confirm_admin_ssh_test
           '
 
           blocked_output="${RUNNER_TEMP}/ubuntu-finalize-preflight.txt"
           if bash -c '
-            source bootstrap/ubuntu-24.04-ipv4.sh
+            source modules/host/bootstrap/ubuntu-24.04-ipv4.sh
             verify_no_ipv6_listener() { return 1; }
             ss() { printf "%s\n" "tcp LISTEN 0 128 [::1]:6010 [::]:* users:((\"sshd\",pid=1222,fd=5))"; }
             ADMIN_SSH_CONFIRMED=1 confirm_admin_ssh_test
@@ -112,35 +112,35 @@ jobs:
 
       - name: Validate Ubuntu reboot persistence contract
         run: |
-          test -x install-ubuntu-24.04.sh
-          test -f configs/systemd/discrete-ipv4-only-after-network.service
-          test -f bootstrap/install-ubuntu-ipv4-reassertion.sh
+          test -x modules/host/install-ubuntu-24.04.sh
+          test -f modules/host/configs/systemd/discrete-ipv4-only-after-network.service
+          test -f modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh
 
           grep -F 'After=network-online.target' \
-            configs/systemd/discrete-ipv4-only-after-network.service
+            modules/host/configs/systemd/discrete-ipv4-only-after-network.service
           grep -F 'ExecStart=/bin/bash /opt/discrete-infrastructure/scripts/configure-ipv4-only.sh' \
-            configs/systemd/discrete-ipv4-only-after-network.service
+            modules/host/configs/systemd/discrete-ipv4-only-after-network.service
           grep -F 'WantedBy=multi-user.target' \
-            configs/systemd/discrete-ipv4-only-after-network.service
+            modules/host/configs/systemd/discrete-ipv4-only-after-network.service
           if grep -F 'install-ubuntu-ipv4-reassertion.sh' \
-            bootstrap/run-ubuntu-24.04.sh; then
+            modules/host/bootstrap/run-ubuntu-24.04.sh; then
             echo 'Ubuntu runner mutates reboot persistence before repository preflight.' >&2
             exit 1
           fi
           grep -F 'verify_repository_preflight' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'install-ubuntu-ipv4-reassertion.sh' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'UBUNTU_IPV4_SERVICE_START_NOW=1' \
-            install-ubuntu-24.04.sh
+            modules/host/install-ubuntu-24.04.sh
           grep -F 'systemctl enable "${UNIT_NAME}"' \
-            bootstrap/install-ubuntu-ipv4-reassertion.sh
+            modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh
 
       - name: Validate Ubuntu external scan guidance
         run: |
           scan_doc="$(
             awk '/^## 12\. Run an external IPv4 scan$/,/^## 13\./' \
-              docs/bootstrap-ubuntu-24.04-from-zero.md
+              docs/host/bootstrap-ubuntu-24.04-from-zero.md
           )"
           targeted_scan='nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>'
           fast_scan='nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>'
@@ -171,21 +171,21 @@ jobs:
       - name: Validate Ubuntu support status
         run: |
           grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' README.md
-          grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' docs/bootstrap-platforms.md
-          grep -F '**Support status:** supported and clean-room validated.' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F '# Clean-room validation record' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'Path B-specific access-mode behavior' docs/bootstrap-ubuntu-24.04-from-zero.md
-          ! grep -F 'Path B experimental' README.md docs/bootstrap-platforms.md
-          ! grep -F 'Path B remains experimental' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' docs/host/bootstrap-platforms.md
+          grep -F '**Support status:** supported and clean-room validated.' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '# Clean-room validation record' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'Path B-specific access-mode behavior' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          ! grep -F 'Path B experimental' README.md docs/host/bootstrap-platforms.md
+          ! grep -F 'Path B remains experimental' docs/host/bootstrap-ubuntu-24.04-from-zero.md
       - name: Validate platform file separation
         run: |
-          grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh
-          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'install-ubuntu-24.04.sh' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'bootstrap/run.sh' docs/bootstrap-platforms.md
-          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/bootstrap-platforms.md
+          grep -F 'ubuntu-24.04-ipv4.sh' modules/host/bootstrap/run-ubuntu-24.04.sh
+          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'install-ubuntu-24.04.sh' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'bootstrap/run.sh' docs/host/bootstrap-platforms.md
+          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/host/bootstrap-platforms.md
 
-          test -f docs/bootstrap-from-zero.md
-          test -f bootstrap/run.sh
-          test -f bootstrap/debian-ipv4.sh
-          test -f install.sh
+          test -f docs/host/bootstrap-from-zero.md
+          test -f modules/host/bootstrap/run.sh
+          test -f modules/host/bootstrap/debian-ipv4.sh
+          test -f modules/host/install.sh

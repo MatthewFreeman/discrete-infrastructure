@@ -1,5 +1,6 @@
-# Bootstrap
+# Compatibility bootstrap entrypoints
 
-Initial preparation for a clean Debian 12 host.
+These paths remain stable for existing runbooks and automation. Canonical host-bootstrap
+implementation lives under [`modules/host/bootstrap/`](../modules/host/bootstrap/).
 
-This directory will contain idempotent scripts for package installation, base directories, users, permissions, and prerequisites required by later deployment stages.
+New logic must not be added here. Each shell file delegates to its matching canonical file.

@@ -9,8 +9,9 @@ import {createWriteStream} from 'node:fs';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 const root='/opt/discrete-pay-qualification';
-const pay=root+'/pay',bin=root+'/release-v0.9.10';
-assert.equal(process.env.DISCRETE_PAY_RELEASE_CHECK,'isolated-official-v0.9.10');
+const candidate=process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-freeman-ci-3027f84';
+assert(candidate || process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-official-v0.9.10');
+const pay=root+'/pay',bin=root+(candidate?'/freeman-ci-3027f84':'/release-v0.9.10');
 const {parseWalletAttestation}=await import(pay+'/dist/services/walletd-facade/src/contracts.js');
 const {startFacadeRuntime}=await import(pay+'/dist/services/walletd-facade/src/runtime.js');
 const {DiscreteScannerRpc}=await import(pay+'/dist/apps/worker/src/discrete-rpc.js');
@@ -18,8 +19,8 @@ const {ReadRpcClient}=await import(pay+'/dist/apps/worker/src/rpc-client.js');
 const dir=await mkdtemp(root+'/release-compat-run-');
 const password=randomBytes(32).toString('hex'),user='release-qualification';
 const children=new Set();
-const result={release:'v.0.9.10',coreCommit:'3e8ef0bad719c6ac6304674f76df52cc5aecbea7',
-  archiveSha256:'1cb78a160963c0f69c92a8718c2dbd5da7cbfccb0a693f1ed68f52632408d04c',
+const result={release:candidate?'Freeman CI merge 3027f84; not a published release':'v.0.9.10',coreCommit:candidate?'3027f8480a71057f2743acc79ef3aaf27bdf31ef':'3e8ef0bad719c6ac6304674f76df52cc5aecbea7',
+  ...(candidate?{artifactId:9509060771}:{archiveSha256:'1cb78a160963c0f69c92a8718c2dbd5da7cbfccb0a693f1ed68f52632408d04c'}),
   scope:'fresh disposable wallets and loopback native node; no funds or public peers',checks:[]};
 const record=(name,value=true)=>{result.checks.push({name,value});console.log(name,JSON.stringify(value));};
 async function port(){const s=createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p;}
@@ -35,24 +36,27 @@ try {
   await until(()=>rpc(node,'getlastblockheader',{},false));
   await wallet('spending-empty',spendPort,node);
   const scheme=await rpc(spendPort,'getDepositScheme');
-  record('official spending-wallet getDepositScheme fields',Object.keys(scheme).sort());
+  record('spending-wallet getDepositScheme fields',Object.keys(scheme).sort());
+  if(candidate){assert.equal(scheme.tracking,false);assert.throws(()=>parseWalletAttestation(scheme,{}),{code:'wallet_not_tracking'});record('CI spending-wallet attests false and Pay rejects it');}
   const tracking=(await rpc(spendPort,'getTrackingKey')).trackingKey;
   assert.equal(typeof tracking,'string');assert(tracking.startsWith('pqview1:'));
   await wallet('view-only-empty',viewPort,node,tracking);
   const viewScheme=await rpc(viewPort,'getDepositScheme');
   const account=await rpc(viewPort,'getAccountStatus');
-  record('official view-only-wallet getDepositScheme fields',Object.keys(viewScheme).sort());
+  record('view-only-wallet getDepositScheme fields',Object.keys(viewScheme).sort());
   assert.equal(viewScheme.scheme,'single-key-index');
-  assert.equal(Object.hasOwn(viewScheme,'tracking'),false);
-  assert.throws(()=>parseWalletAttestation(viewScheme,account),{code:'invalid_response'});
-  record('Pay exact attestation parser rejects official view-only response without tracking');
-  await assert.rejects(()=>startFacadeRuntime({DISCRETE_PAY_FACADE_ENABLED:'true',DISCRETE_PAY_FACADE_LISTEN_HOST:'127.0.0.1',DISCRETE_PAY_FACADE_LISTEN_PORT:String(facadePort),DISCRETE_PAY_FACADE_JOURNAL_PATH:join(dir,'facade.sqlite3'),DISCRETE_PAY_FACADE_BEARER_TOKEN:randomBytes(32).toString('hex'),DISCRETE_PAY_WALLETD_ENDPOINT:'http://127.0.0.1:'+viewPort+'/json_rpc',DISCRETE_PAY_WALLETD_USERNAME:user,DISCRETE_PAY_WALLETD_PASSWORD:password}),{code:'invalid_response'});
-  record('Pay facade startup fails closed with official view-only walletd');
+  assert.equal(Object.hasOwn(viewScheme,'tracking'),candidate);
+  if(candidate)assert.equal(viewScheme.tracking,true);
+  const expectedCode=candidate?'wallet_not_registered':'invalid_response';
+  assert.throws(()=>parseWalletAttestation(viewScheme,account),{code:expectedCode});
+  record(candidate?'CI view-only attests true; Pay proceeds to unregistered-account refusal':'Pay exact attestation parser rejects official view-only response without tracking');
+  await assert.rejects(()=>startFacadeRuntime({DISCRETE_PAY_FACADE_ENABLED:'true',DISCRETE_PAY_FACADE_LISTEN_HOST:'127.0.0.1',DISCRETE_PAY_FACADE_LISTEN_PORT:String(facadePort),DISCRETE_PAY_FACADE_JOURNAL_PATH:join(dir,'facade.sqlite3'),DISCRETE_PAY_FACADE_BEARER_TOKEN:randomBytes(32).toString('hex'),DISCRETE_PAY_WALLETD_ENDPOINT:'http://127.0.0.1:'+viewPort+'/json_rpc',DISCRETE_PAY_WALLETD_USERNAME:user,DISCRETE_PAY_WALLETD_PASSWORD:password}),{code:expectedCode});
+  record('Pay facade startup refusal code',expectedCode);
   const genesis=(await rpc(node,'getblockheaderbyheight',{height:0},false)).block_header.hash;
   const scanner=new DiscreteScannerRpc({wallet:new ReadRpcClient('http://127.0.0.1:'+viewPort+'/json_rpc',{username:user,password}),node:new ReadRpcClient('http://127.0.0.1:'+node+'/json_rpc'),accountNumber:'1-1-0000-0',genesisHash:genesis,network:'testnet',invoices:()=>[]});
-  await assert.rejects(()=>scanner.getTip(),{code:'invalid_response'});
-  record('Pay scanner refuses official view-only wallet before checkpoint');
-  result.result='INCOMPATIBLE_CONFIRMED';
+  await assert.rejects(()=>scanner.getTip(),{code:expectedCode});
+  record('Pay scanner refusal before checkpoint',expectedCode);
+  result.result=candidate?'ATTESTATION_GATE_PASSED_REGISTRATION_NOT_TESTED':'INCOMPATIBLE_CONFIRMED';
 }catch(error){result.result='CHECK_FAILED';result.error=error.message;process.exitCode=1;console.error(error.message);}
 finally {
   await Promise.all([...children].map(async c=>{const done=once(c,'exit');c.kill('SIGTERM');await done;}));

@@ -1,0 +1,3 @@
+# component	source	target	mode	validate	reload	verify
+ssh	profiles/discrete-pay/sshd.conf	/etc/ssh/sshd_config.d/00-discrete.conf	0644	sshd -t	systemctl reload ssh	python3 profiles/discrete-pay/verify.py ssh
+nftables	profiles/discrete-pay/nftables.conf	/etc/nftables.conf	0644	bash scripts/apply-nftables.sh --check /etc/nftables.conf	bash scripts/apply-nftables.sh --apply /etc/nftables.conf	python3 profiles/discrete-pay/verify.py firewall

@@ -1,0 +1,99 @@
+diff --git a/src/PaymentGate/PaymentServiceJsonRpcMessages.cpp b/src/PaymentGate/PaymentServiceJsonRpcMessages.cpp
+index 0c3f34d..d930504 100755
+--- a/src/PaymentGate/PaymentServiceJsonRpcMessages.cpp
++++ b/src/PaymentGate/PaymentServiceJsonRpcMessages.cpp
+@@ -228,6 +228,7 @@ void GetPqDepositScheme::Request::serialize(CryptoNote::ISerializer& serializer)
+ void GetPqDepositScheme::Response::serialize(CryptoNote::ISerializer& serializer) {
+   serializer(scheme, "scheme");
+   serializer(depositCount, "depositCount");
++  serializer(tracking, "tracking");
+ }
+ 
+ void CreatePqDepositAddress::Request::serialize(CryptoNote::ISerializer& serializer) {
+diff --git a/src/PaymentGate/PaymentServiceJsonRpcMessages.h b/src/PaymentGate/PaymentServiceJsonRpcMessages.h
+index 32934fa..d4c9261 100755
+--- a/src/PaymentGate/PaymentServiceJsonRpcMessages.h
++++ b/src/PaymentGate/PaymentServiceJsonRpcMessages.h
+@@ -351,6 +351,7 @@ struct GetPqDepositScheme {
+   struct Response {
+     std::string scheme;
+     uint32_t depositCount;  // how many deposit addresses have been issued
++    bool tracking = false; // true only for an effective tracking container
+ 
+     void serialize(CryptoNote::ISerializer& serializer);
+   };
+diff --git a/src/PaymentGate/PaymentServiceJsonRpcServer.cpp b/src/PaymentGate/PaymentServiceJsonRpcServer.cpp
+index 48df25d..8b9b794 100755
+--- a/src/PaymentGate/PaymentServiceJsonRpcServer.cpp
++++ b/src/PaymentGate/PaymentServiceJsonRpcServer.cpp
+@@ -315,7 +315,7 @@ std::error_code PaymentServiceJsonRpcServer::handleGetPqAccountStatus(const GetP
+ }
+ 
+ std::error_code PaymentServiceJsonRpcServer::handleGetPqDepositScheme(const GetPqDepositScheme::Request& request, GetPqDepositScheme::Response& response) {
+-  return service.getPqDepositScheme(response.scheme, response.depositCount);
++  return service.getPqDepositScheme(response.scheme, response.depositCount, response.tracking);
+ }
+ 
+ std::error_code PaymentServiceJsonRpcServer::handleCreatePqDepositAddress(const CreatePqDepositAddress::Request& request, CreatePqDepositAddress::Response& response) {
+diff --git a/src/PaymentGate/WalletService.cpp b/src/PaymentGate/WalletService.cpp
+index b463d11..0c42083 100755
+--- a/src/PaymentGate/WalletService.cpp
++++ b/src/PaymentGate/WalletService.cpp
+@@ -1587,7 +1587,7 @@ std::error_code resolveOwnPqRegistration(CryptoNote::INode& node, CryptoNote::Wa
+ 
+ }  // namespace
+ 
+-std::error_code WalletService::getPqDepositScheme(std::string& scheme, uint32_t& depositCount) {
++std::error_code WalletService::getPqDepositScheme(std::string& scheme, uint32_t& depositCount, bool& tracking) {
+   try {
+     System::EventLock lk(readyEvent);
+     auto* gw = dynamic_cast<CryptoNote::WalletGreen*>(&wallet);
+@@ -1596,6 +1596,7 @@ std::error_code WalletService::getPqDepositScheme(std::string& scheme, uint32_t&
+     }
+     scheme = depositSchemeName(gw->getPqDepositScheme());
+     depositCount = gw->getPqDepositCount();
++    tracking = gw->isTracking();
+   } catch (std::system_error& x) {
+     logger(Logging::WARNING, Logging::BRIGHT_YELLOW) << "Error while getting deposit scheme: " << x.what();
+     return x.code();
+diff --git a/src/PaymentGate/WalletService.h b/src/PaymentGate/WalletService.h
+index 7d1e90f..3fb4738 100755
+--- a/src/PaymentGate/WalletService.h
++++ b/src/PaymentGate/WalletService.h
+@@ -109,7 +109,7 @@ public:
+   std::error_code registerPqAccount(std::string& transactionHash);
+   std::error_code registerPqAccountPaid(std::string& transactionHash);
+   std::error_code getPqAccountStatus(bool& registered, std::string& accountNumber, uint32_t& blockHeight, uint32_t& txIndex);
+-  std::error_code getPqDepositScheme(std::string& scheme, uint32_t& depositCount);
++  std::error_code getPqDepositScheme(std::string& scheme, uint32_t& depositCount, bool& tracking);
+   std::error_code createPqDepositAddress(std::string& address, uint32_t& index);
+   std::error_code listPqDepositAddresses(std::vector<std::string>& addresses, std::vector<uint32_t>& indices);
+   // Volatile SingleKeyIndex legacy-window extension. Normal scanning covers
+diff --git a/src/Wallet/WalletGreen.cpp b/src/Wallet/WalletGreen.cpp
+index 3be5b1f..60664f8 100755
+--- a/src/Wallet/WalletGreen.cpp
++++ b/src/Wallet/WalletGreen.cpp
+@@ -3042,6 +3042,10 @@ void WalletGreen::throwIfTrackingMode() const {
+   }
+ }
+ 
++bool WalletGreen::isTracking() const {
++  return getTrackingMode() == WalletTrackingMode::TRACKING;
++}
++
+ WalletGreen::WalletTrackingMode WalletGreen::getTrackingMode() const {
+   if (m_walletsContainer.get<RandomAccessIndex>().empty()) {
+     return WalletTrackingMode::NO_ADDRESSES;
+diff --git a/src/Wallet/WalletGreen.h b/src/Wallet/WalletGreen.h
+index 4ee0a48..33673b5 100755
+--- a/src/Wallet/WalletGreen.h
++++ b/src/Wallet/WalletGreen.h
+@@ -52,6 +52,8 @@ public:
+ 
+   INode& getNode() { return m_node; }
+   bool isTestnet() const;
++  // Effective container mode; no key material is returned.
++  bool isTracking() const;
+ 
+   // --- PQ (post-quantum) balance / spend (concrete; not on IWallet) ----------
+   // Mirrors WalletLegacy. PQ is active from genesis. Full wallets derive this

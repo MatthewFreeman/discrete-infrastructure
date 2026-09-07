@@ -34,6 +34,19 @@ class PolicyTest(unittest.TestCase):
     def test_firewall_control(self):
         validate_firewall(fixture())
 
+    def test_debian_12_nft_106_state_array(self):
+        # Live nft 1.0.6 readback uses a JSON array, not a set wrapper.
+        good = fixture()
+        match = good['nftables'][4]['rule']['expr'][0]['match']
+        match.update(op='in', right=['established', 'related'])
+        good['nftables'][5]['rule']['expr'][0]['match']['op'] = 'in'
+        validate_firewall(good)
+        for states in (['new', 'established', 'related'], ['established'], ['invalid', 'related']):
+            bad = copy.deepcopy(good)
+            bad['nftables'][4]['rule']['expr'][0]['match']['right'] = states
+            with self.subTest(states=states), self.assertRaises(AssertionError):
+                validate_firewall(bad)
+
     def test_firewall_rejects_other_ingress(self):
         for port in (22, 9330, 9331, 9332, 9340, 7081):
             bad = fixture()

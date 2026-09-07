@@ -52,7 +52,8 @@ def validate_firewall(doc):
         left, right, verdict = m['left'], m['right'], expr[1]
         if left == {'meta': {'key': 'iifname'}} and right == 'lo' and verdict == {'accept': None}:
             controls.append('loopback')
-        elif left == {'ct': {'key': 'state'}} and right == {'set': ['established', 'related']} and verdict == {'accept': None}:
+        elif left == {'ct': {'key': 'state'}} and right in (
+                {'set': ['established', 'related']}, ['established', 'related']) and verdict == {'accept': None}:
             controls.append('established')
         elif left == {'ct': {'key': 'state'}} and right == 'invalid' and verdict == {'drop': None}:
             controls.append('invalid')

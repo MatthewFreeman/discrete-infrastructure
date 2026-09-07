@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
+import {request as httpsRequest} from 'node:https';
 const pay='/opt/discrete-pay-qualification/pay';
 const {DiscretePayStore}=await import(pay+'/dist/src/persistence/store.js');
 const [file,action]=process.argv.slice(2);
@@ -16,7 +17,25 @@ async function rpc(port,method,params={},wallet=true,path='/json_rpc'){
 const publicStatus=async()=>{const r=await fetch(`http://127.0.0.1:${h.publicEnv.DISCRETE_PAY_PUBLIC_WEB_LISTEN_PORT}/v1/public/invoices/${h.publicToken}`);assert.equal(r.status,200);return(await r.json()).invoice;};
 const store=new DiscretePayStore(h.gatewayEnv.DISCRETE_PAY_GATEWAY_DATABASE_PATH);
 try {
-  if(action==='baseline' || action==='restored') {
+  if(action==='edge') {
+    const {cert}=await import(pay+'/test/worker-runtime/tls-fixture.ts');
+    function request(path,options={}) {return new Promise((resolve,reject)=>{
+      const r=httpsRequest({hostname:'127.0.0.1',servername:'merchant.test',port:18443,path,ca:cert,rejectUnauthorized:true,...options},res=>{const chunks=[];res.on('data',c=>chunks.push(c));res.on('end',()=>resolve({code:res.statusCode,headers:res.headers,body:Buffer.concat(chunks).toString()}));});
+      r.setTimeout(5000,()=>r.destroy(new Error('TLS fixture timeout')));r.on('error',reject);r.end();
+    });}
+    await until(async()=>(await request('/v1/public/invoices/'+h.publicToken)).code===200);
+    const page=await request('/pay/'+h.publicToken);assert.equal(page.code,200);
+    assert(page.body.includes('href="discrete:'+store.getInvoiceById(h.invoiceId).depositAccount));
+    assert(page.headers['cache-control'].includes('no-store'));assert.equal(page.headers['referrer-policy'],'no-referrer');
+    assert(page.headers['content-security-policy']);
+    assert.equal((await request('/json_rpc')).code,404);
+    assert.equal((await request('/v1/invoices/'+h.invoiceId)).code,401);
+    assert.equal((await request('/v1/invoices/'+h.invoiceId,{headers:{authorization:'Bearer '+h.merchantToken}})).code,200);
+    await assert.rejects(()=>request('/',{servername:'wrong.test'}),{code:'ERR_TLS_CERT_ALTNAME_INVALID'});
+    await assert.rejects(()=>request('/',{ca:undefined}),e=>['DEPTH_ZERO_SELF_SIGNED_CERT','SELF_SIGNED_CERT_IN_CHAIN'].includes(e.code));
+    const burst=await Promise.all(Array.from({length:35},()=>request('/pay/assets/payment-page.css',{headers:{'x-forwarded-for':'203.0.113.99'}})));
+    assert(burst.some(r=>r.code===429),'edge rate limit did not reject bounded burst');
+  } else if(action==='baseline' || action==='restored') {
     await until(async()=>{const scheme=await rpc(h.trackingPort,'getDepositScheme');return scheme.tracking===true && scheme.depositCount===1000 && (await publicStatus()).status===(action==='restored'?'overpaid':'confirmed');});
     const before=store.getInvoiceById(h.invoiceId);
     assert.equal(before.confirmedAtomic,action==='restored'?12346n:12345n);

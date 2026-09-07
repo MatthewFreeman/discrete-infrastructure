@@ -20,10 +20,11 @@ assert handoff['dir'] == str(directory)
 native = [p['name'] for p in handoff['processes']]
 assert set(native) <= {'node-a','node-b','node-c','node-d','miner-sender','merchant-tracking-restored'}
 assert {'node-a','node-b','miner-sender','merchant-tracking-restored'} <= set(native)
-roles = native + ['receiver','facade','gateway','public','worker']
+roles = native + ['receiver','facade','gateway','public','worker','edge']
 units = ['payqual-'+r+'.service' for r in roles]
 assert all(subprocess.run(['systemctl','is-active','--quiet',u]).returncode != 0 for u in units)
 evidence = {'scope':'disposable native Linux systemd qualification; no public domain or production funds','checks':[]}
+journal_since = time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
 
 def call(args, capture=False):
     return subprocess.check_output(args, text=True) if capture else subprocess.run(args, check=True)
@@ -33,7 +34,12 @@ def record(name):
     print('PASS:', name, flush=True)
 
 def start(role):
-    call(['systemd-run','--quiet','--unit=payqual-'+role,'--property=User=payqual','--property=Group=payqual',
+    unit='payqual-'+role+'.service'
+    if call(['systemctl','show',unit,'-p','ActiveState','--value'],True).strip()=='failed':
+        assert call(['systemctl','show',unit,'-p','FragmentPath','--value'],True).strip()=='/run/systemd/transient/'+unit
+        assert str(file) in call(['systemctl','cat',unit],True), 'do not reset an unrelated unit'
+        call(['systemctl','reset-failed',unit])
+    call(['systemd-run','--quiet','--collect','--unit=payqual-'+role,'--property=User=payqual','--property=Group=payqual',
           '--property=Type=exec','--property=Restart=on-failure','--property=RestartSec=1',
           '--property=TimeoutStopSec=40','--property=KillMode=control-group','--property=UMask=0077',
           '--property=NoNewPrivileges=yes','--property=ProtectSystem=strict','--property=ProtectHome=yes',
@@ -46,7 +52,7 @@ def probe(action):
     call(['runuser','-u','payqual','--',str(NODE),str(ROOT/'imports/service-probe.mjs'),str(file),action])
 
 def records():
-    text = call(['journalctl','-u','payqual-worker.service','-o','cat','--no-pager'], True)
+    text = call(['journalctl','-u','payqual-worker.service','--since',journal_since,'-o','cat','--no-pager'], True)
     return [json.loads(line) for line in text.splitlines() if line.startswith('{"event":"worker_cycle"')]
 
 def wait(fn, timeout=40):
@@ -61,6 +67,8 @@ try:
     probe('baseline')
     wait(lambda:any(r['component']=='scanner' and r['code']=='success' for r in records()))
     record('native persisted payment, tracking mode, registry1000 and invoice replay through independent systemd apps')
+    probe('edge')
+    record('Nginx loopback TLS: payment page and short URI, headers, merchant auth, RPC denial, hostname/CA rejection and rate limit')
     successes = sum(r['component']=='scanner' and r['code']=='success' for r in records())
     call(['systemctl','stop','payqual-merchant-tracking-restored.service'])
     wait(lambda:any(r['component']=='scanner' and r['code']=='rpc_unavailable' for r in records()))
@@ -105,6 +113,12 @@ try:
     for role in roles: start(role)
     probe('restored')
     record('cold full-state backup restored to original paths with original retained; wallet, invoice, events and registry replay preserved')
+    # Preserve the exact effective unit definitions for a separately controlled
+    # reboot test; do not enable boot startup as an implicit side effect here.
+    boot_units=ROOT/'boot-units'
+    boot_units.mkdir(mode=0o700,exist_ok=True)
+    for unit in units:
+        (boot_units/unit).write_text(call(['systemctl','cat',unit],True))
     evidence.update(result='PASS',backupSha256=digest,backup=str(backup),preservedOriginal=str(preserved))
 except Exception as error:
     evidence.update(result='FAIL',error=str(error))

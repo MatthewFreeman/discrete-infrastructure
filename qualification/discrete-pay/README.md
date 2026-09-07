@@ -27,12 +27,31 @@ native payment, forced worker death/restart, signed HTTPS retry, online SQLite
 backup and cold full-state restore. The pre-restore original is retained under
 a sibling `.pre-restore` path. Its finally block stops only its exact named units.
 Transient units do not establish production boot enablement or deployment.
+After that test passes, `reboot-test.py prepare <exact-handoff>` installs the
+exported exact units only if no conflicting system units exist, rechecks payment
+and TLS, and enables one temporary target. Reboot the explicitly assigned host,
+then run `reboot-test.py verify` and `reboot-test.py cleanup`. Cleanup checks file
+hashes, removes only its own test units and retains all fixture and backup data.
+The reboot qualification does not turn these test launchers into production units.
 
 The HTTPS receiver uses the public test certificate with explicit CA trust and
 hostname verification. No purchased domain, DNS mutation, public RPC, real funds,
 existing wallet, SSH change or alteration of Buyback is involved.
 
-Status: implementation under live qualification; only a PASS evidence file from
-the exact installed scripts proves completion. Failed stages must be recorded.
+Status on 2026-09-07: native Linux, the complete systemd/TLS/crash/retry/restore
+scenario and actual reboot passed on the isolated Debian host. Temporary units
+were removed afterwards. `regression.sh` then passed typecheck, 306 tests/29 files
+and compiled gateway/worker smoke. Only the exact run evidence establishes this
+scope; it is not a production or public-network release qualification.
+
+The first service attempt exposed the Nginx default FastCGI temporary path outside
+the allowed directory. The second exposed retained failed transient units after
+intentional shutdown. Explicit in-fixture temp paths, intentional-stop handling
+and guarded transient cleanup corrected these fixture issues. The third complete
+attempt passed; failed evidence was retained. Pay application code was unchanged.
+
+Secret-free results are `service-evidence.json` and `reboot-evidence.json` under
+the qualification root. The Pay repository's dated no-domain qualification report
+records exact native source/binary/evidence hashes and detailed remaining gates.
 Real external alert routing, public certificate issuance and ordinary-wallet UI
 payment remain separate evidence boundaries even after these fixtures pass.

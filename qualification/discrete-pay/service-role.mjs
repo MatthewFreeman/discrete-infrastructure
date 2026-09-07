@@ -8,7 +8,7 @@ import {createHash, createHmac} from 'node:crypto';
 import {join} from 'node:path';
 const pay='/opt/discrete-pay-qualification/pay';
 const [file,role]=process.argv.slice(2);
-assert(file.startsWith(pay+'/build/native-test/run-') && file.endsWith('/service-handoff.json'));
+assert((file.startsWith(pay+'/build/native-test/run-') || file.startsWith(pay+'/build/native-test/current/run-')) && file.endsWith('/service-handoff.json'));
 const h=JSON.parse(await readFile(file,'utf8'));
 assert.equal(file,join(h.dir,'service-handoff.json'));
 if(role==='edge') {
@@ -85,7 +85,10 @@ http {
   const native=h.processes.find(p=>p.name===role);
   assert(configs[role] || native,'unknown fixture role');
   const spec=configs[role];
-  if(native) assert(native.executable.startsWith(pay+'/build/native-test/bin/src/'));
+  if(native) {
+    const binaries=file.startsWith(pay+'/build/native-test/current/run-')?'current-bin':'bin';
+    assert([join(pay,'build/native-test',binaries,'src/discreted'),join(pay,'build/native-test',binaries,'src/walletd')].includes(native.executable));
+  }
   const log=createWriteStream(join(h.dir,'service-'+role+'.log'),{flags:'a',mode:0o600});
   const child=spawn(spec?process.execPath:native.executable,spec?[join(pay,spec[0])]:native.args,
     {cwd:pay,env:{...process.env,...(spec?spec[1]:{})},stdio:['ignore','pipe','pipe']});

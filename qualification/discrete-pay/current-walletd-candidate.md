@@ -49,5 +49,33 @@ current-base daemon with the established loopback and testnet-difficulty-1
 overlays, and pair it with that exact walletd. Pay's native harness opt-in
 `DISCRETE_PAY_NATIVE_RELEASE=v0.9.10-attestation` selects separate binary/data
 directories and pins the current source commit. Default old-fixture behavior is
-unchanged. At this checkpoint that full payment/reorg fixture is building;
-no successful current-base registration/payment/reorg claim is made yet.
+unchanged. The complete current fixture passed in `current/run-zNSX1D`:
+registration, tracking-only refusal with observed funds, exact 12345 payment,
+HMAC retry/restart, wallet outage, four-node depth-3 reorg and reconfirmation,
+wrong-wallet quarantine/recovery and the 1000-address limit.
+Evidence SHA256 `36d904767fb2c3a1e6585c32be0a5e77201478a6cd1032004fdf834f86d9c12c`.
+Test-only daemon SHA256 `fb9408fb76ab54eebd7016c8d997ad9ece39399b4851e8308e86e6fc3725cfb5`.
+
+The current testnet genesis was independently pinned using the unmodified
+official daemon (`official-genesis.mjs`). A diagnostic on a copy of the failed
+payment run (`current-scan-diagnostic.mjs`) proved inclusion in the second mined
+block; current-only confirmation mining now follows actual inclusion height.
+The original failed runs remain intact. The old Windows native/reorg flow was
+rerun successfully, preserving default behavior.
+
+Current systemd services subsequently passed TLS/auth/denial checks, wallet
+outage/recovery, exact additional-payment total 12346, killed-worker restart,
+identical HMAC retry, online SQLite backup and cold full-state restore. The
+initial launcher path refusal is retained; the launcher now checks the exact
+two binary paths associated with the selected fixture, not an arbitrary prefix.
+
+Actual reboot also passed all 12 auto-started roles, exact payment/registry/state
+and TLS readback. The exact temporary units were removed afterwards, preserving
+all data. Final listeners: SSH TCP22822 and DHCP UDP68 only.
+Service evidence SHA256 `0145ce669f35559579e0f9f27f22e4bdfb902fc88ffbf678e51afba90ba6d14a`;
+reboot evidence SHA256 `fdd00ebf88ef4491cf4f14ba686a301b4e1c6a46811c64e90c3a83a0a9344321`.
+The new cold archive also passed separate encrypted off-host decryption, exact
+SQLite readback and wrong-passphrase/tamper refusal; previous backups retained.
+That evidence SHA256 is `229801dd12a13d9136d06db39b81e4de8c58e188721b47c57fb029b671041179`.
+Full details and remaining public-release/GUI/alert boundaries are in Pay's
+`docs/release-and-offhost-check-2026-09-07.md`; this remains a test-only overlay.

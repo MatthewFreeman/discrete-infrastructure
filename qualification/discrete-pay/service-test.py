@@ -13,7 +13,9 @@ PAY = ROOT / 'pay'
 NODE = ROOT / 'tools/node-v24.18.1-linux-x64/bin/node'
 file = Path(sys.argv[1]).resolve()
 directory = file.parent
-assert directory.parent == PAY / 'build/native-test' and directory.name.startswith('run-')
+assert directory.parent in (PAY / 'build/native-test', PAY / 'build/native-test/current') and directory.name.startswith('run-')
+current = directory.parent == PAY / 'build/native-test/current'
+evidence_path = ROOT / ('current-service-evidence.json' if current else 'service-evidence.json')
 assert file.name == 'service-handoff.json'
 handoff = json.loads(file.read_text())
 assert handoff['dir'] == str(directory)
@@ -115,7 +117,7 @@ try:
     record('cold full-state backup restored to original paths with original retained; wallet, invoice, events and registry replay preserved')
     # Preserve the exact effective unit definitions for a separately controlled
     # reboot test; do not enable boot startup as an implicit side effect here.
-    boot_units=ROOT/'boot-units'
+    boot_units=ROOT/('current-boot-units' if current else 'boot-units')
     boot_units.mkdir(mode=0o700,exist_ok=True)
     for unit in units:
         (boot_units/unit).write_text(call(['systemctl','cat',unit],True))
@@ -125,5 +127,5 @@ except Exception as error:
     raise
 finally:
     subprocess.run(['systemctl','stop',*reversed(units)],check=False)
-    (ROOT/'service-evidence.json').write_text(json.dumps(evidence,indent=2))
-    print('Secret-free service evidence:',ROOT/'service-evidence.json',flush=True)
+    evidence_path.write_text(json.dumps(evidence,indent=2))
+    print('Secret-free service evidence:',evidence_path,flush=True)

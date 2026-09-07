@@ -1,6 +1,7 @@
 """Bounded boot qualification for the disposable Pay fixture, not deployment."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -8,8 +9,10 @@ import sys
 ROOT = Path('/opt/discrete-pay-qualification')
 SYSTEM = Path('/etc/systemd/system')
 TARGET = 'payqual-reboot.target'
-STATE = ROOT / 'reboot-state.json'
-EVIDENCE = ROOT / 'reboot-evidence.json'
+current = os.environ.get('DISCRETE_PAY_REBOOT_FIXTURE') == 'current-v0.9.10'
+assert os.environ.get('DISCRETE_PAY_REBOOT_FIXTURE') in (None, 'current-v0.9.10')
+STATE = ROOT / ('current-reboot-state.json' if current else 'reboot-state.json')
+EVIDENCE = ROOT / ('current-reboot-evidence.json' if current else 'reboot-evidence.json')
 NODE = ROOT / 'tools/node-v24.18.1-linux-x64/bin/node'
 ALLOWED = {'node-a', 'node-b', 'node-c', 'node-d', 'miner-sender',
            'merchant-tracking-restored', 'receiver', 'facade', 'gateway', 'public', 'worker', 'edge'}
@@ -29,12 +32,12 @@ def boot():
 action = sys.argv[1]
 if action == 'prepare':
     assert not STATE.exists(), 'do not overwrite an existing reboot test'
-    assert json.loads((ROOT / 'service-evidence.json').read_text())['result'] == 'PASS'
+    assert json.loads((ROOT / ('current-service-evidence.json' if current else 'service-evidence.json')).read_text())['result'] == 'PASS'
     handoff = Path(sys.argv[2]).resolve()
     assert handoff.name == 'service-handoff.json'
-    assert handoff.parent.parent == ROOT / 'pay/build/native-test'
+    assert handoff.parent.parent == ROOT / ('pay/build/native-test/current' if current else 'pay/build/native-test')
     assert handoff.parent.name.startswith('run-')
-    units = sorted((ROOT / 'boot-units').glob('payqual-*.service'))
+    units = sorted((ROOT / ('current-boot-units' if current else 'boot-units')).glob('payqual-*.service'))
     roles = {p.name.removeprefix('payqual-').removesuffix('.service') for p in units}
     assert roles <= ALLOWED and {'worker', 'edge', 'gateway', 'public', 'facade', 'receiver', 'node-a', 'merchant-tracking-restored'} <= roles
     data = {}

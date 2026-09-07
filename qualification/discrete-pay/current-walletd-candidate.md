@@ -35,6 +35,19 @@ view-only restart. It uses the unmodified official discreted and no real funds,
 mining, registration or public peers. A successful mode test is not payment,
 registration, reorg, mainnet, or production-release acceptance.
 
-At this preservation checkpoint the candidate build is still running; no new
-candidate runtime result is claimed. See the Pay release report and knowledge
-base for later exact binary hashes and results before using it.
+The second build and native mode probe have now passed. Exact candidate walletd
+SHA256 is `2b289b1d064df864d1ef55abbd417a78748eb74bdb51665c839cfad0a65e36bc`.
+Probe run `H7BUsc` verified `tracking=false` spending refusal, `tracking=true`
+view-only mode, expected unregistered-account refusal in Pay parser/facade/scanner,
+zero spend export, send/prepare application error 5, and mode persistence after
+process restart. The empty-wallet test does not prove refusal with observed funds.
+Secret-free result SHA256:
+`079a538b0c2f33642c6fada0e5b3c38d9ffe9b8cb924a5d505024a765262679b`.
+
+`build-current-native.sh` and `current-fixture-manifest.mjs` build a SEPARATE
+current-base daemon with the established loopback and testnet-difficulty-1
+overlays, and pair it with that exact walletd. Pay's native harness opt-in
+`DISCRETE_PAY_NATIVE_RELEASE=v0.9.10-attestation` selects separate binary/data
+directories and pins the current source commit. Default old-fixture behavior is
+unchanged. At this checkpoint that full payment/reorg fixture is building;
+no successful current-base registration/payment/reorg claim is made yet.

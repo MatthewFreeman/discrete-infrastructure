@@ -1,0 +1,105 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "scope": "native10000 addresses plus seeded10000 invoice/allocation rows; real payment and RPC/HTTP/HMAC; bounded combined cycles, not native100000 or production SLA",
+  "checks": [
+    {
+      "check": "disposable payer funding submitted once",
+      "value": {
+        "transactionHash": "4c39d05e90f04ac319811f06aa39d32b05d60125853501cc41e091ef60f4ebe6"
+      }
+    },
+    {
+      "check": "funding scanner caught stopped private-chain tip",
+      "value": {
+        "height": 75
+      }
+    },
+    {
+      "check": "seeded full invoice and allocation journals using validated native addresses",
+      "value": {
+        "seeded": 9993,
+        "retainedOriginal": 7,
+        "elapsedMs": 17626,
+        "nativeAllocationsDuringSeeding": 0
+      }
+    },
+    {
+      "check": "native facade and gateway open full10000 journals",
+      "value": {
+        "elapsedMs": 4672
+      }
+    },
+    {
+      "check": "native tracking10000 and unique unpaid last invoice",
+      "value": {
+        "routingIndex": 10000,
+        "requiredConfirmations": 2,
+        "expiredAtBaseline": true,
+        "invoiceRows": 10000
+      }
+    },
+    {
+      "check": "native payment to T10000 submitted once",
+      "value": {
+        "transactionHash": "65c142957d4d160621b8f015fe84d14aa5f47c0f5f9e5d627fb687072f8748a0",
+        "amountAtomic": "12345"
+      }
+    },
+    {
+      "check": "high index native mempool detected",
+      "value": {
+        "publicStatus": "seen"
+      }
+    },
+    {
+      "check": "T10000 HTTPS HMAC 503 and exact durable retry across worker reopen",
+      "value": true
+    },
+    {
+      "check": "native T10000 fully paid through public HTTP and signed webhook",
+      "value": {
+        "status": "paid_late",
+        "confirmedAtomic": "12345",
+        "requiredConfirmations": 2
+      }
+    },
+    {
+      "check": "T10000 wallet outage and wallet/worker reopen preserve payment without duplicate events or wrong-invoice credits",
+      "value": {
+        "registryCount": 10000,
+        "invoiceRows": 10000,
+        "unpaidNeighbors": 3,
+        "originalConfirmedAtomic": "12345",
+        "targetEventCount": 3
+      }
+    },
+    {
+      "check": "one native transaction to20 seeded high-index invoices submitted once",
+      "value": {
+        "transactionHash": "83169e077fd58cb132ce92b150b10e4005e73cbf9e113f3303d4d8c3f6ce3ab3",
+        "outputs": 20
+      }
+    },
+    {
+      "check": "20 confirmed native recipients and20 stable full-journal scan cycles",
+      "value": {
+        "invoiceRows": 10000,
+        "elapsedMs": 20275,
+        "minCycleMs": 960,
+        "maxCycleMs": 1060,
+        "meanCycleMs": 1008,
+        "duplicateEvents": 0
+      }
+    },
+    {
+      "check": "actual native merchant allocation10001 with full journal and cold reopen replay",
+      "value": {
+        "allocationMs": 979,
+        "reopenMs": 4055,
+        "invoiceRows": 10001
+      }
+    }
+  ],
+  "result": "PASS"
+}

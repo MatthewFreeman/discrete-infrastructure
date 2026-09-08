@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check qualification/discrete-pay/paged-high-index-payment.mjs
           node --check qualification/discrete-pay/full-journal-load.mjs
+          node --check qualification/discrete-pay/combined-native-journal.mjs
 
       - name: Upload validated source snapshot
         if: always()

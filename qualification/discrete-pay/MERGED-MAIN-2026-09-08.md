@@ -20,6 +20,7 @@ This branch continues directly to development main after checks. Exact tests:
 | evidence/full-journal10000.json | PASS: eight callers created10000 real HTTP invoices and durable SQLite allocation records, unique T/IDs, reopen/replay/conflict/integrity; fake wallet, explicit test rate10000/minute. |
 | evidence/full-journal-default-rate-limit.json | Retained diagnostic FAIL: default120/minute correctly returned429 after120 creations; runtime default unchanged. |
 | evidence/full-journal-first-rate-limit.json | Retained initial failure before caller status diagnostics were added. |
+| evidence/combined-native10000.json | PASS: native wallet plus10000-row seeded journals, paid_lateT10000,20 native recipients,20 stable scan cycles, real merchantT10001/reopen/replay. |
 
 Merged Pay source was rebuilt at `/opt/discrete-pay-qualification/pay-merged-4d2f069`.
 New data copies: native-load/run-mku6hq/state (sourceNFdcs1) and native-ops/run-refv70x9.
@@ -64,7 +65,18 @@ rate10000/minute uses existing configuration; default120 remains unchanged.
 Original evidence SHA256 f072fd3ff25cd04deee3ad9b7aec5c7a15212c0a16e94129dfb5b195945a87ea.
 Do not report its results as native payments or a production load SLA.
 
-Open: native100000 and combined native-wallet/full-journal sustained load, ordinary GUI-wallet
+Combined `native-combined/run-OjCKl5` uses copied native10000 state and seeds9993
+missing test invoice/allocation rows through persistence APIs from validated
+native addresses, retaining seven original rows; no native creation in seeding.
+NativeT10000 paid_late12345/HTTPS503/retry/reopen PASS,20 other recipients each
+confirmed1 atomic with signed webhooks,20 stable scan cycles960..1060ms/mean1008ms
+without duplicate events. Actual merchant allocationT10001 took979ms with full
+journals; facade/gateway reopen4055ms and replay PASS. Not10000 end-to-end creates
+or a long-running mixed workload. Original evidence SHA256
+f72d2238205512c5e88a9d5cc8290884551099ae9d939e8ff33237546ab5e02d.
+CanonicalPR31 now open at8703c16; CI34189907014 all8 PASS. No merge/release.
+
+Open: native100000 and long-running mixed native-wallet/full-journal load, ordinary GUI-wallet
 acceptance, actual operator alert destination/delivery, canonical release and
 public-network policy. Domain deliberately deferred. Do not promote local
 journal signals or isolated proofs to operator delivery or production readiness.

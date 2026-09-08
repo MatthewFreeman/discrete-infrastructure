@@ -1,0 +1,9 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "scope": "copied private native fixture; no sends/mining; not production or sustained load",
+  "target": 10000,
+  "checks": [],
+  "result": "FAIL",
+  "error": "merchant HTTP status for load-first at 2ms\n\n400 !== 201\n"
+}

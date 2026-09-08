@@ -8,11 +8,14 @@ import sys
 
 ROOT = Path('/opt/discrete-pay-qualification')
 SYSTEM = Path('/etc/systemd/system')
-TARGET = 'payqual-reboot.target'
 current = os.environ.get('DISCRETE_PAY_REBOOT_FIXTURE') == 'current-v0.9.10'
-assert os.environ.get('DISCRETE_PAY_REBOOT_FIXTURE') in (None, 'current-v0.9.10')
-STATE = ROOT / ('current-reboot-state.json' if current else 'reboot-state.json')
-EVIDENCE = ROOT / ('current-reboot-evidence.json' if current else 'reboot-evidence.json')
+paged = os.environ.get('DISCRETE_PAY_REBOOT_FIXTURE') == 'paged-main'
+assert os.environ.get('DISCRETE_PAY_REBOOT_FIXTURE') in (None, 'current-v0.9.10', 'paged-main')
+PREFIX = 'payqual-paged-' if paged else 'payqual-'
+TARGET = PREFIX + 'reboot.target'
+if paged: os.environ['DISCRETE_PAY_QUALIFICATION_MODE'] = 'paged'
+STATE = ROOT / ('paged-reboot-state.json' if paged else 'current-reboot-state.json' if current else 'reboot-state.json')
+EVIDENCE = ROOT / ('paged-reboot-evidence.json' if paged else 'current-reboot-evidence.json' if current else 'reboot-evidence.json')
 NODE = ROOT / 'tools/node-v24.18.1-linux-x64/bin/node'
 ALLOWED = {'node-a', 'node-b', 'node-c', 'node-d', 'miner-sender',
            'merchant-tracking-restored', 'receiver', 'facade', 'gateway', 'public', 'worker', 'edge'}
@@ -24,7 +27,7 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 def probe(handoff, action):
-    call(['runuser', '-u', 'payqual', '--', str(NODE), str(ROOT / 'imports/service-probe.mjs'), handoff, action])
+    call(['runuser', '-u', 'payqual', '--', str(NODE), str(ROOT / ('imports/paged-service-probe.mjs' if paged else 'imports/service-probe.mjs')), handoff, action])
 
 def boot():
     return Path('/proc/sys/kernel/random/boot_id').read_text().strip()
@@ -32,13 +35,13 @@ def boot():
 action = sys.argv[1]
 if action == 'prepare':
     assert not STATE.exists(), 'do not overwrite an existing reboot test'
-    assert json.loads((ROOT / ('current-service-evidence.json' if current else 'service-evidence.json')).read_text())['result'] == 'PASS'
+    assert json.loads((ROOT / ('paged-service-evidence.json' if paged else 'current-service-evidence.json' if current else 'service-evidence.json')).read_text())['result'] == 'PASS'
     handoff = Path(sys.argv[2]).resolve()
     assert handoff.name == 'service-handoff.json'
-    assert handoff.parent.parent == ROOT / ('pay/build/native-test/current' if current else 'pay/build/native-test')
+    assert handoff.parent.parent == ROOT / ('pay-merged-4d2f069/build/native-ops' if paged else 'pay/build/native-test/current' if current else 'pay/build/native-test')
     assert handoff.parent.name.startswith('run-')
-    units = sorted((ROOT / ('current-boot-units' if current else 'boot-units')).glob('payqual-*.service'))
-    roles = {p.name.removeprefix('payqual-').removesuffix('.service') for p in units}
+    units = sorted((ROOT / ('paged-boot-units' if paged else 'current-boot-units' if current else 'boot-units')).glob(PREFIX+'*.service'))
+    roles = {p.name.removeprefix(PREFIX).removesuffix('.service') for p in units}
     assert roles <= ALLOWED and {'worker', 'edge', 'gateway', 'public', 'facade', 'receiver', 'node-a', 'merchant-tracking-restored'} <= roles
     data = {}
     for source in units:
@@ -79,7 +82,7 @@ elif action == 'verify':
     result = {'result': 'PASS', 'scope': 'isolated systemd boot and restored native payment; no production deployment',
               'beforeBootId': state['beforeBootId'], 'afterBootId': boot(),
               'checks': ['all exact units automatically active after actual reboot',
-                         'tracking identity, registry1000, invoice replay, exact12346, events and checkpoint retained',
+                         'tracking identity, registry'+str(1001 if paged else 1000)+', invoice replay, exact12346, events and checkpoint retained',
                          'Nginx TLS trust/hostname, short payment URI, auth and bounded rate limit'],
               'unitSha256': state['files']}
     EVIDENCE.write_text(json.dumps(result, indent=2))
@@ -89,7 +92,7 @@ elif action == 'cleanup':
     state = json.loads(STATE.read_text())
     assert state['phase'] in ('installing', 'ready-to-reboot', 'verified')
     names = list(state['files'])
-    assert set(names) <= {'payqual-' + r + '.service' for r in ALLOWED} | {TARGET}
+    assert set(names) <= {PREFIX + r + '.service' for r in ALLOWED} | {TARGET}
     for name in names:
         if (SYSTEM / name).exists():
             assert digest((SYSTEM / name).read_bytes()) == state['files'][name], 'changed unit requires manual review'

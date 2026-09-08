@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "scope": "isolated systemd boot and restored native payment; no production deployment",
+  "beforeBootId": "0920d24c-e7b1-436d-b785-c132c231f146",
+  "afterBootId": "7abf261f-3ac0-4720-be82-2fd28b4fc111",
+  "checks": [
+    "all exact units automatically active after actual reboot",
+    "tracking identity, registry1001, invoice replay, exact12346, events and checkpoint retained",
+    "Nginx TLS trust/hostname, short payment URI, auth and bounded rate limit"
+  ],
+  "unitSha256": {
+    "payqual-paged-edge.service": "d47752e1c06c51f20a8d095b04f1c3c8db31671cf8535d0a06722c703f5827cc",
+    "payqual-paged-facade.service": "97f1b42c78ad18bb189d5ad8212794d2e9a680691dd0341dbe577f8fd9adf416",
+    "payqual-paged-gateway.service": "e98b2188259773e19e704b68b9e0e23ebea28a07a060ae0639680e1ba5d3ba00",
+    "payqual-paged-merchant-tracking-restored.service": "bb000eaab24149e6ca79d251f664c0d38ead0967c2910c1564ad11858c59806f",
+    "payqual-paged-miner-sender.service": "2f7850cb9b441b85a62fe68c445f46bbe92ea95968d6c51e6dc7cf4a979112b5",
+    "payqual-paged-node-a.service": "1311f8a8e04c94f2498f20b46a2d7247e1514bc6f4a62c5078d2b54496a308d8",
+    "payqual-paged-node-b.service": "a8ae8323dbecbe29be45d904c86c79d60401fd8dbf31faa9213df00e256d8ba2",
+    "payqual-paged-node-c.service": "4c473baae265b929f978f474739b4b77ab6c2d5c92e4f97a54528ccd15a3b697",
+    "payqual-paged-node-d.service": "d78463621ad370ff6a25f56f7ca882b9fd4511e322be74724e7bfab2a8ac8358",
+    "payqual-paged-public.service": "be55ab651295997662875f58406ebbaa4529bbc2be8783c64b5d6ad8e1411497",
+    "payqual-paged-receiver.service": "bb7b08705f11c4d8dbde6a845d774d09c83e7076aadfc718621860711356dc52",
+    "payqual-paged-worker.service": "0877a7a2d4d7f76196bda80519084492ef540cf83005236528846fa1c69a4efd",
+    "payqual-paged-reboot.target": "391455f2c6445def407ba3662d17f84ce79bc922f5b54ff1ff21dd5ee65989e1"
+  },
+  "testUnitsRemoved": true
+}

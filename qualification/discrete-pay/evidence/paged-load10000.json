@@ -1,0 +1,107 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "scope": "copied private native fixture; no sends/mining; not production or sustained load",
+  "target": 10000,
+  "checks": [
+    {
+      "check": "copied1001 cold start and merchant allocation/replay",
+      "value": {
+        "coldStartMs": 568,
+        "allocationMs": 956
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 1000,
+        "total": 2002,
+        "elapsedMs": 133145
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 2000,
+        "total": 3002,
+        "elapsedMs": 266385
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 3000,
+        "total": 4002,
+        "elapsedMs": 399593
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 4000,
+        "total": 5002,
+        "elapsedMs": 532777
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 5000,
+        "total": 6002,
+        "elapsedMs": 665933
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 6000,
+        "total": 7002,
+        "elapsedMs": 799169
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 7000,
+        "total": 8002,
+        "elapsedMs": 932321
+      }
+    },
+    {
+      "check": "native prefill progress",
+      "value": {
+        "issued": 8000,
+        "total": 9002,
+        "elapsedMs": 1065473
+      }
+    },
+    {
+      "check": "native concurrent prefill unique and complete",
+      "value": {
+        "count": 9996,
+        "elapsedMs": 1197895
+      }
+    },
+    {
+      "check": "native large registry merchant four-request burst",
+      "value": {
+        "count": 10000,
+        "coldStartMs": 4550,
+        "latencyMs": [
+          1018,
+          1970,
+          2930,
+          3868
+        ]
+      }
+    },
+    {
+      "check": "wallet and facade reopen preserves all issued invoices and original payment",
+      "value": {
+        "count": 10000,
+        "coldStartMs": 3867
+      }
+    }
+  ],
+  "result": "PASS"
+}

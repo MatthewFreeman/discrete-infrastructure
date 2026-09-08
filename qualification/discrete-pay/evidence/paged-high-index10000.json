@@ -1,0 +1,63 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "scope": "native T=10000 payment on copied private testchain; no real funds or production; small invoice journal",
+  "checks": [
+    {
+      "check": "disposable payer funding submitted once",
+      "value": {
+        "transactionHash": "92758d6a61c3fc60de19a1a5f6f3f47dcfc2a182c2c2c0b6480bd8daaf9f6d2c"
+      }
+    },
+    {
+      "check": "funding scanner caught stopped private-chain tip",
+      "value": {
+        "height": 76
+      }
+    },
+    {
+      "check": "native tracking10000 and unique unpaid last invoice",
+      "value": {
+        "routingIndex": 10000,
+        "requiredConfirmations": 2,
+        "expiredAtBaseline": false,
+        "invoiceRows": 7
+      }
+    },
+    {
+      "check": "native payment to T10000 submitted once",
+      "value": {
+        "transactionHash": "496f9afb209c62a01d72b1ad91b02849c8eeaddacdc3bedefc3628d6e90e1e16",
+        "amountAtomic": "12345"
+      }
+    },
+    {
+      "check": "high index native mempool detected",
+      "value": {
+        "publicStatus": "seen"
+      }
+    },
+    {
+      "check": "T10000 HTTPS HMAC 503 and exact durable retry across worker reopen",
+      "value": true
+    },
+    {
+      "check": "native T10000 fully paid through public HTTP and signed webhook",
+      "value": {
+        "status": "confirmed",
+        "confirmedAtomic": "12345",
+        "requiredConfirmations": 2
+      }
+    },
+    {
+      "check": "T10000 wallet outage and wallet/worker reopen preserve payment without duplicate events or wrong-invoice credits",
+      "value": {
+        "registryCount": 10000,
+        "unpaidNeighbors": 3,
+        "originalConfirmedAtomic": "12345",
+        "targetEventCount": 2
+      }
+    }
+  ],
+  "result": "PASS"
+}

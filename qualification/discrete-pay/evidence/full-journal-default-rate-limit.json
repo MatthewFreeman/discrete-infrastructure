@@ -1,0 +1,25 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "scope": "10000 real merchant HTTP creations and durable SQLite invoice/allocation records; fake wallet port, no native sends; bounded test, not production SLA",
+  "checks": [
+    {
+      "check": "failed caller diagnostics",
+      "value": {
+        "completed": 120,
+        "nativeCreateCalls": 120,
+        "errors": [
+          "merchant HTTP status at journal index 124\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 125\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 127\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 126\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 122\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 123\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 120\n\n429 !== 201\n",
+          "merchant HTTP status at journal index 121\n\n429 !== 201\n"
+        ]
+      }
+    }
+  ],
+  "result": "FAIL",
+  "error": "load request failed; no ambiguous create retry"
+}

@@ -1,0 +1,7 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "scope": "10000 real merchant HTTP creations and durable SQLite invoice/allocation records; fake wallet port, no native sends; bounded test, not production SLA",
+  "checks": [],
+  "result": "FAIL",
+  "error": "load request failed; no ambiguous create retry"
+}

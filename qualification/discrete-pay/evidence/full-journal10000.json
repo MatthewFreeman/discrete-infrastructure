@@ -1,0 +1,112 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "scope": "10000 real merchant HTTP creations and durable SQLite invoice/allocation records; fake wallet port, test rate configuration10000/minute; no native sends or production SLA",
+  "checks": [
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 1000,
+        "elapsedMs": 4233,
+        "latestLatencyMs": 37
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 2000,
+        "elapsedMs": 10083,
+        "latestLatencyMs": 49
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 3000,
+        "elapsedMs": 18004,
+        "latestLatencyMs": 70
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 4000,
+        "elapsedMs": 28050,
+        "latestLatencyMs": 88
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 5000,
+        "elapsedMs": 40523,
+        "latestLatencyMs": 139
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 6000,
+        "elapsedMs": 56104,
+        "latestLatencyMs": 146
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 7000,
+        "elapsedMs": 74757,
+        "latestLatencyMs": 166
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 8000,
+        "elapsedMs": 97225,
+        "latestLatencyMs": 195
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 9000,
+        "elapsedMs": 122274,
+        "latestLatencyMs": 200
+      }
+    },
+    {
+      "check": "real gateway and full journal progress",
+      "value": {
+        "completed": 10000,
+        "elapsedMs": 148374,
+        "latestLatencyMs": 127
+      }
+    },
+    {
+      "check": "10000 HTTP invoices and allocation journal rows with eight callers",
+      "value": {
+        "elapsedMs": 148449,
+        "p50Ms": 111,
+        "p95Ms": 212,
+        "p99Ms": 226,
+        "maxMs": 359,
+        "maxConcurrentNativeCreates": 1
+      }
+    },
+    {
+      "check": "full journal cold reopen",
+      "value": {
+        "elapsedMs": 271
+      }
+    },
+    {
+      "check": "eight payload-bound replays and conflicting retry retain all10000 allocations",
+      "value": true
+    },
+    {
+      "check": "both durable SQLite files integrity and foreign-key checks",
+      "value": true
+    }
+  ],
+  "result": "PASS"
+}

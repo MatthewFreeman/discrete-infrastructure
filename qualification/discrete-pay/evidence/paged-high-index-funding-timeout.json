@@ -1,0 +1,15 @@
+{
+  "payCommit": "4d2f06952e2a566df4e92e9ee82b9f38601e0427",
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "scope": "native T=10000 payment on copied private testchain; no real funds or production; small invoice journal",
+  "checks": [
+    {
+      "check": "disposable payer funding submitted once",
+      "value": {
+        "transactionHash": "033031f6c10e185db91edfb98985f6496e543c9a6ddc93427085afaa2ae27b2d"
+      }
+    }
+  ],
+  "result": "FAIL",
+  "error": "fixture timeout: payer funding maturity "
+}

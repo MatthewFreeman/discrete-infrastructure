@@ -1,0 +1,255 @@
+{
+  "coreCommit": "3e8ef0bad719c6ac6304674f76df52cc5aecbea7",
+  "corePatches": [
+    "current-walletd-attestation.patch",
+    "native-core-loopback.patch",
+    "native-core-difficulty.patch"
+  ],
+  "qualification": "private native chain, testnet difficulty 1; not public testnet or production",
+  "checks": [
+    {
+      "check": "isolated nodes started",
+      "value": {
+        "genesis": "fa8828f3f38fa6f91842dec9a837e1ad33d920aa55f989e2baf1d1058d4f4251"
+      }
+    },
+    {
+      "check": "native private-chain mining",
+      "value": true
+    },
+    {
+      "check": "merchant account registered",
+      "value": {
+        "accountNumber": "28-1-BTGB-C",
+        "blockHeight": 28,
+        "registered": true,
+        "txIndex": 1
+      }
+    },
+    {
+      "check": "setup signer stopped; tracking wallet started",
+      "value": true
+    },
+    {
+      "check": "payer funded by native setup transfer",
+      "value": {
+        "height": 39
+      }
+    },
+    {
+      "check": "merchant short account resolves beyond native finality",
+      "value": {
+        "height": 41
+      }
+    },
+    {
+      "check": "native tracking attestation",
+      "value": {
+        "depositCount": 0,
+        "scheme": "single-key-index",
+        "tracking": true
+      }
+    },
+    {
+      "check": "native tracking spend export is all zero",
+      "value": true
+    },
+    {
+      "check": "native tracking mnemonic is zero-seed placeholder, not a backup",
+      "value": true
+    },
+    {
+      "check": "registerAccount has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "registerAccountPaid has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "sendTransaction has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "prepareTransaction has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "facade exposes no generic spend/seed/reset RPC",
+      "value": true
+    },
+    {
+      "check": "merchant HTTP invoice creation and idempotent replay",
+      "value": {
+        "deposit": "28-1-BTGB-1-F"
+      }
+    },
+    {
+      "check": "native initial scan",
+      "value": true
+    },
+    {
+      "check": "native chain partitioned before payment",
+      "value": {
+        "height": 41,
+        "hash": "fc255f585d5886461de7eb1905dfd0e403d6676670cce9287268eafbec3b5dae"
+      }
+    },
+    {
+      "check": "native payment sent",
+      "value": {
+        "transactionHash": "b8e35c79d0633aea122a5533ac02672e096a84634d98cedb8e4ca0b73e992d15"
+      }
+    },
+    {
+      "check": "public HTTP status seen",
+      "value": true
+    },
+    {
+      "check": "HTTPS HMAC, durable retry and worker restart",
+      "value": true
+    },
+    {
+      "check": "native confirmation target follows actual payment inclusion",
+      "value": {
+        "includedHeight": 43,
+        "tipHeight": 44
+      }
+    },
+    {
+      "check": "real payment confirmed through public HTTP",
+      "value": true
+    },
+    {
+      "check": "confirmed HTTPS event received",
+      "value": true
+    },
+    {
+      "check": "wallet outage does not advance checkpoint or erase confirmed payment",
+      "value": true
+    },
+    {
+      "check": "tracking wallet crash recovery preserves identity, prior invoice and unique next deposit",
+      "value": {
+        "nextDeposit": "28-1-BTGB-2-D"
+      }
+    },
+    {
+      "check": "four native nodes adopted the longer competing branch through P2P",
+      "value": {
+        "ancestor": {
+          "height": 41,
+          "hash": "fc255f585d5886461de7eb1905dfd0e403d6676670cce9287268eafbec3b5dae"
+        },
+        "oldTip": {
+          "height": 44,
+          "hash": "4418abe2332ae31c0a2bf496b704a0a2ec264f6a2ba6cfcc3dc34f36a2d6e9d9"
+        },
+        "newTip": {
+          "height": 46,
+          "hash": "a2036a382ea69c6186af35c4a0f9d8ea4fc02f8c1e0ebe2d9d1278eb37e908a8"
+        },
+        "depth": 3,
+        "oldWork": 45,
+        "newWork": 47
+      }
+    },
+    {
+      "check": "native fork beyond one-block policy fails closed with unchanged checkpoint and outbox",
+      "value": true
+    },
+    {
+      "check": "public HTTP confirmed -> reorged; confirmation amount revoked",
+      "value": {
+        "depth": 3
+      }
+    },
+    {
+      "check": "signed HTTPS reorg notice retried identically after worker restart",
+      "value": {
+        "deliveryId": "webhook_delivery_af54b159674721d996b1a66f8a6bfdc28cebf8c666be9fe380028d5ada1ef408"
+      }
+    },
+    {
+      "check": "repeated scan emits no duplicate reorg and keeps invoice identity",
+      "value": {
+        "status": "seen"
+      }
+    },
+    {
+      "check": "native confirmation target follows actual payment inclusion",
+      "value": {
+        "includedHeight": 47,
+        "tipHeight": 48
+      }
+    },
+    {
+      "check": "orphaned payment reconfirmed once without double counting",
+      "value": {
+        "states": [
+          "seen",
+          "confirmed",
+          "reorged",
+          "seen",
+          "confirmed"
+        ],
+        "confirmedAtomic": "12345"
+      }
+    },
+    {
+      "check": "native registered foreign tracking wallet rejected by scanner and restart recovery; quarantine survives restart",
+      "value": true
+    },
+    {
+      "check": "original tracking wallet restored without invoice or event changes",
+      "value": true
+    },
+    {
+      "check": "native registry 999 -> 1000; 1001 refused before prepare/create; replay retained at default 64 KiB transport limit",
+      "value": true
+    },
+    {
+      "check": "native paged registry allocates1001, rejects invalid bounds/stale count/foreign identity, and replays after reopen",
+      "value": true
+    },
+    {
+      "check": "private service handoff prepared",
+      "value": true
+    }
+  ],
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "registryMode": "paged-v1",
+  "patchSha256": [
+    "5a0f3262c678b46cfef8758a64018651c01c4d50d7ac1486ec585f7d44ef57b8",
+    "8842105a0ac81a81793cffbb416691acc0a47b7abf24441c2ef494aaa2a33445",
+    "2f08a9a210e48eef25b6176663e8498c8edcd67fc7118a6ab6bc2328dd66b04f"
+  ],
+  "discretedSha256": "fb9408fb76ab54eebd7016c8d997ad9ece39399b4851e8308e86e6fc3725cfb5",
+  "walletdSha256": "630a033e0b41ebb01d666886948bd9a4affa4c44a299474bc125c3284afc15d1",
+  "nativeReorg": {
+    "ancestor": {
+      "height": 41,
+      "hash": "fc255f585d5886461de7eb1905dfd0e403d6676670cce9287268eafbec3b5dae"
+    },
+    "oldTip": {
+      "height": 44,
+      "hash": "4418abe2332ae31c0a2bf496b704a0a2ec264f6a2ba6cfcc3dc34f36a2d6e9d9"
+    },
+    "newTip": {
+      "height": 46,
+      "hash": "a2036a382ea69c6186af35c4a0f9d8ea4fc02f8c1e0ebe2d9d1278eb37e908a8"
+    },
+    "depth": 3,
+    "oldWork": 45,
+    "newWork": 47
+  },
+  "result": "PASS"
+}

@@ -1,0 +1,63 @@
+{
+  "scope": "copied failed disposable state; read-only RPC, no mining or sending",
+  "checks": [
+    {
+      "name": "tip and wallet sync",
+      "value": {
+        "tip": 793,
+        "blockCount": 794,
+        "knownBlockCount": 794
+      }
+    },
+    {
+      "name": "account publication",
+      "value": {
+        "registered": true,
+        "blockHeight": 49,
+        "txIndex": 1
+      }
+    },
+    {
+      "name": "direct registration transaction",
+      "value": {
+        "hash": "6cfc013b827d659e7103e164f059dd11f7529ac1a1de71367b885052252f8da8",
+        "blockIndex": 49,
+        "state": 0,
+        "confirmations": 745
+      }
+    },
+    {
+      "name": "payer balance",
+      "value": {
+        "available": 2653,
+        "locked": 0,
+        "scannedHeight": 793
+      }
+    },
+    {
+      "name": "pending transaction hashes",
+      "value": {
+        "hashes": []
+      }
+    },
+    {
+      "name": "publication diagnostic reason",
+      "value": []
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 49,
+        "transactions": [
+          {
+            "hash": "6cfc013b827d659e7103e164f059dd11f7529ac1a1de71367b885052252f8da8",
+            "blockIndex": 49,
+            "fee": 1,
+            "state": 0
+          }
+        ]
+      }
+    }
+  ],
+  "result": "DIAGNOSTIC_CAPTURED"
+}

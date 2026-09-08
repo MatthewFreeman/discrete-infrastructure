@@ -1,0 +1,131 @@
+{
+  "scope": "copied failed disposable state; read-only RPC, no mining or sending",
+  "checks": [
+    {
+      "name": "tip and wallet sync",
+      "value": {
+        "tip": 59,
+        "blockCount": 60,
+        "knownBlockCount": 60
+      }
+    },
+    {
+      "name": "account publication",
+      "value": {
+        "registered": false
+      }
+    },
+    {
+      "name": "payer balance",
+      "value": {
+        "available": 2653,
+        "locked": 0,
+        "scannedHeight": 59
+      }
+    },
+    {
+      "name": "pending transaction hashes",
+      "value": {
+        "hashes": []
+      }
+    },
+    {
+      "name": "publication diagnostic reason",
+      "value": [
+        "Account number not reported: Your registration is on chain but not yet deep enough for anyone to pay it. Re-check in a few blocks; share your full address meanwhile."
+      ]
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 48,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 49,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 50,
+        "transactions": [
+          {
+            "hash": "439e4a111c166ba945b15eb4ee20cffa7d9930872149e5e344270c184b261d9e",
+            "blockIndex": 50,
+            "fee": 1,
+            "state": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 51,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 52,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 53,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 54,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 55,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 56,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 57,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 58,
+        "transactions": []
+      }
+    },
+    {
+      "name": "transactions at height",
+      "value": {
+        "height": 59,
+        "transactions": []
+      }
+    }
+  ],
+  "result": "DIAGNOSTIC_CAPTURED"
+}

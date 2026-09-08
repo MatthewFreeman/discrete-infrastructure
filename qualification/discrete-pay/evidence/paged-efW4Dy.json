@@ -1,0 +1,236 @@
+{
+  "coreCommit": "3e8ef0bad719c6ac6304674f76df52cc5aecbea7",
+  "corePatches": [
+    "current-walletd-attestation.patch",
+    "native-core-loopback.patch",
+    "native-core-difficulty.patch"
+  ],
+  "qualification": "private native chain, testnet difficulty 1; not public testnet or production",
+  "checks": [
+    {
+      "check": "isolated nodes started",
+      "value": {
+        "genesis": "fa8828f3f38fa6f91842dec9a837e1ad33d920aa55f989e2baf1d1058d4f4251"
+      }
+    },
+    {
+      "check": "native private-chain mining",
+      "value": true
+    },
+    {
+      "check": "merchant account registered",
+      "value": {
+        "accountNumber": "28-1-T6G1-T",
+        "blockHeight": 28,
+        "registered": true,
+        "txIndex": 1
+      }
+    },
+    {
+      "check": "setup signer stopped; tracking wallet started",
+      "value": true
+    },
+    {
+      "check": "payer funded by native setup transfer",
+      "value": {
+        "height": 39
+      }
+    },
+    {
+      "check": "merchant short account resolves beyond native finality",
+      "value": {
+        "height": 41
+      }
+    },
+    {
+      "check": "native tracking attestation",
+      "value": {
+        "depositCount": 0,
+        "scheme": "single-key-index",
+        "tracking": true
+      }
+    },
+    {
+      "check": "native tracking spend export is all zero",
+      "value": true
+    },
+    {
+      "check": "native tracking mnemonic is zero-seed placeholder, not a backup",
+      "value": true
+    },
+    {
+      "check": "registerAccount has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "registerAccountPaid has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "sendTransaction has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "prepareTransaction has no spend authority",
+      "value": {
+        "applicationCode": 5
+      }
+    },
+    {
+      "check": "facade exposes no generic spend/seed/reset RPC",
+      "value": true
+    },
+    {
+      "check": "merchant HTTP invoice creation and idempotent replay",
+      "value": {
+        "deposit": "28-1-T6G1-1-E"
+      }
+    },
+    {
+      "check": "native initial scan",
+      "value": true
+    },
+    {
+      "check": "native chain partitioned before payment",
+      "value": {
+        "height": 41,
+        "hash": "717ba95992ef330cd183db4480726ebff8b81199f939d0f01e655ac1c2fb3471"
+      }
+    },
+    {
+      "check": "native payment sent",
+      "value": {
+        "transactionHash": "9681deb9a350b3ba4e8d8af2388ffa7f68458c6e188d76f2142db83a5847916d"
+      }
+    },
+    {
+      "check": "public HTTP status seen",
+      "value": true
+    },
+    {
+      "check": "HTTPS HMAC, durable retry and worker restart",
+      "value": true
+    },
+    {
+      "check": "native confirmation target follows actual payment inclusion",
+      "value": {
+        "includedHeight": 43,
+        "tipHeight": 44
+      }
+    },
+    {
+      "check": "real payment confirmed through public HTTP",
+      "value": true
+    },
+    {
+      "check": "confirmed HTTPS event received",
+      "value": true
+    },
+    {
+      "check": "wallet outage does not advance checkpoint or erase confirmed payment",
+      "value": true
+    },
+    {
+      "check": "tracking wallet crash recovery preserves identity, prior invoice and unique next deposit",
+      "value": {
+        "nextDeposit": "28-1-T6G1-2-C"
+      }
+    },
+    {
+      "check": "four native nodes adopted the longer competing branch through P2P",
+      "value": {
+        "ancestor": {
+          "height": 41,
+          "hash": "717ba95992ef330cd183db4480726ebff8b81199f939d0f01e655ac1c2fb3471"
+        },
+        "oldTip": {
+          "height": 44,
+          "hash": "4aaaf9109b4faa340bb3f79d24bb8035995b5ffb35f8c0c819a31d70e680fbfa"
+        },
+        "newTip": {
+          "height": 46,
+          "hash": "3e695566bbc3a4833b4639fe6ddff7319c08ed752e90b8edcc29678d802343b8"
+        },
+        "depth": 3,
+        "oldWork": 45,
+        "newWork": 47
+      }
+    },
+    {
+      "check": "native fork beyond one-block policy fails closed with unchanged checkpoint and outbox",
+      "value": true
+    },
+    {
+      "check": "public HTTP confirmed -> reorged; confirmation amount revoked",
+      "value": {
+        "depth": 3
+      }
+    },
+    {
+      "check": "signed HTTPS reorg notice retried identically after worker restart",
+      "value": {
+        "deliveryId": "webhook_delivery_b1c14b1a89b5bec2d98c2ac7d9323021bccaef132f0c918603e84546759dd523"
+      }
+    },
+    {
+      "check": "repeated scan emits no duplicate reorg and keeps invoice identity",
+      "value": {
+        "status": "seen"
+      }
+    },
+    {
+      "check": "native confirmation target follows actual payment inclusion",
+      "value": {
+        "includedHeight": 47,
+        "tipHeight": 48
+      }
+    },
+    {
+      "check": "orphaned payment reconfirmed once without double counting",
+      "value": {
+        "states": [
+          "seen",
+          "confirmed",
+          "reorged",
+          "seen",
+          "confirmed"
+        ],
+        "confirmedAtomic": "12345"
+      }
+    }
+  ],
+  "walletdCommit": "8703c16fa40ffc8456e3d71696b6220b32b4d74a",
+  "registryMode": "paged-v1",
+  "patchSha256": [
+    "5a0f3262c678b46cfef8758a64018651c01c4d50d7ac1486ec585f7d44ef57b8",
+    "8842105a0ac81a81793cffbb416691acc0a47b7abf24441c2ef494aaa2a33445",
+    "2f08a9a210e48eef25b6176663e8498c8edcd67fc7118a6ab6bc2328dd66b04f"
+  ],
+  "discretedSha256": "fb9408fb76ab54eebd7016c8d997ad9ece39399b4851e8308e86e6fc3725cfb5",
+  "walletdSha256": "630a033e0b41ebb01d666886948bd9a4affa4c44a299474bc125c3284afc15d1",
+  "nativeReorg": {
+    "ancestor": {
+      "height": 41,
+      "hash": "717ba95992ef330cd183db4480726ebff8b81199f939d0f01e655ac1c2fb3471"
+    },
+    "oldTip": {
+      "height": 44,
+      "hash": "4aaaf9109b4faa340bb3f79d24bb8035995b5ffb35f8c0c819a31d70e680fbfa"
+    },
+    "newTip": {
+      "height": 46,
+      "hash": "3e695566bbc3a4833b4639fe6ddff7319c08ed752e90b8edcc29678d802343b8"
+    },
+    "depth": 3,
+    "oldWork": 45,
+    "newWork": 47
+  },
+  "result": "FAIL",
+  "error": "foreign registration: timeout"
+}

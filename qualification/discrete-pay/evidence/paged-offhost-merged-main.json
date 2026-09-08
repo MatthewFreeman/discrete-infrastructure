@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "scope": "off-host encrypted backup/decryption and SQLite readback of disposable fixture; not production retention",
+  "sourceArchiveSha256": "7743642da6f7b6d121ed7e91749c39d33bef0a5ba42d81078d310f189edf5e95",
+  "encryptedArchiveSha256": "4640f50e5d320258589659e7d19ceec3ee9ab5d7b7cb6763ef46e967662a1401",
+  "archiveBytes": 1688873,
+  "archiveMembers": 94,
+  "cipher": "OpenSSL CMS AES-256-GCM with RSA3072 recipient",
+  "checks": [
+    "pinned SSH archive stream; no plaintext tar on local disk",
+    "wrong key passphrase refused",
+    "decrypted archive exactly matches cold-restored source",
+    "all archive paths and object types validated",
+    "SQLite integrity_check ok; exact overpaid12346 against expected12345",
+    "tampered ciphertext refused"
+  ]
+}

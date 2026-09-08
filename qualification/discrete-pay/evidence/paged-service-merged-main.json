@@ -1,0 +1,17 @@
+{
+  "scope": "disposable native Linux systemd qualification; no public domain or production funds",
+  "checks": [
+    "native persisted payment, tracking mode, registry1001 and invoice replay through independent systemd apps",
+    "Nginx loopback TLS: payment page and short URI, headers, merchant auth, RPC denial, hostname/CA rejection and rate limit",
+    "tracking outage visible in journal; checkpoint, confirmed payment and event count retained",
+    "tracking recovery visible in journal; same identity and payment retained",
+    "new signed native test payment detected and confirmed as exact overpayment; HTTPS receiver503",
+    "systemd restarted killed worker; durable HTTPS retry has identical payload and ID with valid HMAC",
+    "online SQLite backup integrity and invoice/checkpoint readback",
+    "cold full-state backup restored to original paths with original retained; wallet, invoice, events and registry replay preserved"
+  ],
+  "result": "PASS",
+  "backupSha256": "7743642da6f7b6d121ed7e91749c39d33bef0a5ba42d81078d310f189edf5e95",
+  "backup": "/opt/discrete-pay-qualification/backups/systemd-run-refv70x9.tar.gz",
+  "preservedOriginal": "/opt/discrete-pay-qualification/pay-merged-4d2f069/build/native-ops/run-refv70x9.pre-restore"
+}

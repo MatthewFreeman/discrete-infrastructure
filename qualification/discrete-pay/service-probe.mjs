@@ -3,7 +3,10 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {request as httpsRequest} from 'node:https';
-const pay='/opt/discrete-pay-qualification/pay';
+const paged=process.env.DISCRETE_PAY_QUALIFICATION_MODE==='paged';
+assert([undefined,'paged'].includes(process.env.DISCRETE_PAY_QUALIFICATION_MODE));
+const pay='/opt/discrete-pay-qualification/'+(paged?'pay-merged-4d2f069':'pay');
+const registryCount=paged?1001:1000;
 const {DiscretePayStore}=await import(pay+'/dist/src/persistence/store.js');
 const [file,action]=process.argv.slice(2);
 const h=JSON.parse(await readFile(file,'utf8'));
@@ -36,12 +39,12 @@ try {
     const burst=await Promise.all(Array.from({length:35},()=>request('/pay/assets/payment-page.css',{headers:{'x-forwarded-for':'203.0.113.99'}})));
     assert(burst.some(r=>r.code===429),'edge rate limit did not reject bounded burst');
   } else if(action==='baseline' || action==='restored') {
-    await until(async()=>{const scheme=await rpc(h.trackingPort,'getDepositScheme');return scheme.tracking===true && scheme.depositCount===1000 && (await publicStatus()).status===(action==='restored'?'overpaid':'confirmed');});
+    await until(async()=>{const scheme=await rpc(h.trackingPort,'getDepositScheme');return scheme.tracking===true && scheme.depositCount===registryCount && (await publicStatus()).status===(action==='restored'?'overpaid':'confirmed');});
     const before=store.getInvoiceById(h.invoiceId);
     assert.equal(before.confirmedAtomic,action==='restored'?12346n:12345n);
     const response=await fetch(`http://127.0.0.1:${h.gatewayEnv.DISCRETE_PAY_GATEWAY_LISTEN_PORT}/v1/invoices`,{method:'POST',headers:{authorization:'Bearer '+h.merchantToken,'content-type':'application/json','idempotency-key':'native-test-order'},body:JSON.stringify({amount_atomic:'12345',expires_in_seconds:3600,required_confirmations:2})});
     assert.equal(response.status,200);assert.equal((await response.json()).invoice.id,h.invoiceId);
-    assert.equal((await rpc(h.trackingPort,'getDepositScheme')).depositCount,1000);
+    assert.equal((await rpc(h.trackingPort,'getDepositScheme')).depositCount,registryCount);
     assert.equal(store.getInvoiceById(h.invoiceId).depositAccount,before.depositAccount);
     if(action==='baseline')assert.deepEqual(store.listInvoiceEvents(h.invoiceId).map(e=>e.invoiceStatus),h.expectedEvents);
     if(action==='restored') {

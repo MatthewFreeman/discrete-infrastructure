@@ -7,15 +7,20 @@ import subprocess
 import sys
 import tarfile
 import time
+import os
 
 ROOT = Path('/opt/discrete-pay-qualification')
-PAY = ROOT / 'pay'
+paged = os.environ.get('DISCRETE_PAY_QUALIFICATION_MODE') == 'paged'
+assert os.environ.get('DISCRETE_PAY_QUALIFICATION_MODE') in (None, 'paged')
+PAY = ROOT / ('pay-merged-4d2f069' if paged else 'pay')
+PREFIX = 'payqual-paged-' if paged else 'payqual-'
+HELPER = 'paged-' if paged else ''
 NODE = ROOT / 'tools/node-v24.18.1-linux-x64/bin/node'
 file = Path(sys.argv[1]).resolve()
 directory = file.parent
-assert directory.parent in (PAY / 'build/native-test', PAY / 'build/native-test/current') and directory.name.startswith('run-')
+assert directory.parent in ((PAY / 'build/native-ops',) if paged else (PAY / 'build/native-test', PAY / 'build/native-test/current')) and directory.name.startswith('run-')
 current = directory.parent == PAY / 'build/native-test/current'
-evidence_path = ROOT / ('current-service-evidence.json' if current else 'service-evidence.json')
+evidence_path = ROOT / ('paged-service-evidence.json' if paged else 'current-service-evidence.json' if current else 'service-evidence.json')
 assert file.name == 'service-handoff.json'
 handoff = json.loads(file.read_text())
 assert handoff['dir'] == str(directory)
@@ -23,7 +28,7 @@ native = [p['name'] for p in handoff['processes']]
 assert set(native) <= {'node-a','node-b','node-c','node-d','miner-sender','merchant-tracking-restored'}
 assert {'node-a','node-b','miner-sender','merchant-tracking-restored'} <= set(native)
 roles = native + ['receiver','facade','gateway','public','worker','edge']
-units = ['payqual-'+r+'.service' for r in roles]
+units = [PREFIX+r+'.service' for r in roles]
 assert all(subprocess.run(['systemctl','is-active','--quiet',u]).returncode != 0 for u in units)
 evidence = {'scope':'disposable native Linux systemd qualification; no public domain or production funds','checks':[]}
 journal_since = time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
@@ -36,25 +41,26 @@ def record(name):
     print('PASS:', name, flush=True)
 
 def start(role):
-    unit='payqual-'+role+'.service'
+    unit=PREFIX+role+'.service'
     if call(['systemctl','show',unit,'-p','ActiveState','--value'],True).strip()=='failed':
         assert call(['systemctl','show',unit,'-p','FragmentPath','--value'],True).strip()=='/run/systemd/transient/'+unit
         assert str(file) in call(['systemctl','cat',unit],True), 'do not reset an unrelated unit'
         call(['systemctl','reset-failed',unit])
-    call(['systemd-run','--quiet','--collect','--unit=payqual-'+role,'--property=User=payqual','--property=Group=payqual',
+    call(['systemd-run','--quiet','--collect','--unit='+PREFIX+role,'--property=User=payqual','--property=Group=payqual',
           '--property=Type=exec','--property=Restart=on-failure','--property=RestartSec=1',
           '--property=TimeoutStopSec=40','--property=KillMode=control-group','--property=UMask=0077',
           '--property=NoNewPrivileges=yes','--property=ProtectSystem=strict','--property=ProtectHome=yes',
           '--property=PrivateTmp=yes','--property=CapabilityBoundingSet=',
           '--property=RestrictAddressFamilies=AF_UNIX AF_INET','--property=IPAddressDeny=any',
           '--property=IPAddressAllow=localhost','--property=ReadWritePaths='+str(directory),
-          '--working-directory='+str(PAY),str(NODE),str(ROOT/'imports/service-role.mjs'),str(file),role])
+          *(['--setenv=DISCRETE_PAY_QUALIFICATION_MODE=paged'] if paged else []),
+          '--working-directory='+str(PAY),str(NODE),str(ROOT/('imports/'+HELPER+'service-role.mjs')),str(file),role])
 
 def probe(action):
-    call(['runuser','-u','payqual','--',str(NODE),str(ROOT/'imports/service-probe.mjs'),str(file),action])
+    call(['runuser','-u','payqual','--',str(NODE),str(ROOT/('imports/'+HELPER+'service-probe.mjs')),str(file),action])
 
 def records():
-    text = call(['journalctl','-u','payqual-worker.service','--since',journal_since,'-o','cat','--no-pager'], True)
+    text = call(['journalctl','-u',PREFIX+'worker.service','--since',journal_since,'-o','cat','--no-pager'], True)
     return [json.loads(line) for line in text.splitlines() if line.startswith('{"event":"worker_cycle"')]
 
 def wait(fn, timeout=40):
@@ -68,11 +74,11 @@ try:
     for role in roles: start(role)
     probe('baseline')
     wait(lambda:any(r['component']=='scanner' and r['code']=='success' for r in records()))
-    record('native persisted payment, tracking mode, registry1000 and invoice replay through independent systemd apps')
+    record('native persisted payment, tracking mode, registry'+str(1001 if paged else 1000)+' and invoice replay through independent systemd apps')
     probe('edge')
     record('Nginx loopback TLS: payment page and short URI, headers, merchant auth, RPC denial, hostname/CA rejection and rate limit')
     successes = sum(r['component']=='scanner' and r['code']=='success' for r in records())
-    call(['systemctl','stop','payqual-merchant-tracking-restored.service'])
+    call(['systemctl','stop',PREFIX+'merchant-tracking-restored.service'])
     wait(lambda:any(r['component']=='scanner' and r['code']=='rpc_unavailable' for r in records()))
     probe('outage')
     record('tracking outage visible in journal; checkpoint, confirmed payment and event count retained')
@@ -87,12 +93,12 @@ try:
     os.chown(flag,uid,pwd.getpwnam('payqual').pw_gid)
     probe('pay')
     record('new signed native test payment detected and confirmed as exact overpayment; HTTPS receiver503')
-    oldpid=call(['systemctl','show','payqual-worker.service','--property=MainPID','--value'],True).strip()
-    call(['systemctl','kill','--kill-whom=main','--signal=SIGKILL','payqual-worker.service'])
-    wait(lambda:(lambda p:p not in ('0',oldpid))(call(['systemctl','show','payqual-worker.service','--property=MainPID','--value'],True).strip()))
+    oldpid=call(['systemctl','show',PREFIX+'worker.service','--property=MainPID','--value'],True).strip()
+    call(['systemctl','kill','--kill-whom=main','--signal=SIGKILL',PREFIX+'worker.service'])
+    wait(lambda:(lambda p:p not in ('0',oldpid))(call(['systemctl','show',PREFIX+'worker.service','--property=MainPID','--value'],True).strip()))
     flag.unlink()
     probe('retry')
-    assert int(call(['systemctl','show','payqual-worker.service','--property=NRestarts','--value'],True))>=1
+    assert int(call(['systemctl','show',PREFIX+'worker.service','--property=NRestarts','--value'],True))>=1
     record('systemd restarted killed worker; durable HTTPS retry has identical payload and ID with valid HMAC')
     probe('snapshot')
     record('online SQLite backup integrity and invoice/checkpoint readback')
@@ -117,7 +123,7 @@ try:
     record('cold full-state backup restored to original paths with original retained; wallet, invoice, events and registry replay preserved')
     # Preserve the exact effective unit definitions for a separately controlled
     # reboot test; do not enable boot startup as an implicit side effect here.
-    boot_units=ROOT/('current-boot-units' if current else 'boot-units')
+    boot_units=ROOT/('paged-boot-units' if paged else 'current-boot-units' if current else 'boot-units')
     boot_units.mkdir(mode=0o700,exist_ok=True)
     for unit in units:
         (boot_units/unit).write_text(call(['systemctl','cat',unit],True))

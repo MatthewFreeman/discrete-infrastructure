@@ -6,9 +6,11 @@ import {spawn} from 'node:child_process';
 import {createServer} from 'node:https';
 import {createHash, createHmac} from 'node:crypto';
 import {join} from 'node:path';
-const pay='/opt/discrete-pay-qualification/pay';
+const paged=process.env.DISCRETE_PAY_QUALIFICATION_MODE==='paged';
+assert([undefined,'paged'].includes(process.env.DISCRETE_PAY_QUALIFICATION_MODE));
+const pay='/opt/discrete-pay-qualification/'+(paged?'pay-merged-4d2f069':'pay');
 const [file,role]=process.argv.slice(2);
-assert((file.startsWith(pay+'/build/native-test/run-') || file.startsWith(pay+'/build/native-test/current/run-')) && file.endsWith('/service-handoff.json'));
+assert((paged?file.startsWith(pay+'/build/native-ops/run-'):(file.startsWith(pay+'/build/native-test/run-') || file.startsWith(pay+'/build/native-test/current/run-'))) && file.endsWith('/service-handoff.json'));
 const h=JSON.parse(await readFile(file,'utf8'));
 assert.equal(file,join(h.dir,'service-handoff.json'));
 if(role==='edge') {
@@ -86,7 +88,7 @@ http {
   assert(configs[role] || native,'unknown fixture role');
   const spec=configs[role];
   if(native) {
-    const binaries=file.startsWith(pay+'/build/native-test/current/run-')?'current-bin':'bin';
+    const binaries=paged?'paged-bin':file.startsWith(pay+'/build/native-test/current/run-')?'current-bin':'bin';
     assert([join(pay,'build/native-test',binaries,'src/discreted'),join(pay,'build/native-test',binaries,'src/walletd')].includes(native.executable));
   }
   const log=createWriteStream(join(h.dir,'service-'+role+'.log'),{flags:'a',mode:0o600});

@@ -1,5 +1,14 @@
 # No-domain Discrete Pay qualification (not production deployment)
 
+The native load helper accepts target10000 or100000. Opt-in
+`DISCRETE_PAY_NATIVE_LOAD_BASE=qualified10000` starts from a **copy** of the
+SHA-bound previously qualified10000 fixture, with distinct merchant request keys.
+It preserves the default1001-based test, records progress separately as RUNNING,
+and never promotes incomplete prefill to PASS. Native prefill checks each returned
+index once; ambiguous allocations are not blindly retried. Run it in its own
+loopback/resource/time-limited unit and restore any paused private test stack on
+both successful and failed completion. This is not proof of sustained load.
+
 Only for an explicitly assigned, isolated Debian 12 amd64 host. The Pay host
 firewall/SSH profile is a prerequisite and is not changed by this fixture.
 Use a fresh unprivileged `payqual` account and `/opt/discrete-pay-qualification`.

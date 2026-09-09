@@ -19,3 +19,4 @@ jobs:
           node-version: '24.18.1'
       - run: python -B qualification/discrete-pay/test_persistent.py
       - run: node --check qualification/discrete-pay/persistent-probe.mjs
+      - run: node --check qualification/discrete-pay/paged-native-load.mjs

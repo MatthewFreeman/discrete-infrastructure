@@ -68,7 +68,7 @@ payment remain separate evidence boundaries even after these fixtures pass.
 ## Pinned internal Linux candidate — 2026-09-09
 
 `bundle-candidate.py` assembles explicit immutable Pay939d8fe source/runtime
-archives with clean FreemanCore8703c16 CI binaries and Node24.18.1. Input hashes
+or Pay136f63d archives with clean FreemanCore8703c16 CI binaries and Node24.18.1. Input hashes
 are mandatory. This is an internal candidate, not an installer, release tag,
 service activation, or proof of public-network payment compatibility.
 No live wallet, database, host configuration, operational token or test-difficulty
@@ -87,6 +87,34 @@ package using its bundled Node binary. Operator lifecycle:7PASS/1platformskip.
 Version readback matched both bundled Core binaries. Secret-free validation
 evidenceSHA256:f2c2b2ca0e8b418bd942fc285fadbe0ab6cd48c642f0cf841bfdd3f2ebf526db.
 Identical archive retained off-host. No persistent service changed by these tests.
+
+The newer Pay136f63d package includes merchant credentials, webhook provisioning
+and durable webhook failure reporting. ArchiveSHA256:
+`9f2c8462e2f2aa7291f50e07ad4152f70757146e5759710958b20cc55de87d7c`.
+ManifestSHA256:
+`a2d5f970819b09ff99e653aaa1efdd82a370f80c3d39341889102c6c48b9d54c`.
+All77 manifest entries verified from the extracted archive. Bundled Node ran
+compiled gateway/worker smokes, actual worker process HTTPS503/restart/204/dead
+letter reporting, merchant credentials7PASS/1platformskip and webhook operator
+7PASS/1platformskip. ValidationSHA256:
+`10974959d9db6e14b3d66a7be2a57bd8dfc283c330e7baececeb2249eca869f9`.
+Exact archive retained off-host, older939d8fe artifact preserved. No persistent
+service activation or native/public-network payment is claimed by these smokes.
+Mismatched immutable source/runtime pairs are refused before any filesystem work.
+
+## Copied GUI URI preview
+
+`gui-uri-session.mjs` is a no-payment fixture using the already paid GUI profile
+copy and the pinned released wallet v.0.9.8 AppImage. It starts two exclusive
+loopback private nodes, the Pay public page, Xvfb/noVNC and Firefox. A temporary
+XDG profile registers the existing discrete URI route with an isolated testnet
+data directory. It performs no mining, funding, signing or payment submission.
+Run only in a bounded unprivileged loopback-only unit on the designated test VPS.
+NoVNC must remain localhost-only. Do not automate a browser permission handoff.
+Page rendering and reaching a browser permission dialog do not prove wallet
+prefill; inspect the actual wallet after the user permits the Open Link action.
+Stop the exact GUI unit and restore any separately authorized temporary SSH
+forwarding exception when the preview ends. Original wallet profile stays intact.
 
 The clean compatibility mode `isolated-freeman-ci-8703c16` passed empty-wallet
 tracking attestation, spending-wallet/unregistered-wallet refusal, empty view-only

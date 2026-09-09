@@ -9,6 +9,15 @@ spec=importlib.util.spec_from_file_location('bundle',Path(__file__).with_name('b
 bundle=importlib.util.module_from_spec(spec);spec.loader.exec_module(bundle)
 
 class BundleTest(unittest.TestCase):
+    def test_immutable_source_runtime_pairing(self):
+        self.assertEqual(set(bundle.PAY_INPUTS.values()), {
+            '939d8fe60435c895d618246d1a50923c7b3f46b2',
+            '136f63d9faaec07c7e414acc9e896b7f188a6c86'})
+        old,new=list(bundle.PAY_INPUTS)
+        for runtime,source in [(old[0],new[1]),(new[0],old[1]),('0'*64,new[1])]:
+            with self.assertRaisesRegex(ValueError,'unknown immutable Pay input'):
+                bundle.main(Path('absent-runtime'),runtime,Path('absent-source'),source)
+
     def archive(self,name,kind=tarfile.REGTYPE):
         buffer=io.BytesIO()
         with tarfile.open(fileobj=buffer,mode='w') as archive:

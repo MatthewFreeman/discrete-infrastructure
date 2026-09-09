@@ -1,8 +1,9 @@
 """Assemble an internal pinned Linux bundle; not an installer or public release.
 
 Only explicit compiled Pay/source archives and already hash-pinned binaries are
-copied. No wallet, database, host configuration, token, .ssh or fixture tree enters
-the package. The clean Core daemon must not be replaced with a difficulty fixture.
+copied. No operational wallet, database, host configuration, token, .ssh or native
+fixture tree enters the package. Git source retains public disposable test keys.
+The clean Core daemon must not be replaced with a difficulty fixture.
 """
 import gzip
 import hashlib
@@ -13,7 +14,14 @@ import shutil
 import sys
 import tarfile
 
-PAY = '939d8fe60435c895d618246d1a50923c7b3f46b2'
+PAY_INPUTS = {
+ ('b6c19b5e8567bb01cd607396b74c95138758ad1628225dd2b7aa6acb71369b35',
+  'c0ae4e4d34fd08f1a6aa92a18a9c988c76e5aded841766ab8bd6c9057164fc05'):
+  '939d8fe60435c895d618246d1a50923c7b3f46b2',
+ ('e31032835d7d7dd2d8317ca478542e59f60af01f6b060451b20f12d987cfef64',
+  '6bd5a71cb82ecc1a78c4b541a2294ce17d188f8f2c1d3cc0772366fb77f3575f'):
+  '136f63d9faaec07c7e414acc9e896b7f188a6c86',
+}
 CORE = '8703c16fa40ffc8456e3d71696b6220b32b4d74a'
 ROOT = Path('/opt/discrete-pay-qualification')
 PINS = {
@@ -60,7 +68,8 @@ def pack(tree, destination):
 
 
 def main(runtime, runtime_sha, source, source_sha):
-    if runtime_sha!='b6c19b5e8567bb01cd607396b74c95138758ad1628225dd2b7aa6acb71369b35' or source_sha!='c0ae4e4d34fd08f1a6aa92a18a9c988c76e5aded841766ab8bd6c9057164fc05':raise ValueError('unknown immutable Pay input')
+    pay=PAY_INPUTS.get((runtime_sha,source_sha))
+    if pay is None:raise ValueError('unknown immutable Pay input')
     if sha(runtime)!=runtime_sha or sha(source)!=source_sha:raise ValueError('Pay input hash mismatch')
     inputs = {
       'walletd':ROOT/'freeman-ci-8703c16/walletd', 'discreted':ROOT/'freeman-ci-8703c16/discreted',
@@ -71,16 +80,16 @@ def main(runtime, runtime_sha, source, source_sha):
     for name,path in inputs.items():
         if path.is_symlink() or sha(path)!=PINS[name]:raise ValueError('binary/license pin mismatch')
     base=ROOT/'bundles';base.mkdir(mode=0o755,exist_ok=True)
-    tree=base/('pay-'+PAY[:7]+'-core-'+CORE[:7]);tree.mkdir(mode=0o755)
+    tree=base/('pay-'+pay[:7]+'-core-'+CORE[:7]);tree.mkdir(mode=0o755)
     app=tree/'pay';app.mkdir()
     with tarfile.open(runtime) as archive:
         archive.extractall(app,members=members(archive))
     (tree/'bin').mkdir();(tree/'licenses').mkdir();(tree/'source').mkdir()
     for name in ('walletd','discreted','node'):shutil.copyfile(inputs[name],tree/'bin'/name)
     for name in ('core-license','node-license'):shutil.copyfile(inputs[name],tree/'licenses'/(name+'.txt'))
-    shutil.copyfile(source,tree/'source'/('pay-'+PAY+'.tar'))
+    shutil.copyfile(source,tree/'source'/('pay-'+pay+'.tar'))
     manifest = {'format':1,'status':'internal-candidate-not-public-release',
-      'payCommit':PAY,'paySourceSha256':source_sha,'payRuntimeArchiveSha256':runtime_sha,
+      'payCommit':pay,'paySourceSha256':source_sha,'payRuntimeArchiveSha256':runtime_sha,
       'coreCommit':CORE,'coreBaseCommit':'3e8ef0bad719c6ac6304674f76df52cc5aecbea7',
       'coreCiRun':34181954333,'coreCiArtifact':10039317338,
       'coreArtifactDigest':'751c530f34d7dc35524c5df479b9e18fa35cd5e573cb813046350700c72b9c90',

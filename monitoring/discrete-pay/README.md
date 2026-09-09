@@ -23,6 +23,8 @@ is an unprivileged SSH forced command that can only return this root-owned file.
 The observer is not in the global `systemd-journal` group and has no sudo rights.
 Prove unrelated logs and database/wallet/config files remain unreadable before
 activation. A missing worker is explicitly inactive, never a green baseline.
+The forced command uses a separate root-owned copy of the verified Node runtime;
+it does not require opening access to protected qualification directories.
 
 Current worker invocation filtering prevents a restarted process from looking
 good because of old journal lines. Heartbeat older than 180 seconds is stale;

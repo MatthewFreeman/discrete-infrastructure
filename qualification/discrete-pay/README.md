@@ -64,3 +64,29 @@ the qualification root. The Pay repository's dated no-domain qualification repor
 records exact native source/binary/evidence hashes and detailed remaining gates.
 Real external alert routing, public certificate issuance and ordinary-wallet UI
 payment remain separate evidence boundaries even after these fixtures pass.
+
+## Pinned internal Linux candidate — 2026-09-09
+
+`bundle-candidate.py` assembles explicit immutable Pay939d8fe source/runtime
+archives with clean FreemanCore8703c16 CI binaries and Node24.18.1. Input hashes
+are mandatory. This is an internal candidate, not an installer, release tag,
+service activation, or proof of public-network payment compatibility.
+No wallet, database, host configuration, token or test-difficulty daemon enters
+the bundle. `test_bundle.py` checks archive admission and deterministic envelope.
+
+Qualified archiveSHA256:
+`bc88d9fc37d3d0eda727e964abf57bd63a10c76533a39d349dccd7f5e654f40a`.
+ManifestSHA256:
+`680e736b99800d1d3811896d88ffc9999d16bbd2f6db4844d737f6f3937b441b`.
+74 listed files rehashed after extracting the actual archive. Two archive
+envelopes matched (not a compiler reproducibility claim). Compiled gateway
+creation/replay/auth and worker RPC-failure/restart tests passed from the extracted
+package using its bundled Node binary. Operator lifecycle:7PASS/1platformskip.
+Version readback matched both bundled Core binaries. Secret-free validation
+evidenceSHA256:f2c2b2ca0e8b418bd942fc285fadbe0ab6cd48c642f0cf841bfdd3f2ebf526db.
+Identical archive retained off-host. No persistent service changed by these tests.
+
+The clean compatibility mode `isolated-freeman-ci-8703c16` passed empty-wallet
+tracking attestation, spending-wallet/unregistered-wallet refusal, empty view-only
+send/prepare refusal and mode after restart. This does not prove a registered
+public-network payment. Native capacity/lifecycle fixtures remain a separate gate.

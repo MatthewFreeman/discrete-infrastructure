@@ -10,9 +10,10 @@ import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 const root='/opt/discrete-pay-qualification';
 const current=process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-current-attestation';
-const candidate=current || process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-freeman-ci-3027f84';
+const paged=process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-freeman-ci-8703c16';
+const candidate=paged || current || process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-freeman-ci-3027f84';
 assert(candidate || process.env.DISCRETE_PAY_RELEASE_CHECK==='isolated-official-v0.9.10');
-const pay=root+'/pay',bin=root+(current?'/current-attestation-binaries':candidate?'/freeman-ci-3027f84':'/release-v0.9.10');
+const pay=root+(paged?'/pay-merged-4d2f069':'/pay'),bin=root+(paged?'/freeman-ci-8703c16':current?'/current-attestation-binaries':candidate?'/freeman-ci-3027f84':'/release-v0.9.10');
 const {parseWalletAttestation}=await import(pay+'/dist/services/walletd-facade/src/contracts.js');
 const {startFacadeRuntime}=await import(pay+'/dist/services/walletd-facade/src/runtime.js');
 const {DiscreteScannerRpc}=await import(pay+'/dist/apps/worker/src/discrete-rpc.js');
@@ -20,8 +21,8 @@ const {ReadRpcClient}=await import(pay+'/dist/apps/worker/src/rpc-client.js');
 const dir=await mkdtemp(root+'/release-compat-run-');
 const password=randomBytes(32).toString('hex'),user='release-qualification';
 const children=new Set();
-const result={release:current?'v.0.9.10 source plus test-only mode-attestation overlay; not published':candidate?'Freeman CI merge 3027f84; not a published release':'v.0.9.10',coreCommit:candidate&&!current?'3027f8480a71057f2743acc79ef3aaf27bdf31ef':'3e8ef0bad719c6ac6304674f76df52cc5aecbea7',
-  ...(current?{patchSha256:createHash('sha256').update(await readFile(root+'/imports/current-walletd-attestation.patch')).digest('hex')}:candidate?{artifactId:9509060771}:{archiveSha256:'1cb78a160963c0f69c92a8718c2dbd5da7cbfccb0a693f1ed68f52632408d04c'}),
+const result={release:paged?'Freeman CI 8703c16; not a published release':current?'v.0.9.10 source plus test-only mode-attestation overlay; not published':candidate?'Freeman CI merge 3027f84; not a published release':'v.0.9.10',coreCommit:paged?'8703c16fa40ffc8456e3d71696b6220b32b4d74a':candidate&&!current?'3027f8480a71057f2743acc79ef3aaf27bdf31ef':'3e8ef0bad719c6ac6304674f76df52cc5aecbea7',
+  ...(paged?{artifactId:10039317338}:current?{patchSha256:createHash('sha256').update(await readFile(root+'/imports/current-walletd-attestation.patch')).digest('hex')}:candidate?{artifactId:9509060771}:{archiveSha256:'1cb78a160963c0f69c92a8718c2dbd5da7cbfccb0a693f1ed68f52632408d04c'}),
   scope:'fresh disposable wallets and loopback native node; no funds or public peers',checks:[]};
 const record=(name,value=true)=>{result.checks.push({name,value});console.log(name,JSON.stringify(value));};
 async function port(){const s=createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p;}
@@ -57,7 +58,7 @@ try {
   const scanner=new DiscreteScannerRpc({wallet:new ReadRpcClient('http://127.0.0.1:'+viewPort+'/json_rpc',{username:user,password}),node:new ReadRpcClient('http://127.0.0.1:'+node+'/json_rpc'),accountNumber:'1-1-0000-0',genesisHash:genesis,network:'testnet',invoices:()=>[]});
   await assert.rejects(()=>scanner.getTip(),{code:expectedCode});
   record('Pay scanner refusal before checkpoint',expectedCode);
-  if(current){
+  if(current || paged){
     const address=(await rpc(viewPort,'getAddresses')).addresses[0];
     const keys=await rpc(viewPort,'getSpendKeys',{address});
     assert(keys.spendSecretKey==='0'.repeat(64),'tracking spend export was nonzero');
@@ -80,7 +81,11 @@ try {
   result.result=candidate?'ATTESTATION_GATE_PASSED_REGISTRATION_NOT_TESTED':'INCOMPATIBLE_CONFIRMED';
 }catch(error){result.result='CHECK_FAILED';result.error=error.message;process.exitCode=1;console.error(error.message);}
 finally {
-  await Promise.all([...children].map(async c=>{const done=once(c,'exit');c.kill('SIGTERM');await done;}));
+  if(paged){
+    await writeFile(join(dir,'evidence.json'),JSON.stringify(result,null,2),{mode:0o600});
+    const {stopChild}=await import('./bounded-child.mjs');
+    result.cleanup=await Promise.allSettled([...children].map(c=>stopChild(c,30000)));
+  }else await Promise.all([...children].map(async c=>{const done=once(c,'exit');c.kill('SIGTERM');await done;}));
   await writeFile(join(dir,'evidence.json'),JSON.stringify(result,null,2),{mode:0o600});
   console.log('Secret-free release compatibility evidence:',join(dir,'evidence.json'));
 }

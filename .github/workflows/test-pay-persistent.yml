@@ -22,3 +22,5 @@ jobs:
       - run: node --check qualification/discrete-pay/release-compatibility.mjs
       - run: node --check qualification/discrete-pay/persistent-probe.mjs
       - run: node --check qualification/discrete-pay/paged-native-load.mjs
+      - run: node --check qualification/discrete-pay/combined-native-journal.mjs
+      - run: node --test qualification/discrete-pay/registry-prefix.test.mjs

@@ -71,8 +71,10 @@ payment remain separate evidence boundaries even after these fixtures pass.
 archives with clean FreemanCore8703c16 CI binaries and Node24.18.1. Input hashes
 are mandatory. This is an internal candidate, not an installer, release tag,
 service activation, or proof of public-network payment compatibility.
-No wallet, database, host configuration, token or test-difficulty daemon enters
-the bundle. `test_bundle.py` checks archive admission and deterministic envelope.
+No live wallet, database, host configuration, operational token or test-difficulty
+daemon enters the bundle. The Git source archive retains public disposable test
+material, including its TLS fixture. `test_bundle.py` checks archive admission
+and deterministic envelope.
 
 Qualified archiveSHA256:
 `bc88d9fc37d3d0eda727e964abf57bd63a10c76533a39d349dccd7f5e654f40a`.
@@ -90,3 +92,27 @@ The clean compatibility mode `isolated-freeman-ci-8703c16` passed empty-wallet
 tracking attestation, spending-wallet/unregistered-wallet refusal, empty view-only
 send/prepare refusal and mode after restart. This does not prove a registered
 public-network payment. Native capacity/lifecycle fixtures remain a separate gate.
+
+## Combined high-capacity qualification
+
+`combined-native-journal.mjs` retains its10000 default fixture. The optional
+`DISCRETE_PAY_COMBINED_COUNT=100000` requires an exact stopped native-load source
+and its successful evidence hash (`DISCRETE_PAY_COMBINED_SOURCE`,
+`DISCRETE_PAY_COMBINED_SOURCE_SHA256`). It refuses sources outside the designated
+qualification tree. It seeds missing journal/invoice rows from validated native
+addresses; this is not100000 merchant HTTP creations. The fixture-only streaming
+prefix helper is tested against canonical JSON hashes and does not change Pay.
+
+At100000, the existing ceiling is preserved: extra allocation/retry must return503
+without another native address or journal reservation. The retained invoice must
+still replay after reopening. Native high-index payment,20 recipient payments,
+HTTPS HMAC retry, wallet recovery and a10-minute mixed scan/public/merchant-read/
+replay phase are required. Forced native cleanup or failure is not PASS.
+
+Updated default10000 regression passed on2026-09-09: private native late payment,
+20 recipients, signed retry, wallet/worker recovery,20 stable scan cycles and
+actualT10001/reopen. EvidenceSHA256:
+`69284f59c2f7c4c89d5c97d3ebfd2bfb1af7aa423ff3c03c214026d72be232b0`.
+The run shared a host with native address generation and had50% CPU quota; its
+latencies are not isolated benchmarks or production SLA.100000 path remains
+pending its native prerequisite and direct execution.

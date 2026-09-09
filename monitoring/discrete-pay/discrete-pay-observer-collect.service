@@ -1,0 +1,28 @@
+[Unit]
+Description=Collect redacted Discrete Pay worker status
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/discrete-pay-qualification/tools/node-v24.18.1-linux-x64/bin/node /opt/discrete-pay-observer/current/collect.mjs
+RuntimeDirectory=discrete-pay-observer
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+UMask=0022
+TimeoutStartSec=15
+MemoryMax=128M
+CPUQuota=10%
+TasksMax=16
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX
+ReadWritePaths=/run/discrete-pay-observer

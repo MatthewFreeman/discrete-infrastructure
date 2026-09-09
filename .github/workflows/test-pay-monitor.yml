@@ -1,0 +1,25 @@
+name: Pay monitor candidate
+on:
+  push:
+    branches: [main, codex/pay-operator-monitor]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  policy:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['22.23.2', '24.18.1']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node --test monitoring/discrete-pay/policy.test.mjs
+      - run: node --check monitoring/discrete-pay/monitor.mjs
+      - run: node --check monitoring/discrete-pay/collect.mjs
+      - run: node --check monitoring/discrete-pay/snapshot.mjs

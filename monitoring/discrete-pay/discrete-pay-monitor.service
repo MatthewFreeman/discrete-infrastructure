@@ -1,0 +1,42 @@
+[Unit]
+Description=Discrete Pay observational monitor
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=paymonitor
+Group=paymonitor
+ExecStart=/usr/local/bin/node --max-old-space-size=64 /opt/discrete-pay-monitor/current/monitor.mjs
+WorkingDirectory=/var/lib/discrete-pay-monitor
+StateDirectory=discrete-pay-monitor
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=30
+MemoryHigh=128M
+MemoryMax=192M
+MemorySwapMax=0
+CPUQuota=10%
+TasksMax=32
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET
+ReadWritePaths=/var/lib/discrete-pay-monitor
+
+[Install]
+WantedBy=multi-user.target

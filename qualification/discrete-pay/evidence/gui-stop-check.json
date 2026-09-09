@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "scope": "real released GUI process bounded termination on a copied post-payment wallet profile; not GUI-visible reopen acceptance",
+  "forced": true,
+  "alreadyExited": false,
+  "elapsedMs": 3013
+}

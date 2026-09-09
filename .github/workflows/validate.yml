@@ -25,6 +25,10 @@ jobs:
           node --check qualification/discrete-pay/combined-native-journal.mjs
           node --check qualification/discrete-pay/gui-session.mjs
           node --check qualification/discrete-pay/gui-control.mjs
+          node --check qualification/discrete-pay/verify-gui-payment.mjs
+          node --check qualification/discrete-pay/audit-gui-payment.mjs
+          node --check qualification/discrete-pay/gui-stop-check.mjs
+          node --test qualification/discrete-pay/bounded-child.test.mjs
 
       - name: Upload validated source snapshot
         if: always()

@@ -1,0 +1,24 @@
+{
+  "result": "PASS",
+  "payment": {
+    "invoice_id": "inv_95608cfeff3b4e61913b0dc769e6fe48",
+    "transaction_hash": "6d83898b5efdfe3208104ac13e028faa03ceddf412a023ae6ab0eacbecff2131",
+    "deposit_account": "28-1-GHT6-10002-T",
+    "amount_atomic": 10,
+    "block_height": 125,
+    "canonical": 1,
+    "confirmations": 11
+  },
+  "integrity": "ok",
+  "foreignKeyErrors": 0,
+  "webhookQueueSnapshot": [
+    {
+      "state": "delivered",
+      "count": 6053
+    },
+    {
+      "state": "pending",
+      "count": 3976
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import {createServer} from 'node:http';
 import {createServer as tlsServer} from 'node:https';
 import {createHash,createHmac,randomBytes} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
+import {stopChild} from './bounded-child.mjs';
 assert.equal(process.env.DISCRETE_PAY_GUI,'private-disposable-only');
 const root='/opt/discrete-pay-qualification',pay=root+'/pay-merged-4d2f069';
 const source=pay+'/build/native-combined/run-OjCKl5/state';
@@ -76,4 +77,13 @@ try{
  }catch(e){res.writeHead(500).end(JSON.stringify({error:e.message}));}finally{busy=false;}});control.listen(18911,'127.0.0.1');await once(control,'listening');
  await writeFile(root+'/gui-v0.9.8/session-private.json',JSON.stringify({dir,token,controlPort:18911}),{mode:0o600});record('GUI session ready',{dir,profile,nodePort:na,webPort:18891});await done;
 }catch(e){record('fixture failure',e.message);process.exitCode=1;}
-finally{if(mining)await rpc(na,'stop_mining',{},false,'/stop_mining').catch(()=>{});await worker?.close();await gateway?.close();await facade?.close();await web?.close();control?.close();receiver?.close();store?.close();for(const c of children)c.kill('SIGTERM');await Promise.allSettled([...children].map(c=>once(c,'exit')));await writeFile(dir+'/evidence.json',JSON.stringify({checks,receipts,scope:'isolated GUI fixture; only recorded interactions prove acceptance'},null,2),{mode:0o600});}
+finally{
+ // Persist payment/receiver evidence before any potentially unresponsive GUI exit.
+ const snapshot={checks,receipts,scope:'isolated GUI fixture; only recorded interactions prove acceptance'};
+ await writeFile(dir+'/evidence.json',JSON.stringify({...snapshot,cleanup:'pending'},null,2),{mode:0o600});
+ if(mining)await rpc(na,'stop_mining',{},false,'/stop_mining').catch(()=>{});
+ await worker?.close();await gateway?.close();await facade?.close();await web?.close();
+ control?.close();receiver?.close();store?.close();
+ const exits=await Promise.allSettled([...children].map(c=>stopChild(c)));
+ await writeFile(dir+'/evidence.json',JSON.stringify({...snapshot,cleanup:exits},null,2),{mode:0o600});
+}

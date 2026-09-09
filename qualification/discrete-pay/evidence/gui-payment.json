@@ -1,0 +1,24 @@
+{
+  "guiTransactionHash": "6d83898b5efdfe3208104ac13e028faa03ceddf412a023ae6ab0eacbecff2131",
+  "invoiceId": "inv_95608cfeff3b4e61913b0dc769e6fe48",
+  "amountAtomic": "10",
+  "routingT": 10002,
+  "checks": [
+    {
+      "check": "GUI payment projected confirmed and signed HTTPS delivered",
+      "invoiceStatus": "confirmed",
+      "confirmedAtomic": "10",
+      "targetReceiptCount": 2,
+      "drainedDeliveries": 9926,
+      "elapsedMs": 328226
+    },
+    {
+      "check": "public HTTP confirmed",
+      "status": "confirmed"
+    },
+    {
+      "check": "three repeat native scans create no new events or deliveries"
+    }
+  ],
+  "result": "PASS"
+}

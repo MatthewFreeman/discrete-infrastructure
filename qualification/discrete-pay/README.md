@@ -144,3 +144,16 @@ actualT10001/reopen. EvidenceSHA256:
 The run shared a host with native address generation and had50% CPU quota; its
 latencies are not isolated benchmarks or production SLA.100000 path remains
 pending its native prerequisite and direct execution.
+
+`combined-sequence.py` is a single bounded continuation of that exact test run,
+not a recurring monitor or installer. It waits up to3hours for the existing
+native100000 unit to stop cleanly and publish matching success evidence. It does
+not stop or retry that prerequisite. Only then does it validate the installed
+private stack, durably mark the pause, and start the copied combined fixture in
+a separate unprivileged loopback-only unit (700MiB RAM,1GiB swap,3hour limit).
+The combined unit and supervisor recovery both restore only the existing private
+target. Recovery never starts that target while the prerequisite is running:
+before a validated pause there is no restoration marker. Existing markers,
+changed installation files, failed native evidence or another test process cause
+refusal, not overwrite. Tests cover prerequisite and recovery gates; native
+sequence completion still requires direct final evidence and service readback.

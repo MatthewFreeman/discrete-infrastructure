@@ -1,82 +1,85 @@
 # Discrete Infrastructure
 
-Infrastructure-as-code repository for deploying and maintaining public Discrete.cash nodes.
+Infrastructure, deployment automation, and operational runbooks for the Discrete ecosystem.
 
 This repository is public. Cloning and pulling over HTTPS require no GitHub account, personal
 access token, deploy key, username, or password.
 
-## Supported platforms
+Start with the [getting-started guide](docs/getting-started.md). Current implementation and
+validation status is tracked in one place: [component status](docs/component-status.md).
+
+## Available now
+
+The host module prepares a clean supported VPS for later Discrete services.
 
 | Operating system | Status | Runbook |
 |---|---|---|
-| Debian 12 (bookworm) | Supported and clean-room validated | [`docs/bootstrap-from-zero.md`](docs/bootstrap-from-zero.md) |
-| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated | [`docs/bootstrap-ubuntu-24.04-from-zero.md`](docs/bootstrap-ubuntu-24.04-from-zero.md) |
+| Debian 12 (bookworm) | Supported and clean-room validated | [`docs/host/bootstrap-from-zero.md`](docs/host/bootstrap-from-zero.md) |
+| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated | [`docs/host/bootstrap-ubuntu-24.04-from-zero.md`](docs/host/bootstrap-ubuntu-24.04-from-zero.md) |
 
-Start with the platform chooser:
+The short operator commands remain stable even though canonical implementation now lives under
+`modules/host/`:
 
 ```text
-docs/bootstrap-platforms.md
+bootstrap/run.sh
+bootstrap/run-ubuntu-24.04.sh
+install.sh
+install-ubuntu-24.04.sh
+scripts/audit-ports.sh
 ```
 
 Do not mix commands from different operating-system runbooks.
 
-## Goals
+## Node work
 
-- Reproducible server bootstrap from a clean supported installation
-- Preserve Debian 12 as the validated reference implementation
-- Add explicitly named platform entrypoints instead of ambiguous auto-detection
-- Strict IPv4-only network baseline
-- Minimal, measured hardening without pointless complexity
-- Version-controlled nftables, SSH, sysctl, Fail2Ban, and deployment configuration
-- No secrets committed to Git
-- Git remains the source of truth
+The official Universal Linux amd64 asset is the accepted default for Debian 12 and Ubuntu 24.04.
+The measured decision and reproducible evidence remain at their stable published paths:
 
-## Authoritative runbooks
+- [ADR 0001](docs/decisions/0001-use-official-universal-linux-amd64.md)
+- [Discrete v0.9.5 benchmark suite](docs/benchmarks/discrete-v0.9.5/README.md)
 
-Debian 12 keeps the original validated filenames and commands:
-
-```text
-docs/bootstrap-from-zero.md
-bootstrap/run.sh
-install.sh
-```
-
-Ubuntu Server 24.04 LTS uses separate filenames:
-
-```text
-docs/bootstrap-ubuntu-24.04-from-zero.md
-bootstrap/run-ubuntu-24.04.sh
-install-ubuntu-24.04.sh
-```
-
-Do not bypass or improvise around the selected documented sequence. When implementation and its
-matching runbook disagree, correct the runbook first and then correct and retest the implementation.
-
-## Validation
-
-GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, the IPv4-only
-configuration contract, and platform-entrypoint separation on every push and pull request.
-
-CI validation does not replace a complete clean-room test on a newly created VPS. Ubuntu 24.04 is
-supported after completing the runbook, reboot test, targeted external scan, and full qualification
-scan through Path A. Both access paths converge on the same final infrastructure contract; CI
-enforces the Path B-specific cloud-user, root-lock, key-transfer, and temporary-access behavior.
-
-The measured Linux release-selection decision and its reproducible raw evidence are documented in
-the [Discrete v0.9.5 benchmark suite](docs/benchmarks/discrete-v0.9.5/README.md).
+Node deployment, lifecycle automation, and default-on updates are separate planned work. Benchmark
+qualification does not mean that a production node installer already exists.
 
 ## Repository layout
 
 ```text
-bootstrap/   Platform entrypoints and administrative-account setup
-configs/     Shared managed SSH, nftables, Fail2Ban, and sysctl configuration
-scripts/     Shared deployment, migration, audit, and verification helpers
-docs/        Platform selection, architecture, and operational runbooks
+modules/host/   Canonical host bootstrap, configuration, installers, and verification
+modules/node/   Node deployment contract and future implementation entrypoint
+docs/host/      Host platform selection and clean-room runbooks
+docs/node/      Node documentation index and lifecycle plan
+docs/decisions/ Repository-wide architecture decisions
+docs/benchmarks/Published measurement evidence at stable URLs
+bootstrap/      Stable compatibility entrypoints for existing operator commands
+scripts/        Stable compatibility entrypoints and installed-service paths
 ```
+
+Root compatibility entrypoints contain no independent implementation. New logic belongs in the
+matching module.
+
+## Design rules
+
+- Preserve Debian 12 and Ubuntu 24.04 as separately validated host paths.
+- Keep the network baseline strictly IPv4-only.
+- Prefer minimal, measured hardening over copied tuning folklore.
+- Keep application source code in its own repository; this repository owns deployment and
+  operations.
+- Add a module, profile, or shared abstraction only when real implementation requires it.
+- Never commit secrets or production credentials.
+- Git remains the source of truth.
+
+## Validation
+
+GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, the IPv4-only
+configuration contract, platform separation, compatibility entrypoints, and repository layout.
+
+CI does not replace clean-room testing on newly created VPS instances. A structural change must not
+be described as behaviorally validated until the documented Debian and Ubuntu operator sequences
+have been exercised again.
 
 ## Secrets
 
-Real secrets must never be committed. Production secrets belong under:
+Real secrets belong outside Git under:
 
 ```text
 /etc/discrete/secrets/
@@ -84,7 +87,7 @@ Real secrets must never be committed. Production secrets belong under:
 
 Only documented templates and examples may live in this repository.
 
-## Common final baseline
+## Current host baseline
 
 - Network stack: IPv4-only
 - IPv6 addresses, routes, and listeners: none

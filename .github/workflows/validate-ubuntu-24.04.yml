@@ -13,7 +13,9 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install ShellCheck
         run: |
@@ -22,10 +24,10 @@ jobs:
 
       - name: Validate Ubuntu Bash syntax
         run: |
-          bash -n bootstrap/run-ubuntu-24.04.sh
-          bash -n bootstrap/ubuntu-24.04-ipv4.sh
-          bash -n bootstrap/install-ubuntu-ipv4-reassertion.sh
-          bash -n install-ubuntu-24.04.sh
+          bash -n modules/host/bootstrap/run-ubuntu-24.04.sh
+          bash -n modules/host/bootstrap/ubuntu-24.04-ipv4.sh
+          bash -n modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh
+          bash -n modules/host/install-ubuntu-24.04.sh
 
       - name: Run ShellCheck on Ubuntu entrypoints
         id: shellcheck
@@ -33,15 +35,15 @@ jobs:
         run: |
           set -o pipefail
           shellcheck -x \
-            bootstrap/run-ubuntu-24.04.sh \
-            bootstrap/ubuntu-24.04-ipv4.sh \
-            bootstrap/install-ubuntu-ipv4-reassertion.sh \
-            install-ubuntu-24.04.sh \
+            modules/host/bootstrap/run-ubuntu-24.04.sh \
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh \
+            modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh \
+            modules/host/install-ubuntu-24.04.sh \
             2>&1 | tee shellcheck-ubuntu.txt
 
       - name: Upload Ubuntu ShellCheck diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ubuntu-shellcheck-diagnostics
           path: shellcheck-ubuntu.txt
@@ -53,7 +55,7 @@ jobs:
 
       - name: Validate Ubuntu platform contract
         run: |
-          bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; check_platform'
+          bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; check_platform'
 
           fixture="${RUNNER_TEMP}/debian-os-release"
           cat > "${fixture}" <<'EOF'
@@ -62,7 +64,7 @@ jobs:
           EOF
 
           if UBUNTU_OS_RELEASE_FILE="${fixture}" \
-            bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; check_platform'; then
+            bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; check_platform'; then
             echo 'Ubuntu entrypoint accepted Debian 12.' >&2
             exit 1
           fi
@@ -71,34 +73,34 @@ jobs:
         run: |
           test "$(
             BOOTSTRAP_SOURCE_USER=ubuntu \
-              bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
+              bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
           )" = 'no'
 
           test "$(
             env -u BOOTSTRAP_SOURCE_USER \
-              bash -c 'source bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
+              bash -c 'source modules/host/bootstrap/ubuntu-24.04-ipv4.sh; ubuntu_temporary_root_login_policy'
           )" = 'yes'
 
           grep -F 'PermitRootLogin ${permit_root_login}' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'authorized_keys directly to ${ADMIN_USER}' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'root account remains locked' \
-            docs/bootstrap-ubuntu-24.04-from-zero.md
+            docs/host/bootstrap-ubuntu-24.04-from-zero.md
           grep -F 'ssh -4 -o ForwardX11=no -p 22 <INITIAL_USER>@<VPS_IPV4>' \
-            docs/bootstrap-ubuntu-24.04-from-zero.md
+            docs/host/bootstrap-ubuntu-24.04-from-zero.md
 
       - name: Validate Ubuntu finalize IPv6 preflight
         run: |
           bash -c '
-            source bootstrap/ubuntu-24.04-ipv4.sh
+            source modules/host/bootstrap/ubuntu-24.04-ipv4.sh
             verify_no_ipv6_listener() { return 0; }
             ADMIN_SSH_CONFIRMED=1 confirm_admin_ssh_test
           '
 
           blocked_output="${RUNNER_TEMP}/ubuntu-finalize-preflight.txt"
           if bash -c '
-            source bootstrap/ubuntu-24.04-ipv4.sh
+            source modules/host/bootstrap/ubuntu-24.04-ipv4.sh
             verify_no_ipv6_listener() { return 1; }
             ss() { printf "%s\n" "tcp LISTEN 0 128 [::1]:6010 [::]:* users:((\"sshd\",pid=1222,fd=5))"; }
             ADMIN_SSH_CONFIRMED=1 confirm_admin_ssh_test
@@ -112,80 +114,66 @@ jobs:
 
       - name: Validate Ubuntu reboot persistence contract
         run: |
-          test -x install-ubuntu-24.04.sh
-          test -f configs/systemd/discrete-ipv4-only-after-network.service
-          test -f bootstrap/install-ubuntu-ipv4-reassertion.sh
+          test -x modules/host/install-ubuntu-24.04.sh
+          test -f modules/host/configs/systemd/discrete-ipv4-only-after-network.service
+          test -f modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh
 
           grep -F 'After=network-online.target' \
-            configs/systemd/discrete-ipv4-only-after-network.service
+            modules/host/configs/systemd/discrete-ipv4-only-after-network.service
           grep -F 'ExecStart=/bin/bash /opt/discrete-infrastructure/scripts/configure-ipv4-only.sh' \
-            configs/systemd/discrete-ipv4-only-after-network.service
+            modules/host/configs/systemd/discrete-ipv4-only-after-network.service
           grep -F 'WantedBy=multi-user.target' \
-            configs/systemd/discrete-ipv4-only-after-network.service
+            modules/host/configs/systemd/discrete-ipv4-only-after-network.service
           if grep -F 'install-ubuntu-ipv4-reassertion.sh' \
-            bootstrap/run-ubuntu-24.04.sh; then
+            modules/host/bootstrap/run-ubuntu-24.04.sh; then
             echo 'Ubuntu runner mutates reboot persistence before repository preflight.' >&2
             exit 1
           fi
           grep -F 'verify_repository_preflight' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'install-ubuntu-ipv4-reassertion.sh' \
-            bootstrap/ubuntu-24.04-ipv4.sh
+            modules/host/bootstrap/ubuntu-24.04-ipv4.sh
           grep -F 'UBUNTU_IPV4_SERVICE_START_NOW=1' \
-            install-ubuntu-24.04.sh
+            modules/host/install-ubuntu-24.04.sh
           grep -F 'systemctl enable "${UNIT_NAME}"' \
-            bootstrap/install-ubuntu-ipv4-reassertion.sh
+            modules/host/bootstrap/install-ubuntu-ipv4-reassertion.sh
 
       - name: Validate Ubuntu external scan guidance
         run: |
           scan_doc="$(
             awk '/^## 12\. Run an external IPv4 scan$/,/^## 13\./' \
-              docs/bootstrap-ubuntu-24.04-from-zero.md
+              docs/host/bootstrap-ubuntu-24.04-from-zero.md
           )"
           targeted_scan='nmap -Pn -4 -p 22,22822,9330-9332 <VPS_IPV4>'
-          fast_scan='nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>'
-          full_scan='nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>'
 
           grep -F "${targeted_scan}" <<<"${scan_doc}"
-          grep -F "${fast_scan}" <<<"${scan_doc}"
-          grep -F "${full_scan}" <<<"${scan_doc}"
           grep -F 'required external check for every newly bootstrapped VPS' <<<"${scan_doc}"
-          grep -F 'not a per-VPS bootstrap requirement' <<<"${scan_doc}"
-          grep -F 'Optional fast all-port confidence check' <<<"${scan_doc}"
-          grep -F 'supplemental evidence only' <<<"${scan_doc}"
-          grep -F 'Accuracy-first qualification scan' <<<"${scan_doc}"
-          grep -F '65,535-port scan' <<<"${scan_doc}"
-          grep -F 'may take from several minutes to an hour or longer' <<<"${scan_doc}"
-          grep -F -- '--min-rate' <<<"${scan_doc}"
-          grep -F -- '--max-retries' <<<"${scan_doc}"
-          grep -F 'incomplete scan is not a passing qualification result' <<<"${scan_doc}"
-
-          targeted_line="$(grep -nF "${targeted_scan}" <<<"${scan_doc}" | cut -d: -f1)"
-          fast_line="$(grep -nF "${fast_scan}" <<<"${scan_doc}" | cut -d: -f1)"
-          full_line="$(grep -nF "${full_scan}" <<<"${scan_doc}" | cut -d: -f1)"
-          (( targeted_line < fast_line && fast_line < full_line )) || {
-            echo 'Scan order must be targeted, optional fast sweep, then qualification.' >&2
+          grep -F 'A full `-p-` scan is not part of bootstrap qualification.' <<<"${scan_doc}"
+          grep -F 'local audit enumerates listeners' <<<"${scan_doc}"
+          grep -F 'must not block routine bootstrap or release qualification' <<<"${scan_doc}"
+          if grep -F 'nmap ' <<<"${scan_doc}" | grep -F -- '-p-'; then
+            echo 'All-port Nmap commands must not be part of bootstrap qualification.' >&2
             exit 1
-          }
+          fi
 
       - name: Validate Ubuntu support status
         run: |
           grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' README.md
-          grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' docs/bootstrap-platforms.md
-          grep -F '**Support status:** supported and clean-room validated.' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F '# Clean-room validation record' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'Path B-specific access-mode behavior' docs/bootstrap-ubuntu-24.04-from-zero.md
-          ! grep -F 'Path B experimental' README.md docs/bootstrap-platforms.md
-          ! grep -F 'Path B remains experimental' docs/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '| Ubuntu Server 24.04 LTS (noble) | Supported and clean-room validated |' docs/host/bootstrap-platforms.md
+          grep -F '**Support status:** supported and clean-room validated.' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F '# Clean-room validation record' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'Path B-specific access-mode behavior' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          ! grep -F 'Path B experimental' README.md docs/host/bootstrap-platforms.md
+          ! grep -F 'Path B remains experimental' docs/host/bootstrap-ubuntu-24.04-from-zero.md
       - name: Validate platform file separation
         run: |
-          grep -F 'ubuntu-24.04-ipv4.sh' bootstrap/run-ubuntu-24.04.sh
-          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'install-ubuntu-24.04.sh' docs/bootstrap-ubuntu-24.04-from-zero.md
-          grep -F 'bootstrap/run.sh' docs/bootstrap-platforms.md
-          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/bootstrap-platforms.md
+          grep -F 'ubuntu-24.04-ipv4.sh' modules/host/bootstrap/run-ubuntu-24.04.sh
+          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'install-ubuntu-24.04.sh' docs/host/bootstrap-ubuntu-24.04-from-zero.md
+          grep -F 'bootstrap/run.sh' docs/host/bootstrap-platforms.md
+          grep -F 'bootstrap/run-ubuntu-24.04.sh' docs/host/bootstrap-platforms.md
 
-          test -f docs/bootstrap-from-zero.md
-          test -f bootstrap/run.sh
-          test -f bootstrap/debian-ipv4.sh
-          test -f install.sh
+          test -f docs/host/bootstrap-from-zero.md
+          test -f modules/host/bootstrap/run.sh
+          test -f modules/host/bootstrap/debian-ipv4.sh
+          test -f modules/host/install.sh

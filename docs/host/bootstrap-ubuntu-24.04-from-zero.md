@@ -878,45 +878,10 @@ Required result:
 The targeted scan is the required external check for every newly bootstrapped VPS. Save its output
 with that VPS's deployment record.
 
-### Optional fast all-port confidence check
-
-For an additional best-effort check during routine deployment, scan all TCP ports with an
-aggressively bounded profile:
-
-```bash
-nmap -Pn -4 -T4 --min-rate 500 --max-retries 2 -p- --stats-every 15s <VPS_IPV4>
-```
-
-This optional scan trades some accuracy for speed. An unexpected `open` port is actionable and must
-be investigated, but a clean result is supplemental evidence only: packet loss, filtering, or rate
-limiting can hide responses. It does not replace the required targeted scan or a formal
-accuracy-first qualification scan.
-
-### Accuracy-first qualification scan
-
-The full 65,535-port scan is qualification evidence, not a per-VPS bootstrap requirement. Run it
-only when qualifying a new or changed OS/provider image, after changing host or provider firewall
-policy, or when investigating unexpected exposure.
-
-An accuracy-first full scan may take from several minutes to an hour or longer, especially when a
-provider firewall silently filters probes or rate-limits the scan. Keep the local terminal open;
-`--stats-every 30s` prints progress without changing which ports are scanned. Do not add aggressive
-`--min-rate` or low `--max-retries` values to qualification evidence, because they can reduce
-accuracy on lossy or rate-limited paths.
-
-```bash
-nmap -Pn -4 -p- --stats-every 30s <VPS_IPV4>
-```
-
-Before Discrete services are installed, a completed full scan must show `22822/tcp` as the only
-open TCP port. An interrupted, timed-out, or incomplete scan is not a passing qualification result.
-
-Provider-firewall behavior and Internet reachability can be proven only by an external test.
-A completed full scan is required when qualifying a new access path, OS/provider image, or
-firewall policy. After qualification, it does not need to be repeated for each later VPS unless
-one of the conditions above changes.
-
-Save the full scan output as clean-room qualification evidence.
+A full `-p-` scan is not part of bootstrap qualification. The local audit enumerates listeners and
+the active nftables allowlist, while the targeted external scan confirms the critical public access
+path and provider-firewall behavior. Use broader scanning only for incident investigation or a
+separate security assessment; it must not block routine bootstrap or release qualification.
 
 ---
 

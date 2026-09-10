@@ -158,6 +158,27 @@ changed installation files, failed native evidence or another test process cause
 refusal, not overwrite. Tests cover prerequisite and recovery gates; native
 sequence completion still requires direct final evidence and service readback.
 
+## Pinned private application upgrade
+
+`persistent-upgrade.py` is a one-baseline qualification tool, not a production
+updater. It pins the installed private state and Pay94995a7 candidate manifest
+plus native100000 and extracted-package evidence hashes. Only the facade,
+gateway, public web and worker release paths change. Nodes, tracking wallet,
+environment, observer, SSH and firewall remain unchanged. Schema differences
+refuse this code-only rollback. Old releases, metadata and coherent SQLite
+backups remain retained; recovery never rewinds the live ledger database.
+
+Run only as a root-owned, hash-checked helper under a bounded systemd supervisor
+whose `ExecStopPost` calls the same helper with `recover`. `trial` deliberately
+exits23 after candidate verification; require that failed supervisor result and
+the independently checked restored baseline. A separate `activate` attempt is
+accepted only after the recorded rollback, replay of the existing invoice,
+unchanged financial fingerprint, new application PIDs after restart, all12units
+active and fresh scanner/webhook observations. No payment, mining, public port
+opening, production activation or broad infrastructure deployment is performed.
+Offline tests exercise partial switches, refusal gates, recovery and backup
+retry preservation; they do not replace an actual supervised rollback trial.
+
 On2026-09-10 the native100000 prerequisite was directly read back as PASS:
 evidenceSHA256`450474e339e6ebeb91e0720c130cb567d0d0e60ca753a8dba34992364d862624`,
 four final merchant allocations, wallet/facade reopen and retained original

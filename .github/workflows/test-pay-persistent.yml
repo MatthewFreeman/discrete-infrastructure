@@ -19,6 +19,7 @@ jobs:
           node-version: '24.18.1'
       - run: python -B qualification/discrete-pay/test_persistent.py
       - run: python -B qualification/discrete-pay/test_persistent_upgrade.py
+      - run: python -B services/discrete-pay/test_install.py
       - run: python -B qualification/discrete-pay/test_bundle.py
       - run: python -B qualification/discrete-pay/test_combined_sequence.py
       - run: node --check qualification/discrete-pay/gui-uri-session.mjs

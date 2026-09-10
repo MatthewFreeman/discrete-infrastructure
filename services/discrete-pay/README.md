@@ -48,6 +48,7 @@ Run the reviewed script as root on Linux with Python3 and systemd:
 python3 install.py prepare /root/pay-input/request.json
 python3 install.py verify
 python3 install.py start
+python3 install.py backup
 python3 install.py stop
 ```
 
@@ -60,6 +61,14 @@ Start uses the four real compiled entrypoints, not a development/test server.
 Its active-process result is explicitly `started-not-accepted`, not payment or
 production acceptance. Stop retains all code, configuration and application data.
 No command enables boot startup or silently migrates an existing deployment.
+
+Backup stops the four applications, requires the runtime UID to have no remaining
+processes, captures both SQLite databases through SQLite's backup API (including
+committed WAL), and retains operational JSON/PEM/environment files in a new
+root-only local snapshot with file hashes. It restarts applications only if all
+four were active before capture. Partial attempts remain; no backup is overwritten.
+These snapshots contain secrets: encrypt before any separately authorized off-host
+transfer. A matching backup hash/integrity check is not a completed restore test.
 
 Units are named `discrete-pay-app-{facade,gateway,public,worker}.service` and grouped
 under `discrete-pay-app.target`. They run without capabilities under a distinct

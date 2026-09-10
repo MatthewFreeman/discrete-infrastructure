@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import os
+import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -96,6 +97,23 @@ class InstallTests(unittest.TestCase):
 
     def test_foreign_install_refused_before_file_reads(self):
         with self.assertRaises(ValueError):u.verify({'root':'/foreign','payCommit':u.PAY})
+
+    @unittest.skipIf(os.name=='nt','POSIX mode contract')
+    def test_backup_includes_committed_wal_and_retains_existing_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d=Path(tmp);source=d/'source.sqlite3';target=d/'backup.sqlite3'
+            writer=sqlite3.connect(source)
+            try:
+                writer.execute('PRAGMA journal_mode=WAL');writer.execute('PRAGMA wal_autocheckpoint=0')
+                writer.execute('CREATE TABLE retained(value)');writer.execute('INSERT INTO retained VALUES (12346)');writer.commit()
+                self.assertTrue(Path(str(source)+'-wal').exists())
+                expected=u.database_backup(source,target)
+                reader=sqlite3.connect(target)
+                try:self.assertEqual(reader.execute('SELECT value FROM retained').fetchall(),[(12346,)])
+                finally:reader.close()
+                with self.assertRaises(ValueError):u.database_backup(source,target)
+                self.assertEqual(u.digest(target),expected)
+            finally:writer.close()
 
     @unittest.skipIf(os.name=='nt','POSIX file ownership/mode contract')
     def test_partial_unit_publish_can_retry_but_not_overwrite(self):

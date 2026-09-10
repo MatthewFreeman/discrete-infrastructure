@@ -22,16 +22,31 @@ BUNDLE=ROOT/'bundle'
 
 def copy_bundle():
     archive=QUAL/'bundles/pay-94995a7-core-8703c16.tar.gz'
-    assert not archive.is_symlink() and not BUNDLE.exists()
-    local=ROOT/'candidate.tar.gz';assert not local.exists()
-    shutil.copyfile(archive,local);local.chmod(0o600)
+    assert not archive.is_symlink()
+    local=ROOT/'candidate.tar.gz'
+    if not local.exists():shutil.copyfile(archive,local);local.chmod(0o600)
+    assert not local.is_symlink() and local.stat().st_uid==0
     assert hashlib.sha256(local.read_bytes()).hexdigest()=='a6f5e00970f037678c7b3d8b0452d1e95f6c175531d6520d52c65a5f336d92ec'
-    BUNDLE.mkdir(mode=0o755)
+    BUNDLE.mkdir(mode=0o755,exist_ok=True)
+    assert not BUNDLE.is_symlink() and BUNDLE.stat().st_uid==0
     with tarfile.open(local) as bundle:
+        seen=set()
         for item in bundle.getmembers():
             p=PurePosixPath(item.name)
-            assert not p.is_absolute() and '..' not in p.parts and (item.isfile() or item.isdir())
-        bundle.extractall(BUNDLE,filter='data')
+            assert p.as_posix()==item.name and item.name not in seen and p.parts and not p.is_absolute() and '..' not in p.parts and (item.isfile() or item.isdir())
+            seen.add(item.name)
+        # Portable across the host's older Python: copy regular payloads only,
+        # never archive ownership, links, devices or privileged mode bits.
+        for item in bundle.getmembers():
+            target=BUNDLE/item.name
+            if item.isdir():target.mkdir(mode=0o755,parents=True,exist_ok=True)
+            else:
+                target.parent.mkdir(mode=0o755,parents=True,exist_ok=True)
+                value=bundle.extractfile(item).read()
+                if target.exists():assert not target.is_symlink() and target.read_bytes()==value
+                else:
+                    with target.open('xb') as f:f.write(value)
+                target.chmod(0o755 if PurePosixPath(item.name).parent.as_posix()=='bin' else 0o644)
     print('PASS: hash-pinned archive extracted under a root-controlled input directory')
 
 

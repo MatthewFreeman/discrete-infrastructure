@@ -242,6 +242,52 @@ def load_state():
     return json.loads(path.read_text())
 
 
+def database_backup(source, destination):
+    regular(source)
+    if destination.exists():raise ValueError('backup already exists')
+    # A stopped writer can leave WAL behind when its last peer was read-only.
+    # SQLite's backup API incorporates committed WAL; copying only the main file does not.
+    with closing(sqlite3.connect(source.as_uri()+'?mode=ro',uri=True)) as db, closing(sqlite3.connect(destination)) as target:
+        db.backup(target)
+        if target.execute('PRAGMA integrity_check').fetchone()!=('ok',):raise ValueError('backup integrity failed')
+    destination.chmod(0o600)
+    with destination.open('rb') as f:os.fsync(f.fileno())
+    return digest(destination)
+
+
+def backup(state):
+    statuses=[subprocess.run(['systemctl','is-active','--quiet',name(r)],capture_output=True).returncode for r in APPS]
+    if not (all(v==0 for v in statuses) or all(v==3 for v in statuses)):raise ValueError('inconsistent running app set')
+    active=all(v==0 for v in statuses)
+    directory=ROOT/'backups'
+    if directory.exists():
+        if directory.is_symlink() or directory.stat().st_uid!=0 or stat.S_IMODE(directory.stat().st_mode)!=0o700:
+            raise ValueError('backup directory not root-private')
+    else:directory.mkdir(mode=0o700)
+    attempt=Path(tempfile.mkdtemp(prefix='snapshot-',dir=directory))
+    try:
+        if active:call(['systemctl','stop',TARGET,*[name(r) for r in APPS]])
+        # Refuse an operator CLI or another process using this UID while capturing a pair.
+        remaining=subprocess.run(['pgrep','-u',str(state['uid'])],capture_output=True).returncode
+        if remaining!=1:raise ValueError('runtime identity is not quiescent')
+        files={}
+        for filename in ('gateway.sqlite3','allocations.sqlite3'):
+            files[filename]=database_backup(ROOT/'private'/filename,attempt/filename)
+        for folder in ('private','env'):
+            dest=attempt/folder;dest.mkdir(mode=0o700)
+            for source in (ROOT/folder).iterdir():
+                # Only named operational JSON/PEM inputs and environment files;
+                # never native wallets, logs, sidecar locks or executable helpers.
+                if folder=='private' and (source.suffix not in ('.json','.pem') or not source.is_file()):continue
+                regular(source);shutil.copyfile(source,dest/source.name);(dest/source.name).chmod(0o600)
+                files[folder+'/'+source.name]=digest(dest/source.name)
+        report={'format':1,'payCommit':PAY,'release':state['release'],'files':files,'privateLocalBackup':True}
+        atomic(attempt/'manifest.json',report)
+    finally:
+        if active:call(['systemctl','start',TARGET])
+    return {'backup':str(attempt),'manifestSha256':digest(attempt/'manifest.json'),'applicationsRestarted':active}
+
+
 def install_units(state):
     for filename,text in state['unitText'].items():
         if filename not in {name(r) for r in APPS}|{TARGET}:raise ValueError('foreign unit')
@@ -319,6 +365,7 @@ def main():
     if action=='prepare':prepare(Path(sys.argv[2]));print('PREPARED: application files and disabled units; no wallet or public port changes');return
     state=load_state();verify(state)
     if action=='verify':print(json.dumps({'payCommit':PAY,'phase':state['phase'],'services':4,'filesMatch':True}));return
+    if action=='backup':print(json.dumps(backup(state)));return
     if action=='start':
         try:
             call(['systemctl','start',TARGET])
@@ -329,7 +376,7 @@ def main():
         state['phase']='started-not-accepted'
     elif action=='stop':
         call(['systemctl','stop',TARGET,*[name(r) for r in APPS]]);state['phase']='stopped-data-retained'
-    else:raise ValueError('expected prepare/start/verify/stop')
+    else:raise ValueError('expected prepare/start/verify/backup/stop')
     atomic(ROOT/'install.json',state);print('STATE: '+state['phase']+'; application data retained')
 
 

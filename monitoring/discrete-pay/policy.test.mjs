@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cycle, fromJournal, issues, observe, tick, validateState} from './policy.mjs';
+import {cycle, fromJournal, issues, observe, tick, validateState, workerUnit} from './policy.mjs';
+
+test('collector preserves old binding and permits only the standalone Pay worker', () => {
+  assert.equal(workerUnit(), 'discrete-pay-worker.service');
+  for (const unit of ['discrete-pay-worker.service', 'discrete-pay-app-worker.service']) {
+    assert.equal(workerUnit(unit), unit);
+  }
+  for (const value of ['', null, 'ssh.service', '*', '--all', '../worker',
+    'discrete-pay-app-worker.service\n', 'discrete-pay-app-worker.service; id']) {
+    assert.throws(() => workerUnit(value));
+  }
+});
 
 const now = 1_000_000;
 const sample = (component, ok = true, code = 'success', at = now) => ({component, ok, code, at});

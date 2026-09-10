@@ -23,6 +23,12 @@ is an unprivileged SSH forced command that can only return this root-owned file.
 The observer is not in the global `systemd-journal` group and has no sudo rights.
 Prove unrelated logs and database/wallet/config files remain unreadable before
 activation. A missing worker is explicitly inactive, never a green baseline.
+For the standalone application installer, a root-owned systemd collector drop-in
+may set `Environment=PAY_OBSERVER_WORKER_UNIT=discrete-pay-app-worker.service`.
+Only that unit and the original default are accepted; arbitrary units refuse.
+Changing the binding does not change SSH permissions or the exported snapshot
+schema. Keep the original binding while the persistent private test is the
+monitored instance; do not point a live monitor at an intentionally stopped test.
 The forced command uses a separate root-owned copy of the verified Node runtime;
 it does not require opening access to protected qualification directories.
 

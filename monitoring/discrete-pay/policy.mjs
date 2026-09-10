@@ -1,5 +1,12 @@
 // Read-only observations. A completed webhook cycle is NOT a delivery receipt.
 export const components = ['scanner', 'webhook'];
+// Root-controlled collector environment; never accept a remote unit argument.
+export function workerUnit(value = 'discrete-pay-worker.service') {
+  if (!['discrete-pay-worker.service', 'discrete-pay-app-worker.service'].includes(value)) {
+    throw new Error('unsupported worker unit');
+  }
+  return value;
+}
 const codes = new Set(['success', 'catching_up', 'deep_reorg', 'scanner_behind',
   'chain_invalid', 'rpc_unavailable', 'cycle_failed']);
 const issueKeys = new Set(['worker_inactive', 'snapshot_unavailable',

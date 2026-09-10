@@ -88,3 +88,7 @@ wallet attestation, actual payment state, webhook signature/retry, restart and
 backup/restore for the exact environment. Production/public-network activation
 requires its own explicit operator decision. Current runtime evidence is recorded
 separately after actual qualification; offline tests alone are not acceptance.
+
+The [2026-09-10 standalone acceptance](qualification-2026-09-10.md) records actual
+operator, native allocation, signed retry, restart, WAL-aware restore and
+revocation tests, with exact package/source hashes and residual boundaries.

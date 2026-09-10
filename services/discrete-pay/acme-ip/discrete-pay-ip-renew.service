@@ -1,0 +1,25 @@
+[Unit]
+Description=Renew only the Discrete Pay IP certificate
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/opt/discrete-pay-acme/venv/bin/certbot renew --cert-name discrete-pay-ip --non-interactive --quiet --no-random-sleep-on-renew
+TimeoutStartSec=600
+KillMode=control-group
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt
+MemoryMax=192M
+TasksMax=32

@@ -13,6 +13,9 @@ import {registryPrefixes} from './registry-prefix.mjs';
 import {stopChild} from './bounded-child.mjs';
 assert.equal(process.env.DISCRETE_PAY_COMBINED,'copied-private-chain-full-journal');
 const root='/opt/discrete-pay-qualification',pay=root+'/pay-merged-4d2f069';
+const candidate=process.env.DISCRETE_PAY_COMBINED_PAY;
+assert([undefined,'94995a7c8d7215d1261b79abb83ae7fdda181c58'].includes(candidate));
+const runtime=candidate?root+'/bundles/pay-94995a7-core-8703c16/pay':pay;
 const large=process.env.DISCRETE_PAY_COMBINED_COUNT==='100000';
 assert([undefined,'100000'].includes(process.env.DISCRETE_PAY_COMBINED_COUNT));
 const count=large?100000:10000;
@@ -21,6 +24,12 @@ if(large)assert(new RegExp('^'+pay+'/build/native-load/run-[A-Za-z0-9_-]+/state$
 const original=root+'/pay-paged-tail/build/native-test/paged/run-NFdcs1';
 const bin=root+'/pay-paged-tail/build/native-test/paged-bin/src/';
 const sha=data=>createHash('sha256').update(data).digest('hex');
+if(candidate){
+ const manifestBytes=await readFile(runtime+'/../manifest.json');
+ assert.equal(sha(manifestBytes),'120f2b9478d4474d9cb27456aeb9b83d24febadaebdfb1ba887ba1e856f6f589');
+ const manifest=JSON.parse(manifestBytes);assert.equal(manifest.payCommit,candidate);
+ for(const [file,digest] of Object.entries(manifest.files))if(file.startsWith('pay/'))assert.equal(sha(await readFile(runtime+'/../'+file)),digest);
+}
 for(const [name,hash]of [['walletd','630a033e0b41ebb01d666886948bd9a4affa4c44a299474bc125c3284afc15d1'],['discreted','fb9408fb76ab54eebd7016c8d997ad9ece39399b4851e8308e86e6fc3725cfb5']])assert.equal(sha(await readFile(bin+name)),hash);
 const sourceProof=await readFile(source+'/../evidence.json');
 assert.equal(sha(sourceProof),large?process.env.DISCRETE_PAY_COMBINED_SOURCE_SHA256:'337bbdac87d62a00085b48cfdd25da152a24868ae4f1707d6f59ec0224b642a0');
@@ -30,18 +39,19 @@ const dir=await mkdtemp(pay+'/build/native-combined/run-'),state=dir+'/state';
 await cp(source,state,{recursive:true,force:false,errorOnExist:true});
 const rewrite=text=>text.replaceAll(original,state).replaceAll(source,state);
 const h=JSON.parse(rewrite(await readFile(state+'/service-handoff.json','utf8')));
-const {DiscretePayStore}=await import(pay+'/dist/src/persistence/store.js');
-const {startPublicWebRuntime}=await import(pay+'/dist/apps/public-web/src/runtime.js');
-const {openWorkerRuntime}=await import(pay+'/dist/apps/worker/src/runtime.js');
+const {DiscretePayStore}=await import(runtime+'/dist/src/persistence/store.js');
+const {startPublicWebRuntime}=await import(runtime+'/dist/apps/public-web/src/runtime.js');
+const {openWorkerRuntime}=await import(runtime+'/dist/apps/worker/src/runtime.js');
 const {cert,key}=await import(pay+'/test/worker-runtime/tls-fixture.ts');
-const {AllocationJournal}=await import(pay+'/dist/services/walletd-facade/src/journal.js');
-const {WalletdAllocationClient}=await import(pay+'/dist/services/walletd-facade/src/walletd-client.js');
-const {readPagedRegistry}=await import(pay+'/dist/services/walletd-facade/src/paged-registry.js');
-const {parseWalletAttestation,registryHash}=await import(pay+'/dist/services/walletd-facade/src/contracts.js');
-const {startFacadeRuntime}=await import(pay+'/dist/services/walletd-facade/src/runtime.js');
-const {startGatewayRuntime}=await import(pay+'/dist/apps/gateway-api/src/runtime.js');
+const {AllocationJournal}=await import(runtime+'/dist/services/walletd-facade/src/journal.js');
+const {WalletdAllocationClient}=await import(runtime+'/dist/services/walletd-facade/src/walletd-client.js');
+const {readPagedRegistry}=await import(runtime+'/dist/services/walletd-facade/src/paged-registry.js');
+const {parseWalletAttestation,registryHash}=await import(runtime+'/dist/services/walletd-facade/src/contracts.js');
+const {startFacadeRuntime}=await import(runtime+'/dist/services/walletd-facade/src/runtime.js');
+const {startGatewayRuntime}=await import(runtime+'/dist/apps/gateway-api/src/runtime.js');
 const result={payCommit:'4d2f06952e2a566df4e92e9ee82b9f38601e0427',walletdCommit:'8703c16fa40ffc8456e3d71696b6220b32b4d74a',scope:'native10000 addresses plus seeded10000 invoice/allocation rows; real payment and RPC/HTTP/HMAC; bounded combined cycles, not native100000 or production SLA',checks:[]};
 if(large)result.scope='native100000 addresses plus seeded full invoice/allocation journal; native payment/HTTP/HMAC and10-minute mixed cycles; no production SLA';
+if(candidate){result.payCommit=candidate;result.sourcePayCommit='4d2f06952e2a566df4e92e9ee82b9f38601e0427';}
 const record=(check,value=true)=>{if(large)check=check.replace(/10000|10001/g,n=>String(Number(n)+90000));result.checks.push({check,value});console.log(check,JSON.stringify(value));};
 async function port(){const s=createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p;}
 async function until(label,fn,ms=90000){const end=Date.now()+ms;let last;while(Date.now()<end){try{const v=await fn();if(v)return v;}catch(e){last=e.name;}await delay(300);}throw new Error('fixture timeout: '+label+' '+(last??''));}
@@ -111,7 +121,7 @@ try {
  const config=JSON.parse(rewrite(await readFile(state+'/worker.json','utf8')));config.walletEndpoint='http://127.0.0.1:'+wp+'/json_rpc';config.nodeEndpoint='http://127.0.0.1:'+na+'/json_rpc';
  const workerEnv={DISCRETE_PAY_WORKER_ENABLED:'true',DISCRETE_PAY_WORKER_CONFIG_PATH:state+'/high-worker.json'};await writeFile(workerEnv.DISCRETE_PAY_WORKER_CONFIG_PATH,JSON.stringify(config),{mode:0o600});
  const drain=async()=>{for(let i=0;i<50;i++){const d=await worker.deliverOnce();if(d.kind==='idle')return;assert.equal(d.kind,'delivered');}throw new Error('outbox drain exceeded bound');};
- worker=await openWorkerRuntime(workerEnv);await until('baseline scanner caught up',async()=>(await worker.scanOnce()).caughtUp);await drain();
+ worker=await openWorkerRuntime(workerEnv);record('worker opened before baseline scan',{heapUsed:process.memoryUsage().heapUsed});await until('baseline scanner caught up',async()=>(await worker.scanOnce()).caughtUp);record('baseline scanner caught up',{heapUsed:process.memoryUsage().heapUsed});await drain();
  await until('payer synced before send',async()=>{const b=await rpc(sp,'getBalance',{},true);return b.availableBalance>=12346&&b.scannedHeight>=await height();});
  const payment=await rpc(sp,'sendTransaction',{transfers:[{address:target.depositAccount,amount:12345}],fee:1,unlockHeight:0},true);
  record('native payment to T10000 submitted once',{transactionHash:payment.transactionHash,amountAtomic:'12345'});

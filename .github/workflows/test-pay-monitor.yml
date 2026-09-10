@@ -1,7 +1,7 @@
 name: Pay monitor candidate
 on:
   push:
-    branches: [main, codex/pay-operator-monitor]
+    branches: [main, dev/pay-operator-monitor]
   pull_request:
 permissions:
   contents: read

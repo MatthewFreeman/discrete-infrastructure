@@ -1,7 +1,7 @@
 name: Pay persistent private test
 on:
   push:
-    branches: [main, dev/pay-operator-monitor]
+    branches: [main, dev/pay-operator-monitor, dev/pay-standalone-installer]
   pull_request:
 permissions:
   contents: read
@@ -19,9 +19,11 @@ jobs:
           node-version: '24.18.1'
       - run: python -B qualification/discrete-pay/test_persistent.py
       - run: python -B qualification/discrete-pay/test_persistent_upgrade.py
+      - run: python -B services/discrete-pay/test_install.py
       - run: python -B qualification/discrete-pay/test_bundle.py
       - run: python -B qualification/discrete-pay/test_combined_sequence.py
       - run: node --check qualification/discrete-pay/gui-uri-session.mjs
+      - run: node --check qualification/discrete-pay/standalone-probe.mjs
       - run: node --check qualification/discrete-pay/release-compatibility.mjs
       - run: node --check qualification/discrete-pay/persistent-probe.mjs
       - run: node --check qualification/discrete-pay/paged-native-load.mjs

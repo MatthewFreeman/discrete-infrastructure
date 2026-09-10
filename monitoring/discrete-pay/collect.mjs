@@ -3,10 +3,10 @@
 import {execFileSync} from 'node:child_process';
 import {openSync, writeFileSync, fsyncSync, closeSync, renameSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
-import {fromJournal, issues} from './policy.mjs';
+import {fromJournal, issues, workerUnit} from './policy.mjs';
 
 try {
-  const unit = 'discrete-pay-worker.service';
+  const unit = workerUnit(process.env.PAY_OBSERVER_WORKER_UNIT);
   const info = execFileSync('/usr/bin/systemctl', ['show', unit, '--property=ActiveState,InvocationID,LoadState'],
     {encoding: 'utf8', timeout: 5_000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'ignore']});
   const values = Object.fromEntries(info.trim().split('\n').map(line => line.split('=')));

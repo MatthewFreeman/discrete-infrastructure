@@ -21,12 +21,12 @@ INSTALLER=Path('/opt/discrete-pay-test/persistent-test.py')
 NODE=ROOT/'tools/node-v24.18.1-linux-x64/bin/node'
 TARGET='discrete-pay-test.target'
 NATIVE='pay-qualification-native100k.service'
-CHILD='pay-qualified-combined100k.service'
+CHILD='pay-qualified-combined100k-94995a7.service'
 # Exact retained evidence audited with journal clean-exit readback on2026-09-10.
 # A collected transient unit is NOT success without this immutable proof.
 COMPLETED_NATIVE_SHA='450474e339e6ebeb91e0720c130cb567d0d0e60ca753a8dba34992364d862624'
 PINS={
- 'combined-native-journal.mjs':'b44a5caf3c9bb10ad5edd57693b452aba85ca53539a58535ab0401dceb7c82d2',
+ 'combined-native-journal.mjs':'f7f4aee15325a94e275b84fa57a94fd3fba4a224443f2976e4564a5af0771eca',
  'registry-prefix.mjs':'6dde39f0c487ebc59d29561c3f35b5a710c3a3735ff19e581c444b582dadbf66',
  'bounded-child.mjs':'148734e843ddb2d76962aa93c3f1e3b6d0397ed4f97a39d65393ebb64d2d62fc',
 }
@@ -95,6 +95,7 @@ def run():
         if sha(HERE/name)!=digest:raise ValueError('combined helper changed')
     if sha(ROOT/'imports/paged-native-load-100k.mjs')!='1fdae2c85e01d92a7c3761ede7d49a4dec155575ea501059ee4519fb18ad3c1f':raise ValueError('native helper changed')
     if sha(NODE)!='f3432a45b03b2da0d270095fdd8813dc34cbea73f5fc8b18c7a384b7cf9b333a':raise ValueError('Node changed')
+    if sha(ROOT/'bundles/pay-94995a7-core-8703c16/manifest.json')!='120f2b9478d4474d9cb27456aeb9b83d24febadaebdfb1ba887ba1e856f6f589':raise ValueError('candidate manifest changed')
     if state(CHILD).get('LoadState')!='not-found':raise ValueError('combined unit already exists')
     saved={'phase':'waiting-native','paused':False,'source':str(SOURCE),'scope':'copied private test sequence, no production'};save(saved)
     print('WAITING: exact native100000; no test services changed',flush=True)
@@ -126,6 +127,7 @@ def run():
           '--property=ExecStopPost=+/usr/bin/systemctl start '+TARGET,
           '--setenv=DISCRETE_PAY_COMBINED=copied-private-chain-full-journal',
           '--setenv=DISCRETE_PAY_COMBINED_COUNT=100000',
+          '--setenv=DISCRETE_PAY_COMBINED_PAY=94995a7c8d7215d1261b79abb83ae7fdda181c58',
           '--setenv=DISCRETE_PAY_COMBINED_SOURCE='+str(SOURCE/'state'),
           '--setenv=DISCRETE_PAY_COMBINED_SOURCE_SHA256='+evidence_sha,str(NODE),str(HERE/'combined-native-journal.mjs')]
         with (HERE/'combined-output.log').open('x') as output:
@@ -136,6 +138,7 @@ def run():
         if len(matches)!=1:raise ValueError('exact combined evidence missing')
         evidence=Path(matches[0]);data=json.loads(evidence.read_text())
         if data.get('result')!='PASS':raise ValueError('combined evidence failed')
+        if data.get('payCommit')!='94995a7c8d7215d1261b79abb83ae7fdda181c58':raise ValueError('combined runtime changed')
         saved.update(phase='combined-passed',combinedEvidence=str(evidence),combinedEvidenceSha256=sha(evidence));save(saved)
         print('PASS: combined private100000; evidence='+str(evidence),flush=True)
     finally:restore()

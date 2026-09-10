@@ -157,3 +157,17 @@ before a validated pause there is no restoration marker. Existing markers,
 changed installation files, failed native evidence or another test process cause
 refusal, not overwrite. Tests cover prerequisite and recovery gates; native
 sequence completion still requires direct final evidence and service readback.
+
+On2026-09-10 the native100000 prerequisite was directly read back as PASS:
+evidenceSHA256`450474e339e6ebeb91e0720c130cb567d0d0e60ca753a8dba34992364d862624`,
+four final merchant allocations, wallet/facade reopen and retained original
+payment; journal confirmed normal service exit. Cold facade opening was38964ms
+and38499ms after reopen on this fixture, not a production SLA.
+The initial sequence did NOT run its second phase: systemd garbage-collected the
+successful transient prerequisite before the next poll. The supervisor refused
+its missing unit. Recovery now accepts that exact audited evidence hash after
+unit collection; unknown hashes, malformed/failed evidence or active remaining
+process groups still refuse. The loaded-unit checks are unchanged. It waits
+boundedly for the named GUI preview before pausing anything. Nine offline gate
+tests pass on Linux/Windows; actual recovery reached waiting-gui without stopping
+the persistent target. Combined100000 runtime acceptance remains pending.

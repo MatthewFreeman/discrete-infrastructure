@@ -22,6 +22,9 @@ NODE=ROOT/'tools/node-v24.18.1-linux-x64/bin/node'
 TARGET='discrete-pay-test.target'
 NATIVE='pay-qualification-native100k.service'
 CHILD='pay-qualified-combined100k.service'
+# Exact retained evidence audited with journal clean-exit readback on2026-09-10.
+# A collected transient unit is NOT success without this immutable proof.
+COMPLETED_NATIVE_SHA='450474e339e6ebeb91e0720c130cb567d0d0e60ca753a8dba34992364d862624'
 PINS={
  'combined-native-journal.mjs':'b44a5caf3c9bb10ad5edd57693b452aba85ca53539a58535ab0401dceb7c82d2',
  'registry-prefix.mjs':'6dde39f0c487ebc59d29561c3f35b5a710c3a3735ff19e581c444b582dadbf66',
@@ -36,10 +39,14 @@ def sha(path):
 def call(args):return subprocess.check_output(args,text=True,stderr=subprocess.STDOUT,timeout=180).strip()
 def state(unit):return dict(line.split('=',1) for line in call(['systemctl','show',unit,'-p','LoadState,ActiveState,SubState,Result,ExecMainStatus,ControlGroup']).splitlines())
 
-def prerequisite(value,proof=None):
-    if value.get('LoadState')!='loaded':raise ValueError('exact native prerequisite missing')
+def prerequisite(value,proof=None,evidence_sha=None):
+    collected=value.get('LoadState')=='not-found'
+    if collected:
+        if proof is None or evidence_sha!=COMPLETED_NATIVE_SHA or value.get('ActiveState')!='inactive' or value.get('ControlGroup'):
+            raise ValueError('collected native prerequisite requires exact audited evidence')
+    elif value.get('LoadState')!='loaded':raise ValueError('exact native prerequisite missing')
     if value.get('ActiveState') in ('active','activating','deactivating'):return False
-    if value.get('ActiveState')!='inactive' or value.get('Result')!='success' or value.get('ExecMainStatus')!='0' or value.get('ControlGroup'):
+    if not collected and (value.get('ActiveState')!='inactive' or value.get('Result')!='success' or value.get('ExecMainStatus')!='0' or value.get('ControlGroup')):
         raise ValueError('native prerequisite did not stop cleanly')
     if proof is None:return True
     if proof.get('result')!='PASS' or proof.get('target')!=100000 or proof.get('payCommit')!='4d2f06952e2a566df4e92e9ee82b9f38601e0427' or proof.get('walletdCommit')!='8703c16fa40ffc8456e3d71696b6220b32b4d74a':
@@ -48,6 +55,12 @@ def prerequisite(value,proof=None):
     for name in ('native large registry merchant four-request burst','wallet and facade reopen preserves all issued invoices and original payment'):
         if checks.get(name,{}).get('count')!=100000:raise ValueError('native final interaction evidence missing')
     return True
+
+def current_prerequisite():
+    value=state(NATIVE)
+    if value.get('LoadState')!='not-found':return prerequisite(value)
+    raw=(SOURCE/'evidence.json').read_bytes()
+    return prerequisite(value,json.loads(raw),hashlib.sha256(raw).hexdigest())
 
 def save(value):
     temporary=HERE/'sequence-state.pending'
@@ -86,13 +99,16 @@ def run():
     saved={'phase':'waiting-native','paused':False,'source':str(SOURCE),'scope':'copied private test sequence, no production'};save(saved)
     print('WAITING: exact native100000; no test services changed',flush=True)
     deadline=time.monotonic()+10800
-    while not prerequisite(state(NATIVE)):
+    while not current_prerequisite():
         if time.monotonic()>deadline:raise TimeoutError('native wait deadline; prerequisite left untouched')
         time.sleep(15)
-    proof=json.loads((SOURCE/'evidence.json').read_text())
-    if not prerequisite(state(NATIVE),proof):raise ValueError('native prerequisite became active again')
-    evidence_sha=sha(SOURCE/'evidence.json')
-    if state('pay-gui-uri-7344fbd1.service').get('ActiveState') not in ('inactive','failed'):raise ValueError('GUI preview still active')
+    raw=(SOURCE/'evidence.json').read_bytes();evidence_sha=hashlib.sha256(raw).hexdigest()
+    if not prerequisite(state(NATIVE),json.loads(raw),evidence_sha):raise ValueError('native prerequisite became active again')
+    saved.update(phase='waiting-gui',nativeEvidenceSha256=evidence_sha);save(saved)
+    deadline=time.monotonic()+2100
+    while state('pay-gui-uri-7344fbd1.service').get('ActiveState') not in ('inactive','failed'):
+        if time.monotonic()>deadline:raise TimeoutError('GUI wait deadline; private stack left untouched')
+        time.sleep(15)
     installed=validate_install()
     if state(TARGET).get('ActiveState')!='active':raise ValueError('native automatic stack restoration missing')
     saved.update(phase='combined-preparing',paused=True,installSha256=sha(INSTALL),nativeEvidenceSha256=evidence_sha);save(saved)

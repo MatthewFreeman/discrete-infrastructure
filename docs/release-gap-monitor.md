@@ -19,12 +19,18 @@ read-only GitHub App token or fine-grained token as the `DISCRETE_MONITOR_TOKEN`
 - A new active public repository appears without an explicit monitoring policy.
 - Required GitHub evidence cannot be read or a configured default branch no longer matches GitHub.
 
-The report step completes successfully and writes the job summary and artifact. When gaps exist, a
-separate final step named **Action required - release or deployment gaps detected** marks the run
-red with an explicit error annotation. This keeps alerting intact without making a detected gap look
-like a monitor crash.
+The workflow health and repository status are deliberately separate:
 
-The failing run summary names the repository, exact source SHA, release or deployment evidence,
+- A green workflow means the monitor completed its checks and published its evidence.
+- One automatically maintained operator issue stays open while release/deployment action is needed.
+- The issue title contains the current action count; its body contains the repository table, exact
+  SHAs, relevant commits/PRs, evidence link, and evidence boundaries.
+- The issue is updated in place and closes automatically when every configured repository is current.
+- A changed actionable SHA or status adds one issue comment, so subscribers receive a notification;
+  unchanged scheduled checks do not add comments.
+- A red workflow is reserved for an incomplete verification, API failure, or invalid monitor policy.
+
+The run summary names the repository, exact source SHA, release or deployment evidence,
 and the latest 25 unreleased commits. Pull request links are included when the commit subject contains
 a PR number.
 
@@ -51,13 +57,14 @@ evidence. The monitor does not probe user-visible page content.
 
 ## Operator use
 
-Open **Actions → Monitor canonical release and deployment gaps**. A green run means all configured
-GitHub evidence is current within the boundaries above. A red run requires inspecting its summary
-or the retained `release-gap-report` artifact.
+Open **Issues** for the operator-facing dashboard. An open dashboard issue means action is required;
+a closed dashboard issue means every configured repository is current. Use **Actions → Monitor
+canonical release and deployment gaps** for monitor health, exact run evidence, and the retained
+`release-gap-report` artifact.
 
-Enable GitHub Actions web or email notifications in the account notification settings, preferably
-for failed workflows only. GitHub sends scheduled-workflow notifications to the user who last
-changed the cron schedule. The README badge is a second visible indicator.
+Keep notifications enabled for assigned or subscribed issues to receive actionable-state changes.
+GitHub Actions failure notifications now mean the monitor itself could not complete verification.
+The README badge is a second visible health indicator.
 
 GitHub can disable scheduled workflows in a public repository after 60 days without repository
 activity. If this repository becomes dormant, re-enable the workflow in the Actions tab or change
@@ -67,7 +74,9 @@ Local validation:
 
 ```bash
 node --test monitoring/release-gap/monitor.test.mjs
+node --test monitoring/release-gap/publish-issue.test.mjs
 node --check monitoring/release-gap/monitor.mjs
+node --check monitoring/release-gap/publish-issue.mjs
 node monitoring/release-gap/monitor.mjs --fail-on-gap=false
 ```
 

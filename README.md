@@ -1,6 +1,8 @@
 # Discrete Infrastructure
 
-[![Canonical release/deployment gaps](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml/badge.svg)](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml)
+[![Monitor health](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml/badge.svg)](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml)
+
+Release/deployment status lives in the [operator dashboard](https://github.com/MatthewFreeman/discrete-infrastructure/issues?q=is%3Aissue+in%3Atitle+release%2Fdeployment+sort%3Aupdated-desc). The badge above reports monitor health only.
 
 Infrastructure, deployment automation, and operational runbooks for the Discrete ecosystem.
 

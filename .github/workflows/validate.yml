@@ -35,7 +35,9 @@ jobs:
       - name: Validate canonical release and deployment gap monitor
         run: |
           node --check monitoring/release-gap/monitor.mjs
+          node --check monitoring/release-gap/publish-issue.mjs
           node --test monitoring/release-gap/monitor.test.mjs
+          node --test monitoring/release-gap/publish-issue.test.mjs
 
       - name: Upload validated source snapshot
         if: always()

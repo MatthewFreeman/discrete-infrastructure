@@ -380,6 +380,9 @@ export async function runMonitor({ api, config, now = new Date() }) {
   }
 
   const actionable = results.filter((result) => result.actionable).length;
+  const monitorErrors = results.filter((result) =>
+    ['API_ERROR', 'UNKNOWN_POLICY_KIND'].includes(result.status),
+  ).length;
   return {
     schemaVersion: 1,
     generatedAt: now.toISOString(),
@@ -388,6 +391,7 @@ export async function runMonitor({ api, config, now = new Date() }) {
       repositories: results.length,
       current: results.length - actionable,
       actionable,
+      monitorErrors,
     },
     results,
   };
@@ -415,9 +419,11 @@ export function renderMarkdown(report) {
     '',
     `Action required: **${report.summary.actionable}**; current: **${report.summary.current}**.`,
     '',
-    report.summary.actionable > 0
-      ? '> **Monitor completed successfully.** This run is red because repository action is required, not because the scan crashed.'
-      : '> **Monitor completed successfully.** No release or deployment gaps require action.',
+    report.summary.monitorErrors > 0
+      ? '> **Monitor incomplete.** Verification errors require operator attention; the workflow is red.'
+      : report.summary.actionable > 0
+        ? '> **Monitor healthy.** The workflow stays green; the open operator dashboard issue tracks required release or deployment work.'
+        : '> **Monitor healthy.** All configured release and deployment evidence is current; the operator dashboard issue is closed.',
     '',
     '| Repository | Policy | Result | Evidence |',
     '|---|---|---|---|',
@@ -487,6 +493,7 @@ async function main() {
   }
   if (process.env.GITHUB_OUTPUT) {
     await appendFile(process.env.GITHUB_OUTPUT, `actionable_count=${report.summary.actionable}\n`);
+    await appendFile(process.env.GITHUB_OUTPUT, `monitor_error_count=${report.summary.monitorErrors}\n`);
   }
   process.stdout.write(markdown);
   if (values['fail-on-gap'] !== 'false' && report.summary.actionable > 0) process.exitCode = 1;

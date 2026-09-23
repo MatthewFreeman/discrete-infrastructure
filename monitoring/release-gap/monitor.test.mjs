@@ -94,7 +94,7 @@ test('Markdown report includes evidence boundary and actionable commits', () => 
   const markdown = renderMarkdown({
     generatedAt: '2026-09-23T00:00:00.000Z',
     owner: 'discretecoin',
-    summary: { actionable: 1, current: 0 },
+    summary: { actionable: 1, current: 0, monitorErrors: 0 },
     results: [
       {
         repository: 'discrete',
@@ -120,7 +120,7 @@ test('Markdown report includes evidence boundary and actionable commits', () => 
   });
   assert.match(markdown, /#44/);
   assert.match(markdown, /GitHub release only/);
-  assert.match(markdown, /Monitor completed successfully/);
-  assert.match(markdown, /red because repository action is required/);
+  assert.match(markdown, /Monitor healthy/);
+  assert.match(markdown, /operator dashboard issue/);
   assert.match(markdown, /production runtime state is not inferred/);
 });

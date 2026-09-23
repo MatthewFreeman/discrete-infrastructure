@@ -84,7 +84,7 @@ test('dashboard body prevents cross-repository issue autolinks in commit titles'
     },
   ];
   const body = renderDashboardBody(unsafeReport);
-  assert.ok(body.includes('Merge \\#44: \\[wallet\\] fix'));
+  assert.ok(body.includes('<code>Merge #44: [wallet] fix</code>'));
   assert.match(body, /\[#44\]\(https:\/\/example\.test\/pull\/44\)/);
 });
 

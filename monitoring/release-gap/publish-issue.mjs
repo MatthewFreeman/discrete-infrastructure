@@ -88,10 +88,11 @@ function tableEscape(value) {
   return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ');
 }
 
-function markdownText(value) {
+function htmlText(value) {
   return String(value ?? '')
-    .replaceAll('\\', '\\\\')
-    .replace(/([#[\]_*<>])/g, '\\$1');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 }
 
 function resultEvidence(result) {
@@ -139,7 +140,7 @@ export function renderDashboardBody(report, { runUrl = '' } = {}) {
             .map((pull) => ` [#${pull.number}](${pull.url})`)
             .join('');
           lines.push(
-            `  - [\`${commit.sha.slice(0, 12)}\`](${commit.url}) ${markdownText(commit.title)}${pullLinks}`,
+            `  - [\`${commit.sha.slice(0, 12)}\`](${commit.url}) <code>${htmlText(commit.title)}</code>${pullLinks}`,
           );
         }
       }

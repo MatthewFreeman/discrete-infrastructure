@@ -120,5 +120,7 @@ test('Markdown report includes evidence boundary and actionable commits', () => 
   });
   assert.match(markdown, /#44/);
   assert.match(markdown, /GitHub release only/);
+  assert.match(markdown, /Monitor completed successfully/);
+  assert.match(markdown, /red because repository action is required/);
   assert.match(markdown, /production runtime state is not inferred/);
 });

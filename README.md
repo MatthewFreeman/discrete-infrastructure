@@ -1,9 +1,5 @@
 # Discrete Infrastructure
 
-[![Monitor health](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml/badge.svg)](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml)
-
-Release/deployment status lives in the [operator dashboard](https://github.com/MatthewFreeman/discrete-infrastructure/issues?q=is%3Aissue+in%3Atitle+release%2Fdeployment+sort%3Aupdated-desc). The badge above reports monitor health only.
-
 Infrastructure, deployment automation, and operational runbooks for the Discrete ecosystem.
 
 This repository is public. Cloning and pulling over HTTPS require no GitHub account, personal
@@ -76,8 +72,6 @@ matching module.
 
 GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, the IPv4-only
 configuration contract, platform separation, compatibility entrypoints, and repository layout.
-The [canonical release and deployment gap monitor](docs/release-gap-monitor.md) separately reports
-source that has not reached its configured GitHub release or Pages delivery evidence.
 
 CI does not replace clean-room testing on newly created VPS instances. A structural change must not
 be described as behaviorally validated until the documented Debian and Ubuntu operator sequences

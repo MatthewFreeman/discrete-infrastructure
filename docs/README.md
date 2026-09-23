@@ -7,7 +7,6 @@
 - [Discrete node qualification and deployment plan](node/README.md)
 - [Architecture decisions](decisions/README.md)
 - [Published benchmark evidence](benchmarks/README.md)
-- [Canonical release and deployment gap monitor](release-gap-monitor.md)
 
 A configuration change is not finished until another operator can deploy, verify, and reverse it
 from the documentation. Status claims belong in `component-status.md`; other documents link there

@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: release-gap-monitor
@@ -39,10 +40,19 @@ jobs:
             release-gap-report.md
           if-no-files-found: error
 
-      - name: Action required - release or deployment gaps detected
-        if: steps.monitor.outputs.actionable_count != '0'
+      - name: Publish operator issue dashboard
+        id: dashboard
         env:
-          ACTIONABLE_COUNT: ${{ steps.monitor.outputs.actionable_count }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DASHBOARD_ASSIGNEE: MatthewFreeman
+        run: node monitoring/release-gap/publish-issue.mjs
+
+      - name: Monitor error - verification incomplete
+        if: steps.monitor.outputs.monitor_error_count != '0'
+        env:
+          MONITOR_ERROR_COUNT: ${{ steps.monitor.outputs.monitor_error_count }}
         run: |
-          echo "::error title=Release/deployment gaps detected::Monitor completed successfully and found ${ACTIONABLE_COUNT} actionable gap(s). Open the job summary for exact repositories, commits, and evidence."
+          echo "::error title=Release/deployment monitor incomplete::The monitor encountered ${MONITOR_ERROR_COUNT} verification error(s). Open the job summary and operator dashboard."
           exit 1

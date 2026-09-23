@@ -32,6 +32,11 @@ jobs:
           node --check qualification/discrete-pay/gui-stop-check.mjs
           node --test qualification/discrete-pay/bounded-child.test.mjs
 
+      - name: Validate canonical release and deployment gap monitor
+        run: |
+          node --check monitoring/release-gap/monitor.mjs
+          node --test monitoring/release-gap/monitor.test.mjs
+
       - name: Upload validated source snapshot
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

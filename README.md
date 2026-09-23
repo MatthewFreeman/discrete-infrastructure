@@ -1,5 +1,7 @@
 # Discrete Infrastructure
 
+[![Canonical release/deployment gaps](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml/badge.svg)](https://github.com/MatthewFreeman/discrete-infrastructure/actions/workflows/release-gap-monitor.yml)
+
 Infrastructure, deployment automation, and operational runbooks for the Discrete ecosystem.
 
 This repository is public. Cloning and pulling over HTTPS require no GitHub account, personal
@@ -72,6 +74,8 @@ matching module.
 
 GitHub Actions validates Bash syntax, ShellCheck, OpenSSH, nftables, Fail2Ban, the IPv4-only
 configuration contract, platform separation, compatibility entrypoints, and repository layout.
+The [canonical release and deployment gap monitor](docs/release-gap-monitor.md) separately reports
+source that has not reached its configured GitHub release or Pages delivery evidence.
 
 CI does not replace clean-room testing on newly created VPS instances. A structural change must not
 be described as behaviorally validated until the documented Debian and Ubuntu operator sequences

@@ -415,6 +415,10 @@ export function renderMarkdown(report) {
     '',
     `Action required: **${report.summary.actionable}**; current: **${report.summary.current}**.`,
     '',
+    report.summary.actionable > 0
+      ? '> **Monitor completed successfully.** This run is red because repository action is required, not because the scan crashed.'
+      : '> **Monitor completed successfully.** No release or deployment gaps require action.',
+    '',
     '| Repository | Policy | Result | Evidence |',
     '|---|---|---|---|',
   ];
@@ -480,6 +484,9 @@ async function main() {
   await writeFile(values.markdown, markdown);
   if (process.env.GITHUB_STEP_SUMMARY) {
     await appendFile(process.env.GITHUB_STEP_SUMMARY, markdown);
+  }
+  if (process.env.GITHUB_OUTPUT) {
+    await appendFile(process.env.GITHUB_OUTPUT, `actionable_count=${report.summary.actionable}\n`);
   }
   process.stdout.write(markdown);
   if (values['fail-on-gap'] !== 'false' && report.summary.actionable > 0) process.exitCode = 1;

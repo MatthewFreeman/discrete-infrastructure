@@ -23,10 +23,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Compare canonical source with releases and deployments
+      - name: Build canonical release and deployment report
+        id: monitor
         env:
           GH_TOKEN: ${{ secrets.DISCRETE_MONITOR_TOKEN }}
-        run: node monitoring/release-gap/monitor.mjs
+        run: node monitoring/release-gap/monitor.mjs --fail-on-gap=false
 
       - name: Upload machine-readable and Markdown reports
         if: always()
@@ -37,3 +38,11 @@ jobs:
             release-gap-report.json
             release-gap-report.md
           if-no-files-found: error
+
+      - name: Action required - release or deployment gaps detected
+        if: steps.monitor.outputs.actionable_count != '0'
+        env:
+          ACTIONABLE_COUNT: ${{ steps.monitor.outputs.actionable_count }}
+        run: |
+          echo "::error title=Release/deployment gaps detected::Monitor completed successfully and found ${ACTIONABLE_COUNT} actionable gap(s). Open the job summary for exact repositories, commits, and evidence."
+          exit 1

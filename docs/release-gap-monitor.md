@@ -19,9 +19,14 @@ read-only GitHub App token or fine-grained token as the `DISCRETE_MONITOR_TOKEN`
 - A new active public repository appears without an explicit monitoring policy.
 - Required GitHub evidence cannot be read or a configured default branch no longer matches GitHub.
 
+The report step completes successfully and writes the job summary and artifact. When gaps exist, a
+separate final step named **Action required - release or deployment gaps detected** marks the run
+red with an explicit error annotation. This keeps alerting intact without making a detected gap look
+like a monitor crash.
+
 The failing run summary names the repository, exact source SHA, release or deployment evidence,
-and the latest 25 unreleased commits. Pull request links are included when the commit subject contains a
-PR number.
+and the latest 25 unreleased commits. Pull request links are included when the commit subject contains
+a PR number.
 
 ## Policy file
 

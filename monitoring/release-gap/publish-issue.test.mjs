@@ -73,6 +73,21 @@ test('dashboard body explains the open/closed contract', () => {
   assert.match(body, new RegExp(`release-gap-fingerprint:${dashboardFingerprint(report(2))}`));
 });
 
+test('dashboard body prevents cross-repository issue autolinks in commit titles', () => {
+  const unsafeReport = report(2);
+  unsafeReport.results[0].commits = [
+    {
+      sha: 'abcdef1234567890',
+      url: 'https://example.test/commit',
+      title: 'Merge #44: [wallet] fix',
+      pullRequests: [{ number: 44, url: 'https://example.test/pull/44' }],
+    },
+  ];
+  const body = renderDashboardBody(unsafeReport);
+  assert.ok(body.includes('Merge \\#44: \\[wallet\\] fix'));
+  assert.match(body, /\[#44\]\(https:\/\/example\.test\/pull\/44\)/);
+});
+
 test('dashboard issue lookup ignores pull requests', () => {
   const issue = { number: 2, body: DASHBOARD_MARKER };
   assert.equal(
@@ -131,10 +146,11 @@ test('synchronization comments only when the actionable snapshot changes', async
     repository: 'MatthewFreeman/discrete-infrastructure',
     report: report(2),
     runUrl: 'https://example.test/run',
+    assignee: 'MatthewFreeman',
   });
   assert.equal(result.changeNotified, true);
   assert.equal(api.requests[1].path, '/repos/MatthewFreeman/discrete-infrastructure/issues/7/comments');
-  assert.match(api.requests[1].body.body, /status changed/);
+  assert.match(api.requests[1].body.body, /@MatthewFreeman — release\/deployment status changed/);
 
   const unchangedReport = report(2);
   const unchangedApi = new FakeApi([

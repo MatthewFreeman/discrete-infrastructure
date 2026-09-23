@@ -26,8 +26,8 @@ The workflow health and repository status are deliberately separate:
 - The issue title contains the current action count; its body contains the repository table, exact
   SHAs, relevant commits/PRs, evidence link, and evidence boundaries.
 - The issue is updated in place and closes automatically when every configured repository is current.
-- A changed actionable SHA or status adds one issue comment, so subscribers receive a notification;
-  unchanged scheduled checks do not add comments.
+- A changed actionable SHA or status adds one issue comment and explicitly mentions the configured
+  dashboard assignee; unchanged scheduled checks do not add comments.
 - A red workflow is reserved for an incomplete verification, API failure, or invalid monitor policy.
 
 The run summary names the repository, exact source SHA, release or deployment evidence,
@@ -62,7 +62,7 @@ a closed dashboard issue means every configured repository is current. Use **Act
 canonical release and deployment gaps** for monitor health, exact run evidence, and the retained
 `release-gap-report` artifact.
 
-Keep notifications enabled for assigned or subscribed issues to receive actionable-state changes.
+Keep GitHub mention notifications enabled to receive actionable-state changes.
 GitHub Actions failure notifications now mean the monitor itself could not complete verification.
 The README badge is a second visible health indicator.
 

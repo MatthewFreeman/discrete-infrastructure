@@ -88,6 +88,12 @@ function tableEscape(value) {
   return String(value ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ');
 }
 
+function markdownText(value) {
+  return String(value ?? '')
+    .replaceAll('\\', '\\\\')
+    .replace(/([#[\]_*<>])/g, '\\$1');
+}
+
 function resultEvidence(result) {
   if (result.status === 'UNRELEASED_COMMITS') {
     return `${result.release.tag}; ${result.comparison.aheadBy} unreleased commit(s)`;
@@ -132,7 +138,9 @@ export function renderDashboardBody(report, { runUrl = '' } = {}) {
           const pullLinks = commit.pullRequests
             .map((pull) => ` [#${pull.number}](${pull.url})`)
             .join('');
-          lines.push(`  - [\`${commit.sha.slice(0, 12)}\`](${commit.url}) ${commit.title}${pullLinks}`);
+          lines.push(
+            `  - [\`${commit.sha.slice(0, 12)}\`](${commit.url}) ${markdownText(commit.title)}${pullLinks}`,
+          );
         }
       }
       if (result.boundary) lines.push(`- Evidence boundary: ${result.boundary}`);
@@ -190,9 +198,10 @@ export async function synchronizeDashboard({ api, repository, report, runUrl = '
   });
   const statusChanged = issueFingerprint(existing) !== fingerprint;
   if (state === 'open' && statusChanged) {
+    const mention = assignee ? `@${assignee} — ` : '';
     const evidence = runUrl ? `\n- Evidence: [GitHub Actions](${runUrl})` : '';
     await api.request('POST', `/repos/${owner}/${name}/issues/${existing.number}/comments`, {
-      body: `Release/deployment status changed.\n\n- Action required: **${report.summary.actionable}**\n- Current: **${report.summary.current}**${evidence}\n\nThe dashboard body now contains the current SHAs and required actions.`,
+      body: `${mention}release/deployment status changed.\n\n- Action required: **${report.summary.actionable}**\n- Current: **${report.summary.current}**${evidence}\n\nThe dashboard body now contains the current SHAs and required actions.`,
     });
   }
   return {
